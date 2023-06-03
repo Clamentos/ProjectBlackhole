@@ -6,7 +6,6 @@ package io.github.clamentos.blackhole.logging;
 import io.github.clamentos.blackhole.exceptions.GlobalExceptionHandler;
 
 import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 
 import java.util.HashMap;
@@ -36,33 +35,23 @@ public class Logger {
     */
     public Logger(LogLevel min_level) {
 
-        init(min_level);
-    }
+        logs = new LinkedBlockingQueue<>();
+        file_writers = new HashMap<>();
+        
+        if(min_level == null) this.min_level = LogLevel.INFO;
+        else this.min_level = min_level;
 
-    /**
-     * Complete constructor.
-     * 
-     * @param min_level : Minimum logging level.
-     *     If a log has a level below {@code min_level}, it will be ignored.
-     *     If it's null, it will default to {@link LogLevel#INFO}
-     *
-     * @param paths : Log files paths. The array must not be null.
-     * @throws NullPointerException if {@code paths} is null
-     * @throws IOException if the files at the specified paths cannot be opened.
-    */
-    public Logger(String[] paths, LogLevel min_level) throws NullPointerException, IOException {
-
-        init(min_level);
-
-        for(String path : paths) {
-
-            addFilePath(path);
-        }
+        log_worker = new LogWorker(this.min_level, logs, file_writers);
+        log_worker.setName("Log Worker 0");
+        log_worker.setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
+        log_worker.start();
     }
 
     //____________________________________________________________________________________________________________________________________
 
-    /** @returns The current minimum log level */
+    /**
+     * @returns The current minimum log level
+    */
     public LogLevel getMinLevel() {
 
         return(min_level);
@@ -79,17 +68,12 @@ public class Logger {
         else this.min_level = min_level;
     }
 
-    public void addFilePath(String path) throws IOException {
-
-        file_writers.put(path, new BufferedWriter(new FileWriter(path, true)));
-    }
-
     public void restart() throws IllegalThreadStateException {
 
         log_worker.start();
     }
 
-    public void stop(boolean wait) throws IOException {
+    public void stop(boolean wait) throws IOException, InterruptedException {
 
         if(wait == true) {
 
@@ -103,7 +87,17 @@ public class Logger {
             }
         }
 
-        else log_worker.interrupt();
+        else {
+
+            log_worker.interrupt();
+        }
+
+        log_worker.join();
+
+        for(String writer : file_writers.keySet()) {
+
+            file_writers.get(writer).close();
+        }
     }
 
     public void log(String message, LogLevel log_level, String file_path) {
@@ -122,22 +116,6 @@ public class Logger {
 
             file_writers.get(writer).close();
         }
-    }
-
-    //____________________________________________________________________________________________________________________________________
-
-    private void init(LogLevel min_level) {
-
-        logs = new LinkedBlockingQueue<>();
-        file_writers = new HashMap<>();
-        
-        if(min_level == null) this.min_level = LogLevel.INFO;
-        else this.min_level = min_level;
-
-        log_worker = new LogWorker(this.min_level, logs, file_writers);
-        log_worker.setName("Log Worker 0");
-        log_worker.setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
-        log_worker.start();
     }
 
     //____________________________________________________________________________________________________________________________________

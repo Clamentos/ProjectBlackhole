@@ -3,28 +3,24 @@ package io.github.clamentos.blackhole.exceptions;
 //________________________________________________________________________________________________________________________________________
 
 import io.github.clamentos.blackhole.logging.LogLevel;
+import io.github.clamentos.blackhole.logging.LogPrinter;
 
 import java.lang.Thread.UncaughtExceptionHandler;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 //________________________________________________________________________________________________________________________________________
 
 public class GlobalExceptionHandler implements UncaughtExceptionHandler {
 
-    private final String RESET_COLOR = "\u001B[0m";
-    private DateTimeFormatter date_formatter;
+    private static class GlobalExceptionHandlerHolder {
+
+        private final static GlobalExceptionHandler INSTANCE = new GlobalExceptionHandler();
+    }
 
     //____________________________________________________________________________________________________________________________________
 
     private GlobalExceptionHandler() {
 
-        date_formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
-    }
-
-    private static class GlobalExceptionHandlerHolder {
-
-        private final static GlobalExceptionHandler INSTANCE = new GlobalExceptionHandler();
+        super();
     }
 
     public static GlobalExceptionHandler getInstance() {
@@ -37,11 +33,7 @@ public class GlobalExceptionHandler implements UncaughtExceptionHandler {
     @Override
     public void uncaughtException(Thread t, Throwable e) {
 
-        String prefix = "[ " + LocalDateTime.now().format(date_formatter) + " ] -------- [ ";
-        String color = LogLevel.WARNING.getColor();
-        String level = LogLevel.WARNING.getValue();
-
-        System.out.println(prefix + color + level + RESET_COLOR + " ] -------- : " + color + "Thread: " + t.getName() + " Id: " + t.threadId() + " threw " + e.getClass().getName() + " message: " + e.getMessage() + RESET_COLOR);
+        LogPrinter.printToConsole("Thread: " + t.getName() + " Id: " + t.threadId() + " threw " + e.getClass().getName() + " message: " + e.getMessage(), LogLevel.WARNING);
     }
 
     //____________________________________________________________________________________________________________________________________

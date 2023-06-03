@@ -12,12 +12,11 @@ import io.github.clamentos.blackhole.logging.Logger;
  */
 public class App {
 
-    public static void main(String[] args) throws IOException {
-        
+    public static void main(String[] args) throws IOException, InterruptedException {
+
         Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
 
         Logger logger = new Logger(LogLevel.DEBUG);
-        logger.addFilePath("testLog.log");
 
         logger.log("Messaggio di prova", LogLevel.DEBUG);
         logger.log("Messaggio di prova", LogLevel.INFO);
@@ -26,12 +25,12 @@ public class App {
         logger.log("Messaggio di prova", LogLevel.WARNING);
         logger.log("Messaggio di prova", LogLevel.ERROR);
 
-        logger.log("Messaggio di prova", LogLevel.DEBUG, "testLog");
-        logger.log("Messaggio di prova", LogLevel.INFO, "testLog");
-        logger.log("Messaggio di prova", LogLevel.NOTE, "testLog");
-        logger.log("Messaggio di prova", LogLevel.SUCCESS, "testLog");
-        logger.log("Messaggio di prova", LogLevel.WARNING, "testLog");
-        logger.log("Messaggio di prova", LogLevel.ERROR, "testLog");
+        logger.log("Messaggio di prova", LogLevel.DEBUG, "testLog.log");
+        logger.log("Messaggio di prova", LogLevel.INFO, "testLog.log");
+        logger.log("Messaggio di prova", LogLevel.NOTE, "testLog.log");
+        logger.log("Messaggio di prova", LogLevel.SUCCESS, "testLog.log");
+        logger.log("Messaggio di prova", LogLevel.WARNING, "testLog.log");
+        logger.log("Messaggio di prova", LogLevel.ERROR, "testLog.log");
 
         logger.stop(true);
 
