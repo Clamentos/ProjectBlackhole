@@ -1,11 +1,12 @@
 // mvn compile exec:java -Dexec.mainClass="io.github.clamentos.blackhole.App"
 package io.github.clamentos.blackhole;
 
-import java.io.IOException;
-
 import io.github.clamentos.blackhole.exceptions.GlobalExceptionHandler;
-import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
+import io.github.clamentos.blackhole.web.RequestPool;
+import io.github.clamentos.blackhole.web.Server;
+
+import java.io.IOException;
 
 /**
  * Main App class, just some random stuff for now...
@@ -16,25 +17,16 @@ public class App {
 
         Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
 
-        Logger logger = new Logger(LogLevel.DEBUG);
+        Logger logger = new Logger(
+            
+            ConfigurationProvider.DEFAULT_MINIMUM_LOG_LEVEL,
+            ConfigurationProvider.DEFAULT_OFFER_TIMEOUT,
+            ConfigurationProvider.DEFAULT_MAX_QUEUE_SIZE
+        );
 
-        logger.log("Messaggio di prova", LogLevel.DEBUG);
-        logger.log("Messaggio di prova", LogLevel.INFO);
-        logger.log("Messaggio di prova", LogLevel.NOTE);
-        logger.log("Messaggio di prova", LogLevel.SUCCESS);
-        logger.log("Messaggio di prova", LogLevel.WARNING);
-        logger.log("Messaggio di prova", LogLevel.ERROR);
+        RequestPool request_pool = new RequestPool(ConfigurationProvider.DEFAULT_REQUEST_WORKERS);
+        Server server = new Server(ConfigurationProvider.DEFAULT_SERVER_PORT, request_pool);
 
-        logger.log("Messaggio di prova", LogLevel.DEBUG, "testLog.log");
-        logger.log("Messaggio di prova", LogLevel.INFO, "testLog.log");
-        logger.log("Messaggio di prova", LogLevel.NOTE, "testLog.log");
-        logger.log("Messaggio di prova", LogLevel.SUCCESS, "testLog.log");
-        logger.log("Messaggio di prova", LogLevel.WARNING, "testLog.log");
-        logger.log("Messaggio di prova", LogLevel.ERROR, "testLog.log");
-
-        logger.stop(true);
-
-        // test the global exc handler
-        throw new ArithmeticException("Main failed to do calculations");
+        //...
     }
 }

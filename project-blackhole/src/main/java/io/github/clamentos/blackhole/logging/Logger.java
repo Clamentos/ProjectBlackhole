@@ -1,15 +1,13 @@
-// TODO: finish jdocs
 package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
-
-import io.github.clamentos.blackhole.exceptions.GlobalExceptionHandler;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 
 import java.util.HashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -20,6 +18,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class Logger {
 
     private LogLevel min_level;
+    private int offer_timeout;
     private LogWorker log_worker;
     private LinkedBlockingQueue<Log> logs;
     private HashMap<String, BufferedWriter> file_writers;
@@ -28,14 +27,16 @@ public class Logger {
     
     /**
      * Basic constructor.
-     * 
      * @param min_level : Minimum logging level.
      *     If a log has a level below {@code min_level}, it will be ignored.
-     *     If it's null, it will default to {@link LogLevel#INFO}
+     *     If {@code min_level} is null, it will default to {@link LogLevel#INFO}
+     * @param offer_timeout : Maximum time (in milliseconds) to wait before leaving while inserting a log into the queue.
+     * @param max_queue_capacity : Maximum number of elements that the queue can hold.
     */
-    public Logger(LogLevel min_level) {
+    public Logger(LogLevel min_level, int offer_timeout, int max_queue_capacity) {
 
-        logs = new LinkedBlockingQueue<>();
+        this.offer_timeout = offer_timeout;
+        logs = new LinkedBlockingQueue<>(max_queue_capacity);
         file_writers = new HashMap<>();
         
         if(min_level == null) this.min_level = LogLevel.INFO;
@@ -43,7 +44,6 @@ public class Logger {
 
         log_worker = new LogWorker(this.min_level, logs, file_writers);
         log_worker.setName("Log Worker 0");
-        log_worker.setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
         log_worker.start();
     }
 
@@ -58,21 +58,12 @@ public class Logger {
     }
 
     /**
-     * @param min_level : Minimum logging level.
-     *     If a log has a level below {@code min_level}, it will be ignored.
-     *     If it's null, it will default to {@link LogLevel#INFO}
+     * Stops the log worker thread and closes any open log file.
+     * This method is intended to be called once when the application is being stopped.
+     * @param wait : Wait for the log worker to empty the logging queue before stopping it.
+     * @throws IOException if any I/O error occur while closing the log files.
+     * @throws InterruptedException if this thread is interrupted while waiting.
     */
-    public void setMinLevel(LogLevel min_level) {
-
-        if(min_level == null) this.min_level = LogLevel.INFO;
-        else this.min_level = min_level;
-    }
-
-    public void restart() throws IllegalThreadStateException {
-
-        log_worker.start();
-    }
-
     public void stop(boolean wait) throws IOException, InterruptedException {
 
         if(wait == true) {
@@ -100,22 +91,31 @@ public class Logger {
         }
     }
 
-    public void log(String message, LogLevel log_level, String file_path) {
+    /**
+     * Adds the message to the log queue.
+     * If there is no space in the queue, it will block the thread up to a fixed amount of time.
+     * @param message : The message to be logged.
+     * @param log_level : The severity of the message.
+     * @param file_path : The destination file.
+     * @throws InterruptedException if this thread is interrupted while waiting.
+     * @returns false if the insertion failed, true otherwise.
+     */
+    public boolean log(String message, LogLevel log_level, String file_path) throws InterruptedException {
 
-        logs.add(new Log(message, log_level, file_path));
+        return(logs.offer(new Log(message, log_level, file_path), offer_timeout, TimeUnit.MILLISECONDS));
     }
 
-    public void log(String message, LogLevel log_level) {
+    /**
+     * Adds the message to the log queue.
+     * If there is no space in the queue, it will block the thread up to a fixed amount of time.
+     * @param message : The message to be logged.
+     * @param log_level : The severity of the message.
+     * @throws InterruptedException if this thread is interrupted while waiting.
+     * @returns false if the insertion failed, true otherwise.
+     */
+    public boolean log(String message, LogLevel log_level) throws InterruptedException {
 
-        logs.add(new Log(message, log_level, null));
-    }
-
-    public void closeFiles() throws IOException {
-
-        for(String writer : file_writers.keySet()) {
-
-            file_writers.get(writer).close();
-        }
+        return(logs.offer(new Log(message, log_level, null), offer_timeout, TimeUnit.MILLISECONDS));
     }
 
     //____________________________________________________________________________________________________________________________________

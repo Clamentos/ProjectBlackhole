@@ -3,6 +3,7 @@ package io.github.clamentos.blackhole.logging;
 /**
  * Log levels.
  * Each successive entry is more important than the previous.
+ * Each entry is composed of the log level name + color.
 */
 public enum LogLevel {
     

@@ -3,6 +3,8 @@ package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
 
+import io.github.clamentos.blackhole.exceptions.GlobalExceptionHandler;
+
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -27,6 +29,8 @@ public class LogWorker extends Thread {
 
     public LogWorker(LogLevel min_level, LinkedBlockingQueue<Log> logs, HashMap<String, BufferedWriter> file_writers) {
 
+        Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
+        
         this.min_level = min_level;
         this.logs = logs;
         this.file_writers = file_writers;
@@ -34,6 +38,11 @@ public class LogWorker extends Thread {
 
     //____________________________________________________________________________________________________________________________________
 
+    /**
+     * Spins indefinetly and prints logs as long as there are any in the queue.
+     * If the queue is empty, it simply waits.
+     * If the thread is interrupted, it will print that to the console and terminate.
+    */
     @Override
     public void run() {
 
@@ -76,7 +85,8 @@ public class LogWorker extends Thread {
 
                     if(file_writer == null) {
 
-                        file_writers.put(file_path, new BufferedWriter(new FileWriter(file_path, true)));
+                        file_writer = new BufferedWriter(new FileWriter(file_path, true));
+                        file_writers.put(file_path, file_writer);
                     }
 
                     LogPrinter.printToFile(message, log_level, file_writer);
