@@ -33,6 +33,7 @@ public class GlobalExceptionHandler implements UncaughtExceptionHandler {
     @Override
     public void uncaughtException(Thread t, Throwable e) {
 
+        // TODO: ...
         // NOTE: temporary for now...
         LogPrinter.printToConsole("Thread: " + t.getName() + " Id: " + t.threadId() + " threw " + e.getClass().getName() + " message: " + e.getMessage(), LogLevel.WARNING);
     }

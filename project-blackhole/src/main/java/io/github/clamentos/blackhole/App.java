@@ -3,7 +3,6 @@ package io.github.clamentos.blackhole;
 
 import io.github.clamentos.blackhole.exceptions.GlobalExceptionHandler;
 import io.github.clamentos.blackhole.logging.Logger;
-import io.github.clamentos.blackhole.web.RequestPool;
 import io.github.clamentos.blackhole.web.Server;
 
 import java.io.IOException;
@@ -15,18 +14,12 @@ public class App {
 
     public static void main(String[] args) throws IOException, InterruptedException {
 
+        // set the global exception handler for uncaught exceptions
         Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
+        Logger logger = Logger.getInstance();
+        Server web_server = Server.getInstance();
 
-        Logger logger = new Logger(
-            
-            ConfigurationProvider.DEFAULT_MINIMUM_LOG_LEVEL,
-            ConfigurationProvider.DEFAULT_OFFER_TIMEOUT,
-            ConfigurationProvider.DEFAULT_MAX_QUEUE_SIZE
-        );
-
-        RequestPool request_pool = new RequestPool(ConfigurationProvider.DEFAULT_REQUEST_WORKERS);
-        Server server = new Server(ConfigurationProvider.DEFAULT_SERVER_PORT, request_pool);
-
-        //...
+        // if the method is successful, it will loop forever
+        web_server.start();
     }
 }

@@ -1,4 +1,3 @@
-// TODO: finish jdocs
 package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
@@ -17,7 +16,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 /**
  * Thread that actually does the logging.
  * It waits for logs to be put in the queue and prints them.
- * If there are no logs, it will simply wait.
+ * If there are no logs, it will simply wait indefinetly.
 */
 public class LogWorker extends Thread {
 
@@ -58,7 +57,7 @@ public class LogWorker extends Thread {
 
             catch(InterruptedException exc) {
 
-                LogPrinter.printToConsole(Thread.currentThread().getName() + " stopped", LogLevel.INFO);
+                LogPrinter.printToConsole(Thread.currentThread().getName() + " interrupted -> it will terminate", LogLevel.INFO);
                 break;
             }
         }
@@ -66,6 +65,13 @@ public class LogWorker extends Thread {
 
     //____________________________________________________________________________________________________________________________________
 
+    /**
+     * Private method to do the logging.
+     * This method uses the {@link LogPrinter#printToConsole} and {@link LogPrinter#printToFile}
+     * @param message
+     * @param log_level
+     * @param file_path
+     */
     private void printLog(String message, LogLevel log_level, String file_path) {
 
         BufferedWriter file_writer;
