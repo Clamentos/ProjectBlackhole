@@ -2,7 +2,7 @@ package io.github.clamentos.blackhole.web;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.ConfigurationProvider;
+import io.github.clamentos.blackhole.config.ConfigurationProvider;
 
 import java.net.Socket;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -10,8 +10,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * This class holds the request queue and request worker threads.
- * Stereotype : singleton
+ * Pooling class that holds the request queue and request worker threads.
 */
 public class RequestPool {
 
@@ -23,21 +22,14 @@ public class RequestPool {
 
     //____________________________________________________________________________________________________________________________________
 
-    /**
-     * Instantiates a new RequestPool with the given parameters.
-     * @param num_workers : Number of worker threads.
-     * @param max_queue_size : Maximum number of items allowed in the request pool.
-     * @param servlets : List of servlets used by the workers to dispatch the request.
-     */
-    private RequestPool(int num_workers, int max_queue_size, Servlet[] servlets) {
+    private RequestPool() {
 
-        request_workers = new RequestWorker[num_workers];
-        requests = new LinkedBlockingQueue<>(max_queue_size);
+        request_workers = new RequestWorker[ConfigurationProvider.REQUEST_WORKERS];
+        requests = new LinkedBlockingQueue<>(ConfigurationProvider.MAX_REQUEST_QUEUE_SIZE);
 
         for(int i = 0; i < request_workers.length; i++) {
 
-            request_workers[i] = new RequestWorker(requests, servlets);
-            request_workers[i].setName("Request Worker " + i);
+            request_workers[i] = new RequestWorker("RW_" + i, requests);
             request_workers[i].start();
         }
     }
@@ -60,12 +52,7 @@ public class RequestPool {
 
                 if(temp == null) {
 
-                    temp = new RequestPool(
-
-                        ConfigurationProvider.REQUEST_WORKERS,
-                        ConfigurationProvider.MAX_REQUEST_QUEUE_SIZE,
-                        ConfigurationProvider.SERVLETS
-                    );
+                    temp = new RequestPool();
                 }
             }
         }
@@ -73,16 +60,15 @@ public class RequestPool {
         return(temp);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
     /**
      * Adds a new request (the socket itself) to the queue.
      * This method will block the thread current if there is no space in the queue.
      * @param socket : the accepted socket
+     * @throws InterruptedException if the thread was interrupted while waiting.
      */
-    public void add(Socket socket) {
+    public void add(Socket socket) throws InterruptedException {
 
-        requests.add(socket);
+        requests.put(socket);
     }
 
     //____________________________________________________________________________________________________________________________________

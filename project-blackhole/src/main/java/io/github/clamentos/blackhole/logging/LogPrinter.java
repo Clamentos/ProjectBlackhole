@@ -4,14 +4,14 @@ package io.github.clamentos.blackhole.logging;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 //________________________________________________________________________________________________________________________________________
 
 /**
- * This class holds the actual log printing methods.
- * {@link LogPrinter} has no state.
+ * This class holds the actual (static) log printing methods.
 */
 public class LogPrinter {
 
@@ -27,7 +27,7 @@ public class LogPrinter {
     */
     public static void printToConsole(String message, LogLevel log_level) {
 
-        String prefix = "[ " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")) + " ] -------- [ ";
+        String prefix = "[ " + Thread.currentThread().getName() + ": " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")) + " ] -------- [ ";
         String color = log_level.getColor();
         String level = log_level.getValue();
 
@@ -45,18 +45,17 @@ public class LogPrinter {
     */
     public static void printToFile(String message, LogLevel log_level, BufferedWriter file_writer) {
 
-        String prefix = "[ " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")) + " ] -------- [ ";
+        String prefix = "[ " + Thread.currentThread().getName() + ": " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")) + " ] -------- [ ";
         String level = log_level.getValue();
 
         try {
 
             file_writer.write(prefix + level + " ] -------- : " + message + "\n");
-            file_writer.flush();
         }
 
         catch(IOException exc) {
 
-            printToConsole("Thread: " + Thread.currentThread().getName() + " Id: " + Thread.currentThread().threadId() + " threw " + exc.getClass().getName() + " message: " + exc.getMessage(), log_level);
+            printToConsole("Could not write to log file, IOException thrown: " + exc.getMessage(), LogLevel.WARNING);
         }
     }
 

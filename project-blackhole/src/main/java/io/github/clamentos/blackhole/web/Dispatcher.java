@@ -1,30 +1,92 @@
 package io.github.clamentos.blackhole.web;
 
+//________________________________________________________________________________________________________________________________________
+
+import io.github.clamentos.blackhole.config.ConfigurationProvider;
+import io.github.clamentos.blackhole.logging.LogLevel;
+import io.github.clamentos.blackhole.logging.Logger;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.sql.Connection;
 
+import java.sql.Connection;
+import java.util.HashMap;
+
+//________________________________________________________________________________________________________________________________________
+
+/**
+ * This class is responsible for propagating the request to the appropriate servlet.
+*/
 public class Dispatcher {
 
-    private Servlet[] servlets;
+    private static volatile Dispatcher INSTANCE;
+    private static Object dummy_mutex = new Object();
 
-    public Dispatcher(Servlet[] servlets) {
+    private final Logger LOGGER;
+    private HashMap<Byte, Servlet> servlets;
 
-        this.servlets = servlets;
-    }
+    //____________________________________________________________________________________________________________________________________
 
-    public void dispatch(DataInputStream input_stream, DataOutputStream output_stream,  Connection db_connection) throws IOException {
+    private Dispatcher() {
 
-        byte resource_id = input_stream.readByte();
+        LOGGER = Logger.getInstance();
+        servlets = new HashMap<>();
+        Servlet[] temp = ConfigurationProvider.SERVLETS;
 
-        for(Servlet servlet : servlets) {
+        for(Servlet servlet : temp) {
 
-            if(servlet.match(resource_id) == true) {
-
-                servlet.handle(input_stream, output_stream);
-                break;
-            }
+            servlets.put(servlet.matches(), servlet);
         }
     }
+
+    //____________________________________________________________________________________________________________________________________
+
+    /**
+     * Get the Dispatcher instance.
+     * @return The Dispatcher instance.
+     */
+    public static Dispatcher getInstance() {
+
+        Dispatcher temp = INSTANCE;
+
+        if(temp == null) {
+
+            synchronized(dummy_mutex) {
+
+                temp = INSTANCE;
+
+                if(temp == null) {
+
+                    temp = new Dispatcher();
+                }
+            }
+        }
+
+        return(temp);
+    }
+
+    public void dispatch(DataInputStream input_stream, DataOutputStream output_stream,  Connection db_connection) {
+
+        byte resource_id;
+
+        try {
+
+            resource_id = input_stream.readByte();
+            servlets.get(resource_id).handle(input_stream, output_stream, db_connection);
+        }
+
+        catch(IOException exc) {
+
+            LOGGER.log("Could not read from socket stream, " + exc.getClass().getCanonicalName() + ": " + exc.getMessage(), LogLevel.WARNING);
+        }
+
+        catch(NullPointerException exc) {
+
+            // no servlet matches -> return error
+            // TODO: this
+        }
+    }
+
+    //____________________________________________________________________________________________________________________________________
 }

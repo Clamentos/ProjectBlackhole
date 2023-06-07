@@ -2,24 +2,20 @@
 package io.github.clamentos.blackhole;
 
 import io.github.clamentos.blackhole.exceptions.GlobalExceptionHandler;
-import io.github.clamentos.blackhole.logging.Logger;
 import io.github.clamentos.blackhole.web.Server;
-
-import java.io.IOException;
 
 /**
  * Main App class, just some random stuff for now...
  */
 public class App {
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) {
 
         // set the global exception handler for uncaught exceptions
         Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
-        Logger logger = Logger.getInstance();
-        Server web_server = Server.getInstance();
 
-        // if the method is successful, it will loop forever
+        // create and start the web server
+        Server web_server = Server.getInstance();
         web_server.start();
     }
 }

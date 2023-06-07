@@ -2,20 +2,19 @@ package io.github.clamentos.blackhole.web;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.ConfigurationProvider;
+import io.github.clamentos.blackhole.config.ConfigurationProvider;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
 
 import java.io.IOException;
 
 import java.net.ServerSocket;
-import java.net.SocketTimeoutException;
 
 //________________________________________________________________________________________________________________________________________
 
 /**
- * This class listen and accepts socket requests.
- * Stereotype : singleton
+ * Server class that listens and accepts socket requests.
+ * Once accepted, the sockets will be placed into a queue to be processed.
 */
 public class Server {
 
@@ -24,6 +23,7 @@ public class Server {
 
     private final int PORT;
     private final int CONNECTION_TIMEOUT;
+    private final int RETRIES;
     private final Logger LOGGER;
 
     private RequestPool request_pool;
@@ -32,16 +32,11 @@ public class Server {
 
     //____________________________________________________________________________________________________________________________________
 
-    /**
-     * Instantiates a new Server with the given parameters.
-     * @param port : Port at which the server listens for TCP connections.
-     * @param connection_timeout : The maximum connection timeout time (in milliseconds).
-     * @param request_pool : The pool in which to queue the requests.
-     */
-    private Server(int port, int connection_timeout, RequestPool request_pool) {
+    private Server(RequestPool request_pool) {
 
-        PORT = port;
-        CONNECTION_TIMEOUT = connection_timeout;
+        PORT = ConfigurationProvider.SERVER_PORT;
+        CONNECTION_TIMEOUT = ConfigurationProvider.CONNECTION_TIMEOUT;
+        RETRIES = ConfigurationProvider.MAX_SERVER_START_RETRIES;
         this.request_pool = request_pool;
 
         LOGGER = Logger.getInstance();
@@ -51,7 +46,7 @@ public class Server {
     //____________________________________________________________________________________________________________________________________
 
     /**
-     * Get the Server instance.
+     * Get the Server instance (create if necessary).
      * @return The Server instance.
      */
     public static Server getInstance() {
@@ -66,12 +61,7 @@ public class Server {
 
                 if(temp == null) {
 
-                    temp = new Server(
-            
-                        ConfigurationProvider.SERVER_PORT,
-                        ConfigurationProvider.CONNECTION_TIMEOUT,
-                        RequestPool.getInstance()
-                    );
+                    temp = new Server(RequestPool.getInstance());
                 }
             }
         }
@@ -82,37 +72,69 @@ public class Server {
     //____________________________________________________________________________________________________________________________________
 
     /**
-     * Starts the server.
-     * This method will block the calling thread until a connection is made or times out.
-     * @throws IOException if there are any I/O errors.
-     * @throws SocketTimeoutException if the connection timed out.
-     * @throws IllegalStateException if the server is already running.
+     * Starts the server and listens for requests.
+     * If the server is already running, this method will return immediately without doing anything.
+     * If this method successfully starts the server, it will occupy the thread indefinetly.
+     * If this method fails in starting the server, it will simply return.
      */
-    public void start() throws IOException, SocketTimeoutException, IllegalStateException {
+    public void start() {
 
-        synchronized(this) {
+        if(attempt(RETRIES) == true) {
 
-            if(running == true) {
+            LOGGER.log("Web server started, listening for requests...", LogLevel.SUCCESS);
 
-                throw new IllegalStateException("The web server is already running!");
+            while(true) {
+
+                try {
+
+                    request_pool.add(server_socket.accept());
+                }
+
+                catch(Exception exc) {
+
+                    LOGGER.log("Could not accept socket, " + exc.getClass().getCanonicalName() + ": " + exc.getMessage(), LogLevel.WARNING);
+                }
             }
-
-            server_socket = new ServerSocket(PORT);
-            server_socket.setSoTimeout(CONNECTION_TIMEOUT);
-            running = true;
-        }
-
-        LOGGER.log("Web server started, listening for requests...", LogLevel.INFO);
-
-        while(true) {
-
-            request_pool.add(server_socket.accept());
         }
     }
 
-    public void stop() {
+    //____________________________________________________________________________________________________________________________________
 
-        // TODO: ...
+    private synchronized boolean attempt(int retries) {
+
+        if(running == false) {
+
+            for(int i = 0; i < retries; i++) {
+
+                try {
+
+                    server_socket = new ServerSocket(PORT);
+                    server_socket.setSoTimeout(CONNECTION_TIMEOUT);
+                    running = true;
+
+                    return(true);
+                }
+
+                catch(IOException exc) {
+    
+                    LOGGER.log("Could not create server socket, IOException: " + exc.getMessage(), LogLevel.ERROR);
+                }
+
+                try {
+
+                    Thread.sleep(1000);
+                }
+
+                catch(InterruptedException exc) {
+
+                    LOGGER.log("Interrupted while waiting on retries, InterruptedException: " + exc.getMessage(), LogLevel.INFO);
+                }
+            }
+
+            LOGGER.log("Retries exhausted", LogLevel.ERROR);
+        }
+
+        return(false);
     }
 
     //____________________________________________________________________________________________________________________________________

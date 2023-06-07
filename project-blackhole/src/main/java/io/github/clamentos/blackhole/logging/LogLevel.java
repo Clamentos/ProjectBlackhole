@@ -1,7 +1,9 @@
 package io.github.clamentos.blackhole.logging;
 
+//________________________________________________________________________________________________________________________________________
+
 /**
- * Log levels.
+ * Enumeration listing al the log levels.
  * Each successive entry is more important than the previous.
  * Each entry is composed of the log level name + color.
 */
@@ -14,8 +16,12 @@ public enum LogLevel {
     WARNING("WARNING", "\u001B[33m"),
     ERROR("  ERROR", "\u001B[31m");
 
+    //____________________________________________________________________________________________________________________________________
+
     private String value;
     private String color;
+
+    //____________________________________________________________________________________________________________________________________
 
     private LogLevel(String value, String color) {
 
@@ -23,13 +29,25 @@ public enum LogLevel {
         this.color = color;
     }
 
+    //____________________________________________________________________________________________________________________________________
+
+    /**
+     * Get the associated log level string.
+     * @return the log level string (always well-defined).
+     */
     public String getValue() {
 
         return(value);
     }
 
+    /**
+     * Get the associated log level color.
+     * @return the log level color (always well-defined).
+     */
     public String getColor() {
 
         return(color);
     }
+
+    //____________________________________________________________________________________________________________________________________
 }

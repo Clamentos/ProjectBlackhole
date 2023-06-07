@@ -4,44 +4,33 @@ package io.github.clamentos.blackhole.logging;
 
 import io.github.clamentos.blackhole.exceptions.GlobalExceptionHandler;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-
-import java.util.HashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 //________________________________________________________________________________________________________________________________________
 
 /**
- * Thread that actually does the logging.
- * It waits for logs to be put in the queue and prints them.
- * If there are no logs, it will simply wait indefinetly.
+ * Worker thread that actually does the logging.
 */
 public class LogWorker extends Thread {
 
-    private LogLevel min_level;
-    private LinkedBlockingQueue<Log> logs;
-    private HashMap<String, BufferedWriter> file_writers;
-
-    //____________________________________________________________________________________________________________________________________
-
-    public LogWorker(LogLevel min_level, LinkedBlockingQueue<Log> logs, HashMap<String, BufferedWriter> file_writers) {
-
-        Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
-        
-        this.min_level = min_level;
-        this.logs = logs;
-        this.file_writers = file_writers;
-    }
+    private LinkedBlockingQueue<Log> log_queue;
 
     //____________________________________________________________________________________________________________________________________
 
     /**
-     * Spins indefinetly and prints logs as long as there are any in the queue.
-     * If the queue is empty, it simply waits.
-     * If the thread is interrupted, it will print that to the console and terminate.
-    */
+     * Instantiates a new log worker on the given log queue.
+     * @param name : The worker name, used for identification in logs.
+     * @param log_queue : The log queue on which the thread will consume and log.
+     */
+    public LogWorker(String name, LinkedBlockingQueue<Log> log_queue) {
+
+        Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
+        Thread.currentThread().setName(name);
+        this.log_queue = log_queue;
+    }
+
+    //____________________________________________________________________________________________________________________________________
+
     @Override
     public void run() {
 
@@ -51,57 +40,22 @@ public class LogWorker extends Thread {
 
             try {
 
-                log = logs.take();
-                printLog(log.message(), log.log_level(), log.file_path());
+                log = log_queue.take();
+
+                if(log.log_file() == null) {
+
+                    LogPrinter.printToConsole(log.message(), log.log_level());
+                }
+
+                else {
+
+                    LogPrinter.printToFile(log.message(), log.log_level(), log.log_file().getFileWriter());
+                }
             }
 
             catch(InterruptedException exc) {
 
-                LogPrinter.printToConsole(Thread.currentThread().getName() + " interrupted -> it will terminate", LogLevel.INFO);
-                break;
-            }
-        }
-    }
-
-    //____________________________________________________________________________________________________________________________________
-
-    /**
-     * Private method to do the logging.
-     * This method uses the {@link LogPrinter#printToConsole} and {@link LogPrinter#printToFile}
-     * @param message
-     * @param log_level
-     * @param file_path
-     */
-    private void printLog(String message, LogLevel log_level, String file_path) {
-
-        BufferedWriter file_writer;
-        
-        if(min_level.compareTo(log_level) <= 0) {
-
-            if(file_path == null) {
-
-                LogPrinter.printToConsole(message, log_level);
-            }
-
-            else {
-                
-                try {
-
-                    file_writer = file_writers.get(file_path);
-
-                    if(file_writer == null) {
-
-                        file_writer = new BufferedWriter(new FileWriter(file_path, true));
-                        file_writers.put(file_path, file_writer);
-                    }
-
-                    LogPrinter.printToFile(message, log_level, file_writer);
-                }
-
-                catch(IOException exc) {
-
-                    LogPrinter.printToConsole("Thread: " + Thread.currentThread().getName() + " Id: " + Thread.currentThread().threadId() + " threw " + exc.getClass().getName() + " message: " + exc.getMessage(), log_level);
-                }
+                LogPrinter.printToConsole("Interrupted while waiting on the queue, InterruptedException: " + exc.getMessage(), LogLevel.INFO);
             }
         }
     }
