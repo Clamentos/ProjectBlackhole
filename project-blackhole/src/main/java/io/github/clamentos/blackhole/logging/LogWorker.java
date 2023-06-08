@@ -19,13 +19,11 @@ public class LogWorker extends Thread {
 
     /**
      * Instantiates a new log worker on the given log queue.
-     * @param name : The worker name, used for identification in logs.
      * @param log_queue : The log queue on which the thread will consume and log.
      */
-    public LogWorker(String name, LinkedBlockingQueue<Log> log_queue) {
+    public LogWorker(LinkedBlockingQueue<Log> log_queue) {
 
         Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
-        Thread.currentThread().setName(name);
         this.log_queue = log_queue;
     }
 

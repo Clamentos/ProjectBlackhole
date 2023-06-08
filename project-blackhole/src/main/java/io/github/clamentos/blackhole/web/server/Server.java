@@ -1,4 +1,4 @@
-package io.github.clamentos.blackhole.web;
+package io.github.clamentos.blackhole.web.server;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -49,7 +49,7 @@ public class Server {
      * Get the Server instance (create if necessary).
      * @return The Server instance.
      */
-    public static Server getInstance() {
+    public static Server getInstance() throws InstantiationException{
 
         Server temp = INSTANCE;
 
@@ -62,6 +62,7 @@ public class Server {
                 if(temp == null) {
 
                     temp = new Server(RequestPool.getInstance());
+                    INSTANCE = temp;
                 }
             }
         }
@@ -81,7 +82,7 @@ public class Server {
 
         if(attempt(RETRIES) == true) {
 
-            LOGGER.log("Web server started, listening for requests...", LogLevel.SUCCESS);
+            LOGGER.log("Web server started", LogLevel.SUCCESS);
 
             while(true) {
 
@@ -92,7 +93,7 @@ public class Server {
 
                 catch(Exception exc) {
 
-                    LOGGER.log("Could not accept socket, " + exc.getClass().getCanonicalName() + ": " + exc.getMessage(), LogLevel.WARNING);
+                    LOGGER.log("Could not accept socket, " + exc.getClass().getSimpleName() + ": " + exc.getMessage(), LogLevel.INFO);
                 }
             }
         }
@@ -131,7 +132,7 @@ public class Server {
                 }
             }
 
-            LOGGER.log("Retries exhausted", LogLevel.ERROR);
+            LOGGER.log("Retries exhausted while attempting to start the server", LogLevel.ERROR);
         }
 
         return(false);

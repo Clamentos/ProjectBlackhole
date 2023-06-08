@@ -1,4 +1,4 @@
-package io.github.clamentos.blackhole.web;
+package io.github.clamentos.blackhole.web.servlets;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -38,6 +38,10 @@ public interface Servlet {
  * response shape:
  * 
  *     |status(1)|data_entry(?)|
+ * 
+ *     status values:
+ * 
+ *         ...
  * 
  * 
  * 

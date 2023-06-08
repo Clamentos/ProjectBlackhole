@@ -1,7 +1,7 @@
 package io.github.clamentos.blackhole.web.dtos;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.List;
 
 public record DataEntry(
 
@@ -11,22 +11,25 @@ public record DataEntry(
 
 ) {
 
-    // TODO: finish
-    public byte[] streamify() {
+    public List<Byte> streamify() {
 
-        ArrayList<Byte> temp = new ArrayList<>();
-        byte[] int_buffer;
-        byte type = data_type.streamify();
+        ArrayList<Byte> result = new ArrayList<>();
 
-        temp.add(data_type.streamify());
+        result.add(data_type.streamify());
 
-        if(data_type != null) {
+        if(length != null) {
 
-            int_buffer = ByteBuffer.allocate(4).putInt(length).array();
-            temp.add(int_buffer[0]);
-            temp.add(int_buffer[1]);
-            temp.add(int_buffer[2]);
-            temp.add(int_buffer[3]);
+            result.add((byte)(length & 0x000000FF));
+            result.add((byte)((length & 0x0000FF00) >> 8));
+            result.add((byte)((length & 0x00FF0000) >> 16));
+            result.add((byte)((length & 0xFF000000) >> 24));
         }
+
+        for(Byte elem : data) {
+
+            result.add(elem);
+        }
+
+        return(result);
     }
 }

@@ -4,8 +4,16 @@ package io.github.clamentos.blackhole.logging;
 
 /**
  * Enumeration listing al the log levels.
- * Each successive entry is more important than the previous.
  * Each entry is composed of the log level name + color.
+ * Log levels in increasing order:
+ * <ol>
+ *     <li>DEBUG</li>
+ *     <li>INFO</li>
+ *     <li>SUCCESS</li>
+ *     <li>NOTE</li>
+ *     <li>WARNING</li>
+ *     <li>ERROR</li>
+ * </ol>
 */
 public enum LogLevel {
     

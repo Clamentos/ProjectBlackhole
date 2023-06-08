@@ -1,4 +1,4 @@
-package io.github.clamentos.blackhole.web;
+package io.github.clamentos.blackhole.web.server;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -22,14 +22,14 @@ public class RequestPool {
 
     //____________________________________________________________________________________________________________________________________
 
-    private RequestPool() {
+    private RequestPool() throws InstantiationException {
 
         request_workers = new RequestWorker[ConfigurationProvider.REQUEST_WORKERS];
         requests = new LinkedBlockingQueue<>(ConfigurationProvider.MAX_REQUEST_QUEUE_SIZE);
 
         for(int i = 0; i < request_workers.length; i++) {
 
-            request_workers[i] = new RequestWorker("RW_" + i, requests);
+            request_workers[i] = new RequestWorker(requests);
             request_workers[i].start();
         }
     }
@@ -40,7 +40,7 @@ public class RequestPool {
      * Get the RequestPool instance.
      * @return The RequestPool instance.
      */
-    public static RequestPool getInstance() {
+    public static RequestPool getInstance() throws InstantiationException{
 
         RequestPool temp = INSTANCE;
 

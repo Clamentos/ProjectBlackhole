@@ -27,11 +27,12 @@ public class LogPrinter {
     */
     public static void printToConsole(String message, LogLevel log_level) {
 
-        String prefix = "[ " + Thread.currentThread().getName() + ": " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")) + " ] -------- [ ";
-        String color = log_level.getColor();
-        String level = log_level.getValue();
+        String now =  LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"));
+        String head = "[ " + now + " ]";
+        String level = "[ " + log_level.getColor() + log_level.getValue() + "\u001B[0m ]";
+        String msg = log_level.getColor() + message + "\u001B[0m";
 
-        System.out.println(prefix + color + level + "\u001B[0m" + " ] -------- : " + color + message + "\u001B[0m");
+        System.out.println(head + " --- " + level + " --- " + msg);
     }
 
     /**
@@ -45,12 +46,13 @@ public class LogPrinter {
     */
     public static void printToFile(String message, LogLevel log_level, BufferedWriter file_writer) {
 
-        String prefix = "[ " + Thread.currentThread().getName() + ": " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")) + " ] -------- [ ";
-        String level = log_level.getValue();
+        String now =  LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"));
+        String head = "[ " + now + " ]";
+        String level = "[ " + log_level.getValue() + " ]";
 
         try {
 
-            file_writer.write(prefix + level + " ] -------- : " + message + "\n");
+            file_writer.write(head + " --- " + level + " --- " + message);
         }
 
         catch(IOException exc) {

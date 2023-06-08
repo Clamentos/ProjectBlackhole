@@ -1,11 +1,10 @@
-package io.github.clamentos.blackhole.web;
+package io.github.clamentos.blackhole.web.server;
 
 //________________________________________________________________________________________________________________________________________
 
 import io.github.clamentos.blackhole.config.ConfigurationProvider;
 import io.github.clamentos.blackhole.exceptions.GlobalExceptionHandler;
 import io.github.clamentos.blackhole.logging.LogLevel;
-import io.github.clamentos.blackhole.logging.LogPrinter;
 import io.github.clamentos.blackhole.logging.Logger;
 
 import java.io.BufferedInputStream;
@@ -18,8 +17,7 @@ import java.net.Socket;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -30,7 +28,7 @@ public class RequestWorker extends Thread {
 
     private final Logger LOGGER;
 
-    private LinkedBlockingQueue<Socket> socket_queue;
+    private BlockingQueue<Socket> socket_queue;
     private Connection db_connection;
     private Dispatcher dispatcher;
 
@@ -38,17 +36,21 @@ public class RequestWorker extends Thread {
 
     /**
      * Instantiates a new request worker.
-     * @param name : The worker name, used for identification in logs.
      * @param socket_queue : The socket queue. 
      */
-    public RequestWorker(String name, LinkedBlockingQueue<Socket> socket_queue) {
+    public RequestWorker(BlockingQueue<Socket> socket_queue) throws InstantiationException {
 
         Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
-        Thread.currentThread().setName(name);
-
         LOGGER = Logger.getInstance();
-
         this.socket_queue = socket_queue;
+
+        // TODO: temporary for testing
+        /*if(attempt(ConfigurationProvider.MAX_DB_CONNECTION_RETRIES) == false) {
+
+            throw new InstantiationException("Could not connect to the database");
+        }*/
+
+        LOGGER.log("Database connection was successful", LogLevel.SUCCESS);
         dispatcher = Dispatcher.getInstance();
     }
 
@@ -61,25 +63,21 @@ public class RequestWorker extends Thread {
         DataOutputStream out;
         Socket socket;
 
-        if(attempt(ConfigurationProvider.MAX_DB_CONNECTION_RETRIES) == true) {
+        while(true) {
 
-            LOGGER.log("Database connection was successful", LogLevel.SUCCESS);
+            try {
 
-            while(true) {
+                socket = socket_queue.take();
+                in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+                out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+                //refreshIfNeeded();  TODO: temporary for testing
+                dispatcher.dispatch(in, out, db_connection);
+                socket.close();
+            }
 
-                try {
-    
-                    socket = socket_queue.take();
-                    in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
-                    out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
-                    refreshIfNeeded();
-                    dispatcher.dispatch(in, out, db_connection);
-                }
+            catch(Exception exc) {
 
-                catch(Exception exc) {
-
-                    LOGGER.log("Could not dispatch the request, " + exc.getClass().getCanonicalName() + ": " + exc.getMessage(), LogLevel.WARNING);
-                }
+                LOGGER.log("Could not dispatch the request, " + exc.getClass().getSimpleName() + ": " + exc.getMessage(), LogLevel.WARNING);
             }
         }
     }
@@ -104,7 +102,7 @@ public class RequestWorker extends Thread {
 
             catch(SQLException exc) {
     
-                LogPrinter.printToConsole("Could not connect to the database, SQLException: " + exc.getMessage(), LogLevel.WARNING);
+                LOGGER.log("Could not connect to the database, SQLException: " + exc.getMessage(), LogLevel.WARNING);
             }
 
             try {
@@ -118,7 +116,7 @@ public class RequestWorker extends Thread {
             }
         }
 
-        LOGGER.log("Retries exhausted", LogLevel.ERROR);
+        LOGGER.log("Retries exhausted while attempting to connect to the database", LogLevel.ERROR);
         return(false);
     }
 

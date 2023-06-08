@@ -1,14 +1,49 @@
 package io.github.clamentos.blackhole.web.servlets;
 
-import io.github.clamentos.blackhole.web.Servlet;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.sql.Connection;
 
-// TODO: logic... and maybe make this singleton?
+import io.github.clamentos.blackhole.logging.LogLevel;
+import io.github.clamentos.blackhole.logging.Logger;
+
 public class UserServlet implements Servlet {
+
+    private static volatile UserServlet INSTANCE;
+    private static Object dummy_mutex = new Object();
+    private final Logger LOGGER;
+
+    private UserServlet() {
+
+        LOGGER = Logger.getInstance();
+    }
+
+    /**
+     * Get the UserServlet instance.
+     * If the instance doesn't exist, create it.
+     * @return The UserServlet instance.
+     */
+    public static UserServlet getInstance() {
+
+        UserServlet temp = INSTANCE;
+
+        if(temp == null) {
+
+            synchronized(dummy_mutex) {
+
+                temp = INSTANCE;
+
+                if(temp == null) {
+
+                    temp = new UserServlet();
+                    INSTANCE = temp;
+                }
+            }
+        }
+
+        return(temp);
+    }
     
     @Override
     public byte matches() {
@@ -23,15 +58,21 @@ public class UserServlet implements Servlet {
 
             byte request_method = input_stream.readByte();
 
-            switch(request_method) {
+            //Thread.sleep(10);
+
+            // TODO: temp for testing
+            output_stream.write(request_method + 1);
+            output_stream.flush();
+            
+            /*switch(request_method) {
 
                 //...
-            }
+            }*/
         }
 
-        catch(IOException exc) {
+        catch(Exception exc) {
 
-            //...
+            LOGGER.log("UserServlet", LogLevel.WARNING);
         }
     }
 }

@@ -35,7 +35,7 @@ public class GlobalExceptionHandler implements UncaughtExceptionHandler {
 
         // TODO: ...
         // NOTE: temporary for now...
-        LogPrinter.printToConsole("Thread: " + t.getName() + " Id: " + t.threadId() + " threw " + e.getClass().getName() + " message: " + e.getMessage(), LogLevel.WARNING);
+        LogPrinter.printToConsole("Thread: " + t.getName() + " Id: " + t.threadId() + " threw " + e.getClass().getName() + " message: " + e.getMessage(), LogLevel.ERROR);
     }
 
     //____________________________________________________________________________________________________________________________________

@@ -27,7 +27,7 @@ public class Logger {
 
         logs = new LinkedBlockingQueue<>(ConfigurationProvider.MAX_LOG_QUEUE_SIZE);
         min_console_log_level = ConfigurationProvider.MINIMUM_CONSOLE_LOG_LEVEL;
-        log_worker = new LogWorker("LW_0", logs);
+        log_worker = new LogWorker(logs);
         log_worker.start();
     }
 
@@ -52,6 +52,8 @@ public class Logger {
                 if(temp == null) {
 
                     temp = new Logger();
+                    INSTANCE = temp;
+                    LogPrinter.printToConsole("Logger loaded", LogLevel.SUCCESS);
                 }
             }
         }
@@ -70,7 +72,7 @@ public class Logger {
      */
     public void log(String message, LogLevel log_level, LogFiles log_file) {
 
-        if(log_file.getLogLevel().compareTo(log_level) >= 0) {
+        if(log_file.getLogLevel().compareTo(log_level) <= 0) {
 
             try {
 
@@ -92,7 +94,7 @@ public class Logger {
      */
     public void log(String message, LogLevel log_level) {
 
-        if(min_console_log_level.compareTo(log_level) >= 0) {
+        if(min_console_log_level.compareTo(log_level) <= 0) {
 
             try {
 

@@ -1,16 +1,19 @@
-package io.github.clamentos.blackhole.web;
+package io.github.clamentos.blackhole.web.server;
 
 //________________________________________________________________________________________________________________________________________
 
 import io.github.clamentos.blackhole.config.ConfigurationProvider;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
+import io.github.clamentos.blackhole.web.dtos.ResponseStatus;
+import io.github.clamentos.blackhole.web.servlets.Servlet;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
 import java.sql.Connection;
+
 import java.util.HashMap;
 
 //________________________________________________________________________________________________________________________________________
@@ -78,13 +81,20 @@ public class Dispatcher {
 
         catch(IOException exc) {
 
-            LOGGER.log("Could not read from socket stream, " + exc.getClass().getCanonicalName() + ": " + exc.getMessage(), LogLevel.WARNING);
+            LOGGER.log("Could not read from socket stream, IOException: " + exc.getMessage(), LogLevel.WARNING);
         }
 
         catch(NullPointerException exc) {
 
-            // no servlet matches -> return error
-            // TODO: this
+            try {
+
+                output_stream.write(ResponseStatus.ERROR.streamify());
+            }
+
+            catch(IOException exc2) {
+
+                LOGGER.log("Could not write to socket stream, IOException: " + exc2.getMessage(), LogLevel.WARNING);
+            }
         }
     }
 
