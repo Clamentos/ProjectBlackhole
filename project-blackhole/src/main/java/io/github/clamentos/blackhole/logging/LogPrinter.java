@@ -43,21 +43,28 @@ public class LogPrinter {
      * @param log_level : The severity of the message.
      * @param file_writer : The destination file.
      * @throws NullPointerException if either {@code log_level} or {@code file_writer} are null.
+     * @returns the number of bytes written to the file.
     */
-    public static void printToFile(String message, LogLevel log_level, BufferedWriter file_writer) {
+    public static long printToFile(String message, LogLevel log_level, BufferedWriter file_writer) {
 
         String now =  LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"));
         String head = "[ " + now + " ]";
         String level = "[ " + log_level.getValue() + " ]";
+        String actual = head + " --- " + level + " --- " + message + "\n";
 
         try {
 
-            file_writer.write(head + " --- " + level + " --- " + message);
+            file_writer.write(actual);
+            file_writer.flush();
+            
+            return(actual.length());
         }
 
         catch(IOException exc) {
 
             printToConsole("Could not write to log file, IOException thrown: " + exc.getMessage(), LogLevel.WARNING);
+
+            return(0);
         }
     }
 

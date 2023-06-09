@@ -17,6 +17,7 @@ import java.net.Socket;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+
 import java.util.concurrent.BlockingQueue;
 
 //________________________________________________________________________________________________________________________________________
@@ -37,6 +38,7 @@ public class RequestWorker extends Thread {
     /**
      * Instantiates a new request worker.
      * @param socket_queue : The socket queue. 
+     * @throws InstantiationException if the worker fails to connect to the database.
      */
     public RequestWorker(BlockingQueue<Socket> socket_queue) throws InstantiationException {
 
@@ -44,7 +46,6 @@ public class RequestWorker extends Thread {
         LOGGER = Logger.getInstance();
         this.socket_queue = socket_queue;
 
-        // TODO: temporary for testing
         /*if(attempt(ConfigurationProvider.MAX_DB_CONNECTION_RETRIES) == false) {
 
             throw new InstantiationException("Could not connect to the database");
@@ -70,7 +71,7 @@ public class RequestWorker extends Thread {
                 socket = socket_queue.take();
                 in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
                 out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
-                //refreshIfNeeded();  TODO: temporary for testing
+                //refreshIfNeeded();
                 dispatcher.dispatch(in, out, db_connection);
                 socket.close();
             }

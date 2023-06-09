@@ -3,9 +3,9 @@ package io.github.clamentos.blackhole.logging;
 //________________________________________________________________________________________________________________________________________
 
 import io.github.clamentos.blackhole.config.ConfigurationProvider;
-import io.github.clamentos.blackhole.config.LogFiles;
 
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.locks.ReentrantLock;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -15,7 +15,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class Logger {
 
     private static volatile Logger INSTANCE;
-    private static Object dummy_mutex = new Object();
+    private static ReentrantLock lock = new ReentrantLock();
 
     private LogLevel min_console_log_level;
     private LogWorker log_worker;
@@ -24,9 +24,9 @@ public class Logger {
     //____________________________________________________________________________________________________________________________________
 
     private Logger() {
-
-        logs = new LinkedBlockingQueue<>(ConfigurationProvider.MAX_LOG_QUEUE_SIZE);
+        
         min_console_log_level = ConfigurationProvider.MINIMUM_CONSOLE_LOG_LEVEL;
+        logs = new LinkedBlockingQueue<>(ConfigurationProvider.MAX_LOG_QUEUE_SIZE);
         log_worker = new LogWorker(logs);
         log_worker.start();
     }
@@ -45,46 +45,22 @@ public class Logger {
 
         if(temp == null) {
 
-            synchronized(dummy_mutex) {
+            lock.lock();
+            temp = INSTANCE;
 
-                temp = INSTANCE;
+            if(temp == null) {
 
-                if(temp == null) {
-
-                    temp = new Logger();
-                    INSTANCE = temp;
-                    LogPrinter.printToConsole("Logger loaded", LogLevel.SUCCESS);
-                }
+                INSTANCE = temp = new Logger();
+                LogPrinter.printToConsole("Logger loaded " + INSTANCE, LogLevel.SUCCESS);
             }
+
+            lock.unlock();
         }
 
         return(temp);
     }
 
     //____________________________________________________________________________________________________________________________________
-
-    /**
-     * Adds the message to the log queue.
-     * If there is no space in the queue, it will block the thread.
-     * @param message : The message to be logged.
-     * @param log_level : The severity of the message.
-     * @param log_file : The destination file.
-     */
-    public void log(String message, LogLevel log_level, LogFiles log_file) {
-
-        if(log_file.getLogLevel().compareTo(log_level) <= 0) {
-
-            try {
-
-                logs.put(new Log(message, log_level, log_file));
-            }
-
-            catch(InterruptedException exc) {
-
-                exceptionPrinter(exc);
-            }
-        }
-    }
 
     /**
      * Adds the message to the log queue.
@@ -98,21 +74,14 @@ public class Logger {
 
             try {
 
-                logs.put(new Log(message, log_level, null));
+                logs.put(new Log(message, log_level));
             }
     
             catch(InterruptedException exc) {
     
-                exceptionPrinter(exc);
+                LogPrinter.printToConsole("Could not insert into log queue, InterruptedException: " + exc.getMessage(), LogLevel.WARNING);
             }
         }
-    }
-
-    //____________________________________________________________________________________________________________________________________
-
-    private void exceptionPrinter(InterruptedException exc) {
-
-        LogPrinter.printToConsole("Could not insert into log queue, InterruptedException: " + exc.getMessage(), LogLevel.WARNING);
     }
 
     //____________________________________________________________________________________________________________________________________
