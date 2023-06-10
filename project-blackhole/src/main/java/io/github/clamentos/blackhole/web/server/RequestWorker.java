@@ -11,6 +11,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 
 import java.net.Socket;
 
@@ -19,6 +20,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -29,6 +31,7 @@ public class RequestWorker extends Thread {
 
     private final Logger LOGGER;
 
+    private AtomicBoolean stopped;
     private BlockingQueue<Socket> socket_queue;
     private Connection db_connection;
     private Dispatcher dispatcher;
@@ -45,6 +48,7 @@ public class RequestWorker extends Thread {
         Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
         LOGGER = Logger.getInstance();
         this.socket_queue = socket_queue;
+        stopped = new AtomicBoolean(true);
 
         if(attempt(ConfigurationProvider.MAX_DB_CONNECTION_RETRIES) == false) {
 
@@ -63,8 +67,10 @@ public class RequestWorker extends Thread {
         DataInputStream in;
         DataOutputStream out;
         Socket socket;
+        
+        stopped.set(false);
 
-        while(true) {
+        while(stopped.get() == false) {
 
             try {
 
@@ -76,11 +82,32 @@ public class RequestWorker extends Thread {
                 socket.close();
             }
 
-            catch(Exception exc) {
+            catch(IOException | SQLException exc) {
 
                 LOGGER.log("Could not dispatch the request, " + exc.getClass().getSimpleName() + ": " + exc.getMessage(), LogLevel.WARNING);
             }
+
+            catch(InterruptedException exc) {
+
+                if(stopped.get() == true) {
+
+                    break;
+                }
+
+                LOGGER.log("Interrupted while waiting on the queue, InterruptedException: " + exc.getMessage(), LogLevel.INFO);
+            }
         }
+    }
+
+    /**
+     * Sets the stop flag of the thread.
+     * This method does not guarantee that the thread will stop as it may still be blocked on the log queue.
+     * After calling {@code halt()} the thread must also be interrupted
+     * by calling the {@code interrupt()} method. This will cause the {@link RequestWorker} to check the stop flag.
+    */
+    public void halt() {
+
+        stopped.set(true);
     }
 
     //____________________________________________________________________________________________________________________________________

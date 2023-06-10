@@ -1,11 +1,15 @@
 // mvn compile exec:java -Dexec.mainClass="io.github.clamentos.blackhole.App"
 package io.github.clamentos.blackhole;
 
+//________________________________________________________________________________________________________________________________________
+
 import io.github.clamentos.blackhole.config.ConfigurationProvider;
 import io.github.clamentos.blackhole.exceptions.GlobalExceptionHandler;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
 import io.github.clamentos.blackhole.web.server.Server;
+
+//________________________________________________________________________________________________________________________________________
 
 /**
  * Main App class, just some random stuff for now...
@@ -30,4 +34,6 @@ public class App {
             LOGGER.stopWorker(true);
         }
     }
+
+    //____________________________________________________________________________________________________________________________________
 }

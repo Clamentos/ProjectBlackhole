@@ -101,6 +101,11 @@ public class Server {
         }
     }
 
+    public void stopPool(boolean wait) {
+
+        request_pool.stopWorkers(wait);
+    }
+
     //____________________________________________________________________________________________________________________________________
 
     private synchronized boolean attempt(int retries) {

@@ -71,5 +71,36 @@ public class RequestPool {
         requests.put(socket);
     }
 
+    public void stopWorkers(boolean wait) {
+
+        if(wait == true) {
+
+            while(true) {
+
+                if(requests.size() == 0) {
+
+                    stopWorkers();
+                    break;
+                }
+            }
+        }
+
+        else {
+
+            stopWorkers();
+        }
+    }
+
+    //____________________________________________________________________________________________________________________________________
+
+    private void stopWorkers() {
+
+        for(RequestWorker worker : request_workers) {
+
+            worker.halt();
+            worker.interrupt();
+        }
+    }
+
     //____________________________________________________________________________________________________________________________________
 }
