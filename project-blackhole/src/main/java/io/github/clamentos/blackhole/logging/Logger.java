@@ -18,8 +18,8 @@ public class Logger {
     private static ReentrantLock lock = new ReentrantLock();
 
     private LogLevel min_console_log_level;
-    private LogWorker log_worker;
     private LinkedBlockingQueue<Log> logs;
+    private LogWorker log_worker;
 
     //____________________________________________________________________________________________________________________________________
 
@@ -81,6 +81,35 @@ public class Logger {
     
                 LogPrinter.printToConsole("Could not insert into log queue, InterruptedException: " + exc.getMessage(), LogLevel.WARNING);
             }
+        }
+    }
+
+    /**
+     * Stops the active {@link LogWorker}.
+     * @param wait : waits for the worker to drain the log queue before stopping it.
+     *               If set to false, it will stop the worker as soon as it finishes
+     *               logging the current message.
+    */
+    public void stopWorker(boolean wait) {
+
+        if(wait == true) {
+
+            while(true) {
+
+                if(logs.size() == 0) {
+
+                    log_worker.halt();
+                    log_worker.interrupt();
+                    
+                    break;
+                }
+            }
+        }
+
+        else {
+
+            log_worker.halt();
+            log_worker.interrupt();
         }
     }
 

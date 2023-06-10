@@ -40,7 +40,7 @@ public class RequestPool {
      * Get the RequestPool instance.
      * @return The RequestPool instance.
      */
-    public static RequestPool getInstance() throws InstantiationException{
+    public static RequestPool getInstance() throws InstantiationException {
 
         RequestPool temp = INSTANCE;
 

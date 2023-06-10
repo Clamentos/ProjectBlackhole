@@ -14,14 +14,12 @@ public class App {
 
     public static void main(String[] args) {
 
-        // set the global exception handler for uncaught exceptions
+        Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
         ConfigurationProvider.init();
-        //Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
-        //Logger LOGGER = Logger.getInstance();
+        Logger LOGGER = Logger.getInstance();
 
-        /*try {
+        try {
 
-            // create and start the web server
             Server web_server = Server.getInstance();
             web_server.start();
         }
@@ -29,6 +27,7 @@ public class App {
         catch(Exception exc) {
 
             LOGGER.log("Failed to start the App " + exc.getClass().getSimpleName() + ": " + exc.getMessage(), LogLevel.ERROR);
-        }*/
+            LOGGER.stopWorker(true);
+        }
     }
 }

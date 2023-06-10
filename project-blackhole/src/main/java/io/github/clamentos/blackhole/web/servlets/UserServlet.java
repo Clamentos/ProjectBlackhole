@@ -2,7 +2,6 @@ package io.github.clamentos.blackhole.web.servlets;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
 import java.sql.Connection;
 
 import io.github.clamentos.blackhole.logging.LogLevel;
@@ -57,17 +56,11 @@ public class UserServlet implements Servlet {
         try {
 
             byte request_method = input_stream.readByte();
-
-            //Thread.sleep(10);
-
-            // TODO: temp for testing
-            output_stream.write(request_method + 1);
-            output_stream.flush();
             
-            /*switch(request_method) {
+            switch(request_method) {
 
                 //...
-            }*/
+            }
         }
 
         catch(Exception exc) {

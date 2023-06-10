@@ -10,6 +10,8 @@ import java.io.IOException;
 
 import java.net.ServerSocket;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 //________________________________________________________________________________________________________________________________________
 
 /**
@@ -19,7 +21,7 @@ import java.net.ServerSocket;
 public class Server {
 
     private static volatile Server INSTANCE;
-    private static Object dummy_mutex = new Object();
+    private static ReentrantLock lock = new ReentrantLock();
 
     private final int PORT;
     private final int CONNECTION_TIMEOUT;
@@ -48,23 +50,23 @@ public class Server {
     /**
      * Get the Server instance (create if necessary).
      * @return The Server instance.
+     * @throws InstantiationException if the instantiation of the request pool fails.
      */
-    public static Server getInstance() throws InstantiationException{
+    public static Server getInstance() throws InstantiationException {
 
         Server temp = INSTANCE;
 
         if(temp == null) {
 
-            synchronized(dummy_mutex) {
+            lock.lock();
+            temp = INSTANCE;
 
-                temp = INSTANCE;
+            if(temp == null) {
 
-                if(temp == null) {
-
-                    temp = new Server(RequestPool.getInstance());
-                    INSTANCE = temp;
-                }
+                INSTANCE = temp = new Server(RequestPool.getInstance());
             }
+
+            lock.unlock();
         }
 
         return(temp);

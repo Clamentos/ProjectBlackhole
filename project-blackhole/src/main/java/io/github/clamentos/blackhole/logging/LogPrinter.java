@@ -63,7 +63,6 @@ public class LogPrinter {
         catch(IOException exc) {
 
             printToConsole("Could not write to log file, IOException thrown: " + exc.getMessage(), LogLevel.WARNING);
-
             return(0);
         }
     }

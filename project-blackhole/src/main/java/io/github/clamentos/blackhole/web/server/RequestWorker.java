@@ -46,10 +46,10 @@ public class RequestWorker extends Thread {
         LOGGER = Logger.getInstance();
         this.socket_queue = socket_queue;
 
-        /*if(attempt(ConfigurationProvider.MAX_DB_CONNECTION_RETRIES) == false) {
+        if(attempt(ConfigurationProvider.MAX_DB_CONNECTION_RETRIES) == false) {
 
             throw new InstantiationException("Could not connect to the database");
-        }*/
+        }
 
         LOGGER.log("Database connection was successful", LogLevel.SUCCESS);
         dispatcher = Dispatcher.getInstance();
@@ -71,7 +71,7 @@ public class RequestWorker extends Thread {
                 socket = socket_queue.take();
                 in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
                 out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
-                //refreshIfNeeded();
+                refreshIfNeeded();
                 dispatcher.dispatch(in, out, db_connection);
                 socket.close();
             }

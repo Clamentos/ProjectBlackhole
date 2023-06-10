@@ -13,6 +13,8 @@ import io.github.clamentos.blackhole.web.servlets.UserServlet;
 */
 public class ConfigurationProvider {
 
+    //____________________________________________________________________________________________________________________________________
+
     public static final int MAX_LOG_QUEUE_SIZE = 10_000;
     public static final long MAX_LOG_FILE_SIZE = 1_000;
     public static final LogLevel MINIMUM_CONSOLE_LOG_LEVEL = LogLevel.INFO;
@@ -20,8 +22,10 @@ public class ConfigurationProvider {
     public static final boolean INFO_LEVEL_TO_FILE = false;
     public static final boolean SUCCESS_LEVEL_TO_FILE = false;
     public static final boolean NOTE_LEVEL_TO_FILE = false;
-    public static final boolean WARNING_LEVEL_TO_FILE = false;
-    public static final boolean ERROR_LEVEL_TO_FILE = false;
+    public static final boolean WARNING_LEVEL_TO_FILE = true;
+    public static final boolean ERROR_LEVEL_TO_FILE = true;
+
+    //____________________________________________________________________________________________________________________________________
 
     public static final int SERVER_PORT = 8080;
     public static final int REQUEST_WORKERS = 2;
@@ -34,6 +38,8 @@ public class ConfigurationProvider {
         UserServlet.getInstance()
     };
 
+    //____________________________________________________________________________________________________________________________________
+
     public static final String DB_URL = "jdbc:postgresql://localhost:5432/db_prova";
     public static final String DB_USERNAME = "prova";
     public static final String DB_PASWORD = "prova";
@@ -42,6 +48,10 @@ public class ConfigurationProvider {
 
     //____________________________________________________________________________________________________________________________________
 
+    /**
+     * This method should be the first thing that gets called inside the main.
+     * Calling this method will cause the JVM to instantiate the servlets.
+    */
     public static void init() {}
 
     //____________________________________________________________________________________________________________________________________

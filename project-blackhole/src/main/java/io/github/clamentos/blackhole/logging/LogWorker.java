@@ -11,6 +11,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -19,6 +20,7 @@ import java.util.concurrent.BlockingQueue;
 */
 public class LogWorker extends Thread {
 
+    private AtomicBoolean stopped;
     private BlockingQueue<Log> log_queue;
     private long current_log_file_size;
     private BufferedWriter current_file_writer;
@@ -32,8 +34,9 @@ public class LogWorker extends Thread {
     public LogWorker(BlockingQueue<Log> log_queue) {
 
         Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
-        //findEligible();
+        findEligible();
         this.log_queue = log_queue;
+        stopped = new AtomicBoolean(true);
     }
 
     //____________________________________________________________________________________________________________________________________
@@ -42,34 +45,37 @@ public class LogWorker extends Thread {
     public void run() {
 
         Log log;
+        stopped.set(false);
 
-        while(true) {
+        while(stopped.get() == false) {
 
             try {
 
                 log = log_queue.take();
-
-                /*if(log.log_level().getToFile() == true) {
-
-                    if(current_log_file_size >= ConfigurationProvider.MAX_LOG_FILE_SIZE) {
-
-                        createNewLogFile();
-                    }
-
-                    current_log_file_size += LogPrinter.printToFile(log.message(), log.log_level(), current_file_writer);
-                }
-
-                else {
-
-                    LogPrinter.printToConsole(log.message(), log.log_level());
-                }*/
+                printHelper(log.message(), log.log_level());
             }
 
             catch(InterruptedException exc) {
 
-                LogPrinter.printToConsole("Interrupted while waiting on the queue, InterruptedException: " + exc.getMessage(), LogLevel.INFO);
+                if(stopped.get() == true) {
+
+                    break;
+                }
+
+                printHelper("Interrupted while waiting on the queue, InterruptedException: " + exc.getMessage(), LogLevel.INFO);
             }
         }
+    }
+
+    /**
+     * Sets the stop flag of the thread.
+     * This method does not guarantee that the thread will stop as it may still be blocked on the log queue.
+     * After calling {@code halt()} the thread must also be interrupted
+     * by calling the {@code interrupt()} method. This will cause the {@link LogWorker} to check the stop flag.
+    */
+    public void halt() {
+
+        stopped.set(true);
     }
 
     //____________________________________________________________________________________________________________________________________
@@ -95,7 +101,6 @@ public class LogWorker extends Thread {
 
                 if(files[found].length() < ConfigurationProvider.MAX_LOG_FILE_SIZE) {
 
-                    System.out.println("found");
                     current_log_file_size = files[found].length();
                     current_file_writer = new BufferedWriter(new FileWriter(files[found]));
 
@@ -103,13 +108,12 @@ public class LogWorker extends Thread {
                 }
             }
 
-            System.out.println("new");
             createNewLogFile();
         }
 
-        catch(Exception exc) {
+        catch(IOException exc) {
 
-            System.out.println("findEligible " + exc.getMessage());
+            LogPrinter.printToConsole("Could not access file, IOException: " + exc.getMessage(), LogLevel.ERROR);
         }
     }
 
@@ -132,7 +136,25 @@ public class LogWorker extends Thread {
 
         catch(IOException exc) {
 
-            System.out.println("createNew " + exc.getMessage());
+            LogPrinter.printToConsole("Could not access file, IOException: " + exc.getMessage(), LogLevel.ERROR);
+        }
+    }
+
+    private void printHelper(String message, LogLevel log_level) {
+
+        if(log_level.getToFile() == true) {
+
+            if(current_log_file_size >= ConfigurationProvider.MAX_LOG_FILE_SIZE) {
+
+                createNewLogFile();
+            }
+
+            current_log_file_size += LogPrinter.printToFile(message, log_level, current_file_writer);
+        }
+
+        else {
+
+            LogPrinter.printToConsole(message, log_level);
         }
     }
 
