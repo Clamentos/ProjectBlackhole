@@ -2,14 +2,15 @@ package io.github.clamentos.blackhole.web.server;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.config.ConfigurationProvider;
+import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
 
 import java.io.IOException;
 
 import java.net.ServerSocket;
-
+import java.net.Socket;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
 //________________________________________________________________________________________________________________________________________
@@ -23,26 +24,27 @@ public class Server {
     private static volatile Server INSTANCE;
     private static ReentrantLock lock = new ReentrantLock();
 
-    private final int PORT;
-    private final int CONNECTION_TIMEOUT;
-    private final int RETRIES;
     private final Logger LOGGER;
 
-    private RequestPool request_pool;
+    private boolean running;
     private ServerSocket server_socket;
-    private boolean running; 
+    private LinkedBlockingQueue<Socket> sockets_queue;
+    private RequestWorker[] request_workers; 
 
     //____________________________________________________________________________________________________________________________________
 
-    private Server(RequestPool request_pool) {
-
-        PORT = ConfigurationProvider.SERVER_PORT;
-        CONNECTION_TIMEOUT = ConfigurationProvider.CONNECTION_TIMEOUT;
-        RETRIES = ConfigurationProvider.MAX_SERVER_START_RETRIES;
-        this.request_pool = request_pool;
+    private Server() {
 
         LOGGER = Logger.getInstance();
         running = false;
+        sockets_queue = new LinkedBlockingQueue<>(ConfigurationProvider.MAX_REQUEST_QUEUE_SIZE);
+        request_workers = new RequestWorker[ConfigurationProvider.REQUEST_WORKERS];
+
+        for(int i = 0; i < request_workers.length; i++) {
+
+            request_workers[i] = new RequestWorker(sockets_queue);
+            request_workers[i].start();
+        }
     }
 
     //____________________________________________________________________________________________________________________________________
@@ -50,9 +52,8 @@ public class Server {
     /**
      * Get the Server instance (create if necessary).
      * @return The Server instance.
-     * @throws InstantiationException if the instantiation of the request pool fails.
      */
-    public static Server getInstance() throws InstantiationException {
+    public static Server getInstance() {
 
         Server temp = INSTANCE;
 
@@ -63,7 +64,7 @@ public class Server {
 
             if(temp == null) {
 
-                INSTANCE = temp = new Server(RequestPool.getInstance());
+                INSTANCE = temp = new Server();
             }
 
             lock.unlock();
@@ -82,7 +83,7 @@ public class Server {
      */
     public void start() {
 
-        if(attempt(RETRIES) == true) {
+        if(attempt(ConfigurationProvider.MAX_SERVER_START_RETRIES) == true) {
 
             LOGGER.log("Web server started", LogLevel.SUCCESS);
 
@@ -90,7 +91,7 @@ public class Server {
 
                 try {
 
-                    request_pool.add(server_socket.accept());
+                    sockets_queue.put(server_socket.accept());
                 }
 
                 catch(Exception exc) {
@@ -101,9 +102,30 @@ public class Server {
         }
     }
 
-    public void stopPool(boolean wait) {
+    /**
+     * Stops all the active {@link RequestWorker}.
+     * @param wait : waits for the workers to drain the sockets queue before stopping it.
+     *               If set to false, it will stop the workers as soon as they finish
+     *               handling the current socket.
+    */
+    public void stopWorkers(boolean wait) {
 
-        request_pool.stopWorkers(wait);
+        if(wait == true) {
+
+            while(true) {
+
+                if(sockets_queue.size() == 0) {
+
+                    stopWorkers();
+                    break;
+                }
+            }
+        }
+
+        else {
+
+            stopWorkers();
+        }
     }
 
     //____________________________________________________________________________________________________________________________________
@@ -116,8 +138,8 @@ public class Server {
 
                 try {
 
-                    server_socket = new ServerSocket(PORT);
-                    server_socket.setSoTimeout(CONNECTION_TIMEOUT);
+                    server_socket = new ServerSocket(ConfigurationProvider.SERVER_PORT);
+                    server_socket.setSoTimeout(ConfigurationProvider.CONNECTION_TIMEOUT);
                     running = true;
 
                     return(true);
@@ -143,6 +165,15 @@ public class Server {
         }
 
         return(false);
+    }
+
+    private void stopWorkers() {
+
+        for(RequestWorker worker : request_workers) {
+
+            worker.halt();
+            worker.interrupt();
+        }
     }
 
     //____________________________________________________________________________________________________________________________________

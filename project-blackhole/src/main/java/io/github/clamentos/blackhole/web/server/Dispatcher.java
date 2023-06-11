@@ -1,8 +1,6 @@
 package io.github.clamentos.blackhole.web.server;
 
-//________________________________________________________________________________________________________________________________________
-
-import io.github.clamentos.blackhole.config.ConfigurationProvider;
+import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
 import io.github.clamentos.blackhole.web.dtos.ResponseStatus;
@@ -12,9 +10,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import java.sql.Connection;
-
 import java.util.HashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -24,7 +21,7 @@ import java.util.HashMap;
 public class Dispatcher {
 
     private static volatile Dispatcher INSTANCE;
-    private static Object dummy_mutex = new Object();
+    private static ReentrantLock lock = new ReentrantLock();
 
     private final Logger LOGGER;
     private HashMap<Byte, Servlet> servlets;
@@ -55,28 +52,28 @@ public class Dispatcher {
 
         if(temp == null) {
 
-            synchronized(dummy_mutex) {
+            lock.lock();
+            temp = INSTANCE;
 
-                temp = INSTANCE;
+            if(temp == null) {
 
-                if(temp == null) {
-
-                    temp = new Dispatcher();
-                }
+                INSTANCE = temp = new Dispatcher();
             }
+
+            lock.unlock();
         }
 
         return(temp);
     }
 
-    public void dispatch(DataInputStream input_stream, DataOutputStream output_stream,  Connection db_connection) {
+    public void dispatch(DataInputStream input_stream, DataOutputStream output_stream) {
 
         byte resource_id;
 
         try {
 
             resource_id = input_stream.readByte();
-            servlets.get(resource_id).handle(input_stream, output_stream, db_connection);
+            servlets.get(resource_id).handle(input_stream, output_stream);
         }
 
         catch(IOException exc) {

@@ -2,8 +2,8 @@ package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.config.ConfigurationProvider;
-import io.github.clamentos.blackhole.exceptions.GlobalExceptionHandler;
+import io.github.clamentos.blackhole.common.Worker;
+import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -11,17 +11,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 //________________________________________________________________________________________________________________________________________
 
 /**
  * Worker thread that actually does the logging.
 */
-public class LogWorker extends Thread {
-
-    private AtomicBoolean stopped;
-    private BlockingQueue<Log> log_queue;
+public class LogWorker extends Worker<Log> {
+    
     private long current_log_file_size;
     private BufferedWriter current_file_writer;
 
@@ -29,53 +26,45 @@ public class LogWorker extends Thread {
 
     /**
      * Instantiates a new log worker on the given log queue.
-     * @param log_queue : The log queue on which the thread will consume and log.
+     * @param logs_queue : The log queue on which the thread will consume and log.
      */
-    public LogWorker(BlockingQueue<Log> log_queue) {
+    public LogWorker(BlockingQueue<Log> logs_queue) {
 
-        Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
+        super(logs_queue);
         findEligible();
-        this.log_queue = log_queue;
-        stopped = new AtomicBoolean(true);
     }
 
     //____________________________________________________________________________________________________________________________________
 
+    /**
+     * Method that prints the aquired log.
+    */
     @Override
-    public void run() {
+    public void doWork(Log log) {
 
-        Log log;
-        stopped.set(false);
+        if(log.log_level().getToFile() == true) {
 
-        while(stopped.get() == false) {
+            if(current_log_file_size >= ConfigurationProvider.MAX_LOG_FILE_SIZE) {
 
-            try {
-
-                log = log_queue.take();
-                printHelper(log.message(), log.log_level());
+                createNewLogFile();
             }
 
-            catch(InterruptedException exc) {
+            current_log_file_size += LogPrinter.printToFile(log.message(), log.log_level(), current_file_writer);
+        }
 
-                if(stopped.get() == true) {
+        else {
 
-                    break;
-                }
-
-                printHelper("Interrupted while waiting on the queue, InterruptedException: " + exc.getMessage(), LogLevel.INFO);
-            }
+            LogPrinter.printToConsole(log.message(), log.log_level());
         }
     }
 
     /**
-     * Sets the stop flag of the thread.
-     * This method does not guarantee that the thread will stop as it may still be blocked on the log queue.
-     * After calling {@code halt()} the thread must also be interrupted
-     * by calling the {@code interrupt()} method. This will cause the {@link LogWorker} to check the stop flag.
+     * {@inheritDoc}
     */
-    public void halt() {
+    @Override
+    public void catchInterrupted(InterruptedException exc) {
 
-        stopped.set(true);
+        LogPrinter.printToConsole("Interrupted while waiting on queue, InterruptedException: " + exc.getMessage(), LogLevel.INFO);
     }
 
     //____________________________________________________________________________________________________________________________________
@@ -137,24 +126,6 @@ public class LogWorker extends Thread {
         catch(IOException exc) {
 
             LogPrinter.printToConsole("Could not access file, IOException: " + exc.getMessage(), LogLevel.ERROR);
-        }
-    }
-
-    private void printHelper(String message, LogLevel log_level) {
-
-        if(log_level.getToFile() == true) {
-
-            if(current_log_file_size >= ConfigurationProvider.MAX_LOG_FILE_SIZE) {
-
-                createNewLogFile();
-            }
-
-            current_log_file_size += LogPrinter.printToFile(message, log_level, current_file_writer);
-        }
-
-        else {
-
-            LogPrinter.printToConsole(message, log_level);
         }
     }
 

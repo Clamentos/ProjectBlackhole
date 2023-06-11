@@ -1,4 +1,4 @@
-package io.github.clamentos.blackhole.config;
+package io.github.clamentos.blackhole.common.config;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -15,6 +15,7 @@ public class ConfigurationProvider {
 
     //____________________________________________________________________________________________________________________________________
 
+    public static final int LOG_WORKERS = 1;
     public static final int MAX_LOG_QUEUE_SIZE = 10_000;
     public static final long MAX_LOG_FILE_SIZE = 1_000;
     public static final LogLevel MINIMUM_CONSOLE_LOG_LEVEL = LogLevel.INFO;

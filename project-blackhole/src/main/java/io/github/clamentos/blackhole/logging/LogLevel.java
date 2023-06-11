@@ -1,8 +1,6 @@
 package io.github.clamentos.blackhole.logging;
 
-//________________________________________________________________________________________________________________________________________
-
-import io.github.clamentos.blackhole.config.ConfigurationProvider;
+import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 
 //________________________________________________________________________________________________________________________________________
 

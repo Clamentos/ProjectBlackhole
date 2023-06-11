@@ -1,4 +1,4 @@
-package io.github.clamentos.blackhole.exceptions;
+package io.github.clamentos.blackhole.common.exceptions;
 
 //________________________________________________________________________________________________________________________________________
 

@@ -1,22 +1,32 @@
 package io.github.clamentos.blackhole.web.servlets;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.sql.Connection;
+//________________________________________________________________________________________________________________________________________
 
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+
+import java.util.concurrent.locks.ReentrantLock;
+
+//________________________________________________________________________________________________________________________________________
+
 public class UserServlet implements Servlet {
 
     private static volatile UserServlet INSTANCE;
-    private static Object dummy_mutex = new Object();
+    private static ReentrantLock lock = new ReentrantLock();
+
     private final Logger LOGGER;
+
+    //____________________________________________________________________________________________________________________________________
 
     private UserServlet() {
 
         LOGGER = Logger.getInstance();
     }
+
+    //____________________________________________________________________________________________________________________________________
 
     /**
      * Get the UserServlet instance.
@@ -29,16 +39,15 @@ public class UserServlet implements Servlet {
 
         if(temp == null) {
 
-            synchronized(dummy_mutex) {
+            lock.lock();
+            temp = INSTANCE;
 
-                temp = INSTANCE;
+            if(temp == null) {
 
-                if(temp == null) {
-
-                    temp = new UserServlet();
-                    INSTANCE = temp;
-                }
+                INSTANCE = temp = new UserServlet();
             }
+
+            lock.unlock();
         }
 
         return(temp);
@@ -51,7 +60,7 @@ public class UserServlet implements Servlet {
     }
 
     @Override
-    public void handle(DataInputStream input_stream, DataOutputStream output_stream, Connection db_connection) {
+    public void handle(DataInputStream input_stream, DataOutputStream output_stream) {
 
         try {
 
@@ -68,4 +77,6 @@ public class UserServlet implements Servlet {
             LOGGER.log("UserServlet", LogLevel.WARNING);
         }
     }
+
+    //____________________________________________________________________________________________________________________________________
 }

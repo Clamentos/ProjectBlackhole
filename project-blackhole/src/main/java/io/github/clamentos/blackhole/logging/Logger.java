@@ -2,7 +2,7 @@ package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.config.ConfigurationProvider;
+import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantLock;
@@ -19,7 +19,7 @@ public class Logger {
 
     private LogLevel min_console_log_level;
     private LinkedBlockingQueue<Log> logs;
-    private LogWorker log_worker;
+    private LogWorker[] log_workers;
 
     //____________________________________________________________________________________________________________________________________
 
@@ -27,8 +27,14 @@ public class Logger {
         
         min_console_log_level = ConfigurationProvider.MINIMUM_CONSOLE_LOG_LEVEL;
         logs = new LinkedBlockingQueue<>(ConfigurationProvider.MAX_LOG_QUEUE_SIZE);
-        log_worker = new LogWorker(logs);
-        log_worker.start();
+        
+        log_workers = new LogWorker[ConfigurationProvider.LOG_WORKERS];
+
+        for(LogWorker worker : log_workers) {
+
+            worker = new LogWorker(logs);
+            worker.start();
+        }
     }
 
     //____________________________________________________________________________________________________________________________________
@@ -85,12 +91,12 @@ public class Logger {
     }
 
     /**
-     * Stops the active {@link LogWorker}.
-     * @param wait : waits for the worker to drain the log queue before stopping it.
-     *               If set to false, it will stop the worker as soon as it finishes
+     * Stops all the active {@link LogWorker}.
+     * @param wait : waits for the workers to drain the log queue before stopping it.
+     *               If set to false, it will stop the workers as soon as they finish
      *               logging the current message.
     */
-    public void stopWorker(boolean wait) {
+    public void stopWorkers(boolean wait) {
 
         if(wait == true) {
 
@@ -98,9 +104,7 @@ public class Logger {
 
                 if(logs.size() == 0) {
 
-                    log_worker.halt();
-                    log_worker.interrupt();
-                    
+                    stopWorkers();
                     break;
                 }
             }
@@ -108,8 +112,16 @@ public class Logger {
 
         else {
 
-            log_worker.halt();
-            log_worker.interrupt();
+            stopWorkers();
+        }
+    }
+
+    private void stopWorkers() {
+
+        for(LogWorker worker : log_workers) {
+
+            worker.halt();
+            worker.interrupt();
         }
     }
 

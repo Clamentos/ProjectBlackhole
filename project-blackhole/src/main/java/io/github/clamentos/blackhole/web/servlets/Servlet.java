@@ -1,13 +1,20 @@
 package io.github.clamentos.blackhole.web.servlets;
 
+//________________________________________________________________________________________________________________________________________
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.sql.Connection;
+
+//________________________________________________________________________________________________________________________________________
 
 public interface Servlet {
+
+    //____________________________________________________________________________________________________________________________________
     
     public byte matches();
-    public void handle(DataInputStream input_stream, DataOutputStream output_stream, Connection db_connection);
+    public void handle(DataInputStream input_stream, DataOutputStream output_stream);
+
+    //____________________________________________________________________________________________________________________________________
 }
 
 /*
