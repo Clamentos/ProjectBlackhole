@@ -2,8 +2,8 @@ package io.github.clamentos.blackhole.web.servlets;
 
 //________________________________________________________________________________________________________________________________________
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import io.github.clamentos.blackhole.web.dtos.Request;
+import io.github.clamentos.blackhole.web.dtos.Response;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -12,7 +12,7 @@ public interface Servlet {
     //____________________________________________________________________________________________________________________________________
     
     public byte matches();
-    public void handle(DataInputStream input_stream, DataOutputStream output_stream);
+    public Response handle(Request request);
 
     //____________________________________________________________________________________________________________________________________
 }

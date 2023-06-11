@@ -2,29 +2,24 @@ package io.github.clamentos.blackhole.web.dtos;
 
 public enum Type {
     
-    BYTE,
-    SHORT,
-    INT,
-    LONG,
-    FLOAT,
-    DOUBLE,
-    STRING,
-    RAW;
+    BYTE(0),
+    SHORT(1),
+    INT(2),
+    LONG(3),
+    FLOAT(4),
+    DOUBLE(5),
+    STRING(6),
+    RAW(7);
+
+    private int val;
+
+    private Type(int val) {
+
+        this.val = val;
+    }
 
     public byte streamify() {
 
-        switch(this) {
-
-            case BYTE: return(0);
-            case SHORT: return(1);
-            case INT: return(2);
-            case LONG: return(3);
-            case FLOAT: return(4);
-            case DOUBLE: return(5);
-            case STRING: return(6);
-            case RAW: return(7);
-
-            default: return(-1);
-        }
+        return((byte)val);
     }
 }

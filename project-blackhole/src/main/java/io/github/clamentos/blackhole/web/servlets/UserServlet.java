@@ -2,12 +2,12 @@ package io.github.clamentos.blackhole.web.servlets;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
+import io.github.clamentos.blackhole.persistence.Repository;
+import io.github.clamentos.blackhole.web.dtos.Request;
+import io.github.clamentos.blackhole.web.dtos.Response;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-
+import java.sql.PreparedStatement;
 import java.util.concurrent.locks.ReentrantLock;
 
 //________________________________________________________________________________________________________________________________________
@@ -18,12 +18,14 @@ public class UserServlet implements Servlet {
     private static ReentrantLock lock = new ReentrantLock();
 
     private final Logger LOGGER;
+    private Repository repository;
 
     //____________________________________________________________________________________________________________________________________
 
     private UserServlet() {
 
         LOGGER = Logger.getInstance();
+        repository = Repository.getInstance();
     }
 
     //____________________________________________________________________________________________________________________________________
@@ -52,7 +54,7 @@ public class UserServlet implements Servlet {
 
         return(temp);
     }
-    
+
     @Override
     public byte matches() {
 
@@ -60,22 +62,30 @@ public class UserServlet implements Servlet {
     }
 
     @Override
-    public void handle(DataInputStream input_stream, DataOutputStream output_stream) {
+    public Response handle(Request request) {
 
-        try {
+        switch(request.method()) {
 
-            byte request_method = input_stream.readByte();
-            
-            switch(request_method) {
+            case CREATE: return(null);
+            case READ: return(null);
+            case UPDATE: return(null);
+            case DELETE: return(null);
+            case LOGIN: return(login(request));
 
-                //...
-            }
+            default: return(null);
         }
+    }
 
-        catch(Exception exc) {
+    //____________________________________________________________________________________________________________________________________
 
-            LOGGER.log("UserServlet", LogLevel.WARNING);
-        }
+    // creates new user session
+    private Response login(Request request) {
+
+        String username = new String(request.data_entries().get(0).data());
+        String password = new String(request.data_entries().get(1).data());
+        
+        // TODO: this
+        return(null);
     }
 
     //____________________________________________________________________________________________________________________________________

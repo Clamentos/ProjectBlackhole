@@ -44,6 +44,7 @@ public class ConfigurationProvider {
     public static final String DB_URL = "jdbc:postgresql://localhost:5432/db_prova";
     public static final String DB_USERNAME = "prova";
     public static final String DB_PASWORD = "prova";
+    public static final int DB_CONNECTIONS = 4;
     public static final int MAX_DB_CONNECTION_RETRIES = 3;
     public static final int MAX_DB_CONNECTION_TIMEOUT = 1000;
 

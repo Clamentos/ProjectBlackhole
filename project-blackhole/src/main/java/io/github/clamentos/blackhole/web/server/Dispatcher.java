@@ -1,8 +1,11 @@
 package io.github.clamentos.blackhole.web.server;
 
+//________________________________________________________________________________________________________________________________________
+
 import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
+import io.github.clamentos.blackhole.web.dtos.DtoParser;
 import io.github.clamentos.blackhole.web.dtos.ResponseStatus;
 import io.github.clamentos.blackhole.web.servlets.Servlet;
 
@@ -24,6 +27,7 @@ public class Dispatcher {
     private static ReentrantLock lock = new ReentrantLock();
 
     private final Logger LOGGER;
+    private final DtoParser PARSER;
     private HashMap<Byte, Servlet> servlets;
 
     //____________________________________________________________________________________________________________________________________
@@ -31,6 +35,7 @@ public class Dispatcher {
     private Dispatcher() {
 
         LOGGER = Logger.getInstance();
+        PARSER = DtoParser.getInstance();
         servlets = new HashMap<>();
         Servlet[] temp = ConfigurationProvider.SERVLETS;
 
@@ -68,12 +73,9 @@ public class Dispatcher {
 
     public void dispatch(DataInputStream input_stream, DataOutputStream output_stream) {
 
-        byte resource_id;
-
         try {
 
-            resource_id = input_stream.readByte();
-            servlets.get(resource_id).handle(input_stream, output_stream);
+            servlets.get(input_stream.readByte()).handle(PARSER.parseRequest(input_stream));
         }
 
         catch(IOException exc) {
