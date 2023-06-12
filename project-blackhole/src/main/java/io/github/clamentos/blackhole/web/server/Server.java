@@ -103,7 +103,7 @@ public class Server {
 
                 catch(IOException exc) {
 
-                    LOGGER.log("Could not accept socket, IOException :" + exc.getMessage(), LogLevel.NOTE);
+                    LOGGER.log("Could not accept socket, IOException: " + exc.getMessage(), LogLevel.NOTE);
                 }
 
                 catch(InterruptedException exc) {

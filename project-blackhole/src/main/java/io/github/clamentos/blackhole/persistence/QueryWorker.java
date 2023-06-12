@@ -118,7 +118,7 @@ public class QueryWorker extends Worker<QueryWrapper> {
             }
         }
 
-        throw new InstantiationError("Retries exhausted while attempting to connect to the database.");
+        throw new InstantiationException("Retries exhausted while attempting to connect to the database.");
     }
 
     //____________________________________________________________________________________________________________________________________

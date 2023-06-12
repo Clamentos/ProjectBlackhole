@@ -5,6 +5,8 @@ package io.github.clamentos.blackhole;
 
 import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 import io.github.clamentos.blackhole.common.exceptions.GlobalExceptionHandler;
+import io.github.clamentos.blackhole.logging.LogLevel;
+import io.github.clamentos.blackhole.logging.Logger;
 import io.github.clamentos.blackhole.persistence.Repository;
 import io.github.clamentos.blackhole.web.server.Server;
 
@@ -19,8 +21,10 @@ public class App {
 
     public static void main(String[] args) {
 
-        try {
+        Logger logger = Logger.getInstance();
 
+        try {
+            
             Repository repo = Repository.getInstance();
             Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
             ConfigurationProvider.initServlets(repo);
@@ -30,8 +34,8 @@ public class App {
 
         catch(InstantiationException exc) {
 
-            //...
-            // stop all
+            logger.log("Could not fully start the app, InstantiationException: " + exc.getMessage(), LogLevel.ERROR);
+            System.exit(1);
         }
     }
 

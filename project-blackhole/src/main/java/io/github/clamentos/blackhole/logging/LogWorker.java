@@ -78,25 +78,23 @@ public class LogWorker extends Worker<Log> {
             File[] files = new File("logs/").listFiles();
             long last_modified = 0;
             int found = 0;
-            
+
             for(int i = 0; i < files.length; i++) {
 
                 if(files[i].lastModified() > last_modified) {
 
                     last_modified = files[i].lastModified();
-                    found = i;
+                    found = i + 1;
                 }
             }
 
-            if(found > 0) {
+            if((found > 0) && (files[found - 1].length() < ConfigurationProvider.MAX_LOG_FILE_SIZE)) {
 
-                if(files[found].length() < ConfigurationProvider.MAX_LOG_FILE_SIZE) {
+                current_log_file_size = files[found - 1].length();
+                current_file_writer = new BufferedWriter(new FileWriter(files[found - 1], true));
+                System.out.println("here");
 
-                    current_log_file_size = files[found].length();
-                    current_file_writer = new BufferedWriter(new FileWriter(files[found]));
-
-                    return;
-                }
+                return;
             }
 
             createNewLogFile();
