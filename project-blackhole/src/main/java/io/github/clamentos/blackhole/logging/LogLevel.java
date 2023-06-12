@@ -1,5 +1,7 @@
 package io.github.clamentos.blackhole.logging;
 
+//________________________________________________________________________________________________________________________________________
+
 import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 
 //________________________________________________________________________________________________________________________________________
@@ -7,7 +9,8 @@ import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 /**
  * Enumeration listing al the log levels.
  * Each entry is composed of the log level name + color + destination.
- * Log levels in increasing order:
+ * The destination must be configured in the {@link ConfigurationProvider}.
+ * The log levels in increasing order are:
  * <ol>
  *     <li>DEBUG</li>
  *     <li>INFO</li>
@@ -46,7 +49,7 @@ public enum LogLevel {
     /**
      * Get the associated log level string.
      * @return the log level string (always well-defined).
-     */
+    */
     public String getValue() {
 
         return(value);
@@ -55,7 +58,7 @@ public enum LogLevel {
     /**
      * Get the associated log level color.
      * @return the log level color (always well-defined).
-     */
+    */
     public String getColor() {
 
         return(color);
@@ -64,7 +67,7 @@ public enum LogLevel {
     /**
      * Get the destination of the associated log level.
      * @return the log level destination, either to console or to file.
-     */
+    */
     public boolean getToFile() {
 
         return(to_file);

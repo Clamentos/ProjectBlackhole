@@ -43,12 +43,17 @@ public class Dispatcher {
 
             servlets.put(servlet.matches(), servlet);
         }
+
+        LOGGER.log("Dispatcher instantiated", LogLevel.SUCCESS);
     }
 
     //____________________________________________________________________________________________________________________________________
 
     /**
+     * <p><b>This method is thread safe.</b></p>
      * Get the Dispatcher instance.
+     * If the instance doesn't exist, create it with the values configured in
+     * {@link ConfigurationProvider}
      * @return The Dispatcher instance.
      */
     public static Dispatcher getInstance() {
@@ -71,6 +76,12 @@ public class Dispatcher {
         return(temp);
     }
 
+    /**
+     * <p><b>This method is thread safe.</b></p>
+     * Dispatch the request to the proper servlet.
+     * @param input_stream : The stream for reading data.
+     * @param output_stream : The stream for writing data.
+    */
     public void dispatch(DataInputStream input_stream, DataOutputStream output_stream) {
 
         try {

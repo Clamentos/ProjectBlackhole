@@ -32,12 +32,14 @@ public class LogWorker extends Worker<Log> {
 
         super(logs_queue);
         findEligible();
+        LogPrinter.printToConsole("Log worker started", LogLevel.SUCCESS);
     }
 
     //____________________________________________________________________________________________________________________________________
 
     /**
      * Method that prints the aquired log.
+     * @param log : The log to log.
     */
     @Override
     public void doWork(Log log) {
@@ -64,7 +66,7 @@ public class LogWorker extends Worker<Log> {
     @Override
     public void catchInterrupted(InterruptedException exc) {
 
-        LogPrinter.printToConsole("Interrupted while waiting on queue, InterruptedException: " + exc.getMessage(), LogLevel.INFO);
+        LogPrinter.printToConsole("Interrupted while waiting on queue, InterruptedException: " + exc.getMessage(), LogLevel.NOTE);
     }
 
     //____________________________________________________________________________________________________________________________________

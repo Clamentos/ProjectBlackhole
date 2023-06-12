@@ -22,7 +22,7 @@ public abstract class Worker<T> extends Thread {
     /**
      * Instantiates a new worker on the given resource queue.
      * @param resource_queue : The queue on which the thread will consume and do work.
-     */
+    */
     public Worker(BlockingQueue<T> resource_queue) {
 
         Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
@@ -56,7 +56,7 @@ public abstract class Worker<T> extends Thread {
     /**
      * Get the current status of the worker.
      * @return {@code true} if running, {@code false} if not.
-     */
+    */
     public boolean getRunning() {
 
         return(running);
@@ -77,13 +77,13 @@ public abstract class Worker<T> extends Thread {
      * Method that does the actual processing.
      * After fetching the resource from the queue, the {@link Worker} will call this method.
      * @param resource : The resource.
-     */
+    */
     public abstract void doWork(T resource);
 
     /**
      * Method to handle the potential {@link InterruptedException} thrown while waiting on the queue.
-     * @param exc : the exception.
-     */
+     * @param exc : The InterruptedException.
+    */
     public abstract void catchInterrupted(InterruptedException exc);
 
     //____________________________________________________________________________________________________________________________________

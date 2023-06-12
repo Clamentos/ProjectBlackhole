@@ -2,18 +2,19 @@ package io.github.clamentos.blackhole.web.session;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.HashMap;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 // must be singleton
 public class SessionService {
     
     private SecureRandom rng;
-    private HashMap<byte[], UserSession> user_sessions;
+    private ConcurrentHashMap<byte[], UserSession> user_sessions;
 
     public SessionService() throws NoSuchAlgorithmException {
 
         rng = SecureRandom.getInstance("SHA1PRNG");
-        user_sessions = new HashMap<>();
+        user_sessions = new ConcurrentHashMap<>();
     }
 
     public UserSession findSession(byte[] session_id) {

@@ -37,12 +37,14 @@ public class RequestWorker extends Worker<Socket> {
         super(sockets_queue);
         LOGGER = Logger.getInstance();
         dispatcher = Dispatcher.getInstance();
+        LOGGER.log("Request worker started", LogLevel.SUCCESS);
     }
 
     //____________________________________________________________________________________________________________________________________
 
     /**
      * Method that dispatches the request.
+     * @param socket : The socket to service.
     */
     @Override
     public void doWork(Socket socket) {
@@ -70,7 +72,7 @@ public class RequestWorker extends Worker<Socket> {
     @Override
     public void catchInterrupted(InterruptedException exc) {
 
-        LOGGER.log("Interrupted while waiting on queue, InterruptedException: " + exc.getMessage(), LogLevel.INFO);
+        LOGGER.log("Interrupted while waiting on queue, InterruptedException: " + exc.getMessage(), LogLevel.NOTE);
     }
 
     //____________________________________________________________________________________________________________________________________

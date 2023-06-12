@@ -5,6 +5,7 @@ package io.github.clamentos.blackhole;
 
 import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 import io.github.clamentos.blackhole.common.exceptions.GlobalExceptionHandler;
+import io.github.clamentos.blackhole.persistence.Repository;
 import io.github.clamentos.blackhole.web.server.Server;
 
 //________________________________________________________________________________________________________________________________________
@@ -18,11 +19,20 @@ public class App {
 
     public static void main(String[] args) {
 
-        Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
-        ConfigurationProvider.init();
+        try {
 
-        Server web_server = Server.getInstance();
-        web_server.start();
+            Repository repo = Repository.getInstance();
+            Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
+            ConfigurationProvider.initServlets(repo);
+            Server web_server = Server.getInstance();
+            web_server.start();
+        }
+
+        catch(InstantiationException exc) {
+
+            //...
+            // stop all
+        }
     }
 
     //____________________________________________________________________________________________________________________________________

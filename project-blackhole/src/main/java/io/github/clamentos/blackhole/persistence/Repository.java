@@ -3,6 +3,7 @@ package io.github.clamentos.blackhole.persistence;
 //________________________________________________________________________________________________________________________________________
 
 import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
+import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
 
 import java.util.concurrent.LinkedBlockingQueue;
@@ -22,7 +23,7 @@ public class Repository {
 
     //____________________________________________________________________________________________________________________________________
 
-    private Repository() {
+    private Repository() throws InstantiationException {
 
         LOGGER = Logger.getInstance();
         
@@ -34,15 +35,21 @@ public class Repository {
             worker = new QueryWorker(query_queue);
             worker.start();
         }
+
+        LOGGER.log("Repository instantiated and workers started", LogLevel.SUCCESS);
     }
 
     //____________________________________________________________________________________________________________________________________
 
     /**
-     * Get the Repository instance (create if necessary).
+     * <p><b>This method is thread safe.</b></p>
+     * Get the Repository instance.
+     * If the instance doesn't exist, create it with the values configured in
+     * {@link ConfigurationProvider} and start the workers.
      * @return The Repository instance.
-     */
-    public static Repository getInstance() {
+     * @throw InstantiationException if any of the workers cannot connect to the database.
+    */
+    public static Repository getInstance() throws InstantiationException {
 
         Repository temp = INSTANCE;
 
@@ -62,6 +69,16 @@ public class Repository {
         return(temp);
     }
 
+    //____________________________________________________________________________________________________________________________________
+
+    // TODO: start workers
+    // TODO: stop workers
+
+    /**
+     * <p><b>This method is thread safe.</b></p>
+     * Inserts the query into the queue for processing.
+     * @param query : The query to be added.
+     */
     public void execute(QueryWrapper query) {
 
         try {
@@ -71,7 +88,7 @@ public class Repository {
 
         catch(InterruptedException exc) {
 
-            //...
+            LOGGER.log("Interrupted while waiting on queue, InterruptedException: " + exc.getMessage(), LogLevel.NOTE);
         }
     }
 

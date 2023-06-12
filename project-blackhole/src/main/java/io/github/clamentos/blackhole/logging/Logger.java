@@ -10,7 +10,7 @@ import java.util.concurrent.locks.ReentrantLock;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * Logging class responsible for managing the logger thread and inserting logs into the queue.
+ * Logging class responsible for managing the logger threads and inserting the logs into the queue.
 */
 public class Logger {
 
@@ -27,7 +27,7 @@ public class Logger {
         
         min_console_log_level = ConfigurationProvider.MINIMUM_CONSOLE_LOG_LEVEL;
         logs = new LinkedBlockingQueue<>(ConfigurationProvider.MAX_LOG_QUEUE_SIZE);
-        
+
         log_workers = new LogWorker[ConfigurationProvider.LOG_WORKERS];
 
         for(LogWorker worker : log_workers) {
@@ -35,16 +35,19 @@ public class Logger {
             worker = new LogWorker(logs);
             worker.start();
         }
+
+        LogPrinter.printToConsole("Logger instantiated and workers started", LogLevel.SUCCESS);
     }
 
     //____________________________________________________________________________________________________________________________________
 
     /**
-     * Get the Logger instance.
-     * If the instance doesn't exist, create it with default values.
-     * See {@link ConfigurationProvider} for more information.
+     * <p><b>This method is thread safe.</b></p>
+     * Gets the Logger instance.
+     * If the instance doesn't exist, create it with the values configured in
+     * {@link ConfigurationProvider} and start the workers.
      * @return The Logger instance.
-     */
+    */
     public static Logger getInstance() {
 
         Logger temp = INSTANCE;
@@ -57,7 +60,6 @@ public class Logger {
             if(temp == null) {
 
                 INSTANCE = temp = new Logger();
-                LogPrinter.printToConsole("Logger loaded " + INSTANCE, LogLevel.SUCCESS);
             }
 
             lock.unlock();
@@ -69,11 +71,12 @@ public class Logger {
     //____________________________________________________________________________________________________________________________________
 
     /**
+     * <p><b>This method is thread safe.</b></p>
      * Adds the message to the log queue.
      * If there is no space in the queue, this method will block the thread.
      * @param message : The message to be logged.
      * @param log_level : The severity of the message.
-     */
+    */
     public void log(String message, LogLevel log_level) {
 
         if(min_console_log_level.compareTo(log_level) <= 0) {
@@ -85,18 +88,34 @@ public class Logger {
     
             catch(InterruptedException exc) {
     
-                LogPrinter.printToConsole("Could not insert into log queue, InterruptedException: " + exc.getMessage(), LogLevel.WARNING);
+                LogPrinter.printToConsole("Could not insert into the log queue, InterruptedException: " + exc.getMessage(), LogLevel.WARNING);
             }
         }
     }
 
     /**
+     * <p><b>This method is thread safe.</b></p>
+     * Starts all the inactive {@link LogWorker}.
+    */
+    public synchronized void startWorkers() {
+
+        for(LogWorker worker : log_workers) {
+
+            if(worker.getRunning() == false) {
+
+                worker.start();
+            }
+        }
+    }
+
+    /**
+     * <p><b>This method is thread safe.</b></p>
      * Stops all the active {@link LogWorker}.
-     * @param wait : waits for the workers to drain the log queue before stopping it.
+     * @param wait : Waits for the workers to drain the log queue before stopping it.
      *               If set to false, it will stop the workers as soon as they finish
      *               logging the current message.
     */
-    public void stopWorkers(boolean wait) {
+    public synchronized void stopWorkers(boolean wait) {
 
         if(wait == true) {
 
@@ -115,6 +134,8 @@ public class Logger {
             stopWorkers();
         }
     }
+
+    //____________________________________________________________________________________________________________________________________
 
     private void stopWorkers() {
 

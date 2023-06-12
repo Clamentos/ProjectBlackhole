@@ -7,11 +7,24 @@ import io.github.clamentos.blackhole.web.dtos.Response;
 
 //________________________________________________________________________________________________________________________________________
 
+/**
+ * Servlet interface. Servlets must implement this interface in order to be considered.
+*/
 public interface Servlet {
 
     //____________________________________________________________________________________________________________________________________
     
+    /**
+     * Get the resource_id mathing the servlet.
+     * @return The mathing reasource_id
+    */
     public byte matches();
+
+    /**
+     * Handle a request.
+     * @param request : The request object.
+     * @return The response.
+    */
     public Response handle(Request request);
 
     //____________________________________________________________________________________________________________________________________

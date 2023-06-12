@@ -3,6 +3,7 @@ package io.github.clamentos.blackhole.common.config;
 //________________________________________________________________________________________________________________________________________
 
 import io.github.clamentos.blackhole.logging.LogLevel;
+import io.github.clamentos.blackhole.persistence.Repository;
 import io.github.clamentos.blackhole.web.servlets.Servlet;
 import io.github.clamentos.blackhole.web.servlets.UserServlet;
 
@@ -34,10 +35,7 @@ public class ConfigurationProvider {
     public static final int MAX_REQUEST_QUEUE_SIZE = 10_000_000;
     public static final int MAX_SERVER_START_RETRIES = 3;
 
-    public static final Servlet[] SERVLETS = {
-
-        UserServlet.getInstance()
-    };
+    public static Servlet[] SERVLETS;
 
     //____________________________________________________________________________________________________________________________________
 
@@ -52,9 +50,13 @@ public class ConfigurationProvider {
 
     /**
      * This method should be the first thing that gets called inside the main.
-     * Calling this method will cause the JVM to instantiate the servlets.
+     * Calling this method will instantiate the servlets.
     */
-    public static void init() {}
+    public static void initServlets(Repository repository) {
+
+        SERVLETS = new Servlet[1];
+        SERVLETS[0] = UserServlet.getInstance(repository);
+    }
 
     //____________________________________________________________________________________________________________________________________
 }

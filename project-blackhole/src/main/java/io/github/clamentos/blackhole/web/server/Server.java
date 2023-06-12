@@ -10,6 +10,7 @@ import java.io.IOException;
 
 import java.net.ServerSocket;
 import java.net.Socket;
+
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -26,17 +27,17 @@ public class Server {
 
     private final Logger LOGGER;
 
-    private boolean running;
+    private boolean server_running;
     private ServerSocket server_socket;
     private LinkedBlockingQueue<Socket> sockets_queue;
-    private RequestWorker[] request_workers; 
+    private RequestWorker[] request_workers;
 
     //____________________________________________________________________________________________________________________________________
 
     private Server() {
 
         LOGGER = Logger.getInstance();
-        running = false;
+        server_running = false;
         sockets_queue = new LinkedBlockingQueue<>(ConfigurationProvider.MAX_REQUEST_QUEUE_SIZE);
         request_workers = new RequestWorker[ConfigurationProvider.REQUEST_WORKERS];
 
@@ -45,14 +46,19 @@ public class Server {
             request_workers[i] = new RequestWorker(sockets_queue);
             request_workers[i].start();
         }
+
+        LOGGER.log("Web server instantiated and workers started", LogLevel.SUCCESS);
     }
 
     //____________________________________________________________________________________________________________________________________
 
     /**
-     * Get the Server instance (create if necessary).
+     * <p><b>This method is thread safe.</b></p>
+     * Get the Server instance.
+     * If the instance doesn't exist, create it with the values configured in
+     * {@link ConfigurationProvider} and start the workers.
      * @return The Server instance.
-     */
+    */
     public static Server getInstance() {
 
         Server temp = INSTANCE;
@@ -76,11 +82,12 @@ public class Server {
     //____________________________________________________________________________________________________________________________________
 
     /**
+     * <p><b>This method is thread safe.</b></p>
      * Starts the server and listens for requests.
      * If the server is already running, this method will return immediately without doing anything.
      * If this method successfully starts the server, it will occupy the thread indefinetly.
      * If this method fails in starting the server, it will simply return.
-     */
+    */
     public void start() {
 
         if(attempt(ConfigurationProvider.MAX_SERVER_START_RETRIES) == true) {
@@ -94,21 +101,45 @@ public class Server {
                     sockets_queue.put(server_socket.accept());
                 }
 
-                catch(Exception exc) {
+                catch(IOException exc) {
 
-                    LOGGER.log("Could not accept socket, " + exc.getClass().getSimpleName() + ": " + exc.getMessage(), LogLevel.INFO);
+                    LOGGER.log("Could not accept socket, IOException :" + exc.getMessage(), LogLevel.NOTE);
+                }
+
+                catch(InterruptedException exc) {
+
+                    if(server_running == false) {
+
+                        LOGGER.log("Web server stopped", LogLevel.NOTE);
+                        break;
+                    }
+                    
+                    LOGGER.log("Interrupted while waiting on queue, InterruptedException: " + exc.getMessage(), LogLevel.NOTE);
                 }
             }
         }
     }
 
     /**
+     * <p><b>This method is thread safe.</b></p>
+     * Stops the server only. No {@link RequestWorker} will be affected.
+     * This method only sets the {@code server_running} flag to {@code false}.
+     * In order to free the server thread from the loop, a signal,
+     * via the {@code Thread.interrupt()} method, must be sent.
+    */
+    public synchronized void stopServer() {
+
+        server_running = false;
+    }
+
+    /**
+     * <p><b>This method is thread safe.</b></p>
      * Stops all the active {@link RequestWorker}.
      * @param wait : waits for the workers to drain the sockets queue before stopping it.
      *               If set to false, it will stop the workers as soon as they finish
      *               handling the current socket.
     */
-    public void stopWorkers(boolean wait) {
+    public synchronized void stopWorkers(boolean wait) {
 
         if(wait == true) {
 
@@ -132,7 +163,7 @@ public class Server {
 
     private synchronized boolean attempt(int retries) {
 
-        if(running == false) {
+        if(server_running == false) {
 
             for(int i = 0; i < retries; i++) {
 
@@ -140,7 +171,7 @@ public class Server {
 
                     server_socket = new ServerSocket(ConfigurationProvider.SERVER_PORT);
                     server_socket.setSoTimeout(ConfigurationProvider.CONNECTION_TIMEOUT);
-                    running = true;
+                    server_running = true;
 
                     return(true);
                 }
