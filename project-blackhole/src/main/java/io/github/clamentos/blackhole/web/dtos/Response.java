@@ -1,6 +1,5 @@
 package io.github.clamentos.blackhole.web.dtos;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public record Response(
@@ -11,15 +10,22 @@ public record Response(
 ) implements Streamable {
 
     @Override
-    public List<Byte> toBytes() {
+    public byte[] toBytes() {
 
-        ArrayList<Byte> result = new ArrayList<>();
+        byte[] result;
+        byte[][] temp = new byte[data_entries.size()][];
 
-        result.addAll(response_status.toBytes());
+        for(int i = 0; i < data_entries.size(); i++) {
 
-        for(DataEntry data : data_entries) {
+            temp[i] = data_entries.get(i).toBytes();
+        }
 
-            result.addAll(data.toBytes());
+        result = new byte[(temp.length * temp[0].length) + 1];
+        result[0] = response_status.toBytes()[0];
+
+        for(int i = 0; i < result.length; i++) {
+
+            System.arraycopy(temp[i], 0, result, (i * temp[i].length) + 1, temp[i].length);
         }
 
         return(result);

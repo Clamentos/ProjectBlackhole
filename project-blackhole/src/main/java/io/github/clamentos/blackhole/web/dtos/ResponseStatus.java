@@ -1,7 +1,5 @@
 package io.github.clamentos.blackhole.web.dtos;
 
-import java.util.List;
-
 public enum ResponseStatus implements Streamable {
 
     OK,
@@ -11,17 +9,17 @@ public enum ResponseStatus implements Streamable {
     ERROR;
 
     @Override
-    public List<Byte> toBytes() {
+    public byte[] toBytes() {
 
         switch(this) {
 
-            case OK: return(List.of((byte)0));
-            case DENIED: return(List.of((byte)1));
-            case UNAUTHENTICATED: return(List.of((byte)2));
-            case NOT_FOUND: return(List.of((byte)3));
-            case ERROR: return(List.of((byte)4));
+            case OK: return(new byte[]{0});
+            case DENIED: return(new byte[]{1});
+            case UNAUTHENTICATED: return(new byte[]{2});
+            case NOT_FOUND: return(new byte[]{3});
+            case ERROR: return(new byte[]{4});
 
-            default: return(List.of((byte)-1));
+            default: return(new byte[]{5});
         }
     }
 }

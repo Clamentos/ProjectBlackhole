@@ -36,7 +36,6 @@ public class UserServlet implements Servlet {
     private final Logger LOGGER;
     private Repository repository;
     private SessionService session_service;
-    private DtoParser parser;
 
     //____________________________________________________________________________________________________________________________________
 
@@ -45,7 +44,6 @@ public class UserServlet implements Servlet {
         LOGGER = Logger.getInstance();
         this.repository = repository;
         this.session_service = session_service;
-        parser = DtoParser.getInstance();
         LOGGER.log("User servlet instantiated", LogLevel.SUCCESS);
     }
 
@@ -113,9 +111,9 @@ public class UserServlet implements Servlet {
     // creates new user session
     private Response login(Request request) {
 
+        User user;
         String username = new String(request.data_entries().get(0).data());
         String password = new String(request.data_entries().get(1).data());
-        User user;
         List<EndpointPermission> perms;
         QueryWrapper fetch_permissions;
 
@@ -150,7 +148,7 @@ public class UserServlet implements Servlet {
                         if(fetch_permissions.getStatus() == true) {
 
                             perms = EntityMapper.resultToEndpointPermissions(fetch_permissions.getResult(), 0x0000000F);
-                            return(parser.createResponse(ResponseStatus.OK, session_service.insertSession(perms)));
+                            return(DtoParser.respondRaw(ResponseStatus.OK, session_service.insertSession(perms)));
                         }
                     }
                 }

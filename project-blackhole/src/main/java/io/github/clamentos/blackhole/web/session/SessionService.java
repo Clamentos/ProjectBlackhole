@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
-// must be singleton
 public class SessionService {
 
     private static volatile SessionService INSTANCE;

@@ -15,7 +15,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
 //________________________________________________________________________________________________________________________________________
@@ -85,21 +84,11 @@ public class Dispatcher {
     public void dispatch(DataInputStream input_stream, DataOutputStream output_stream) {
 
         Response response;
-        byte[] buff;
-        List<Byte> temp;
         
         try {
 
             response = servlets.get(input_stream.readByte()).handle(DtoParser.parseRequest(input_stream));
-            temp = response.toBytes();
-            buff = new byte[temp.size()];
-
-            for(int i = 0; i < buff.length; i++) {
-
-                buff[i] = temp.get(i);
-            }
-
-            output_stream.write(buff);
+            output_stream.write(response.toBytes());
             output_stream.flush();
         }
 
@@ -112,7 +101,7 @@ public class Dispatcher {
 
             try {
 
-                output_stream.write(DtoParser.streamify(ResponseStatus.ERROR.toBytes()));
+                output_stream.write(ResponseStatus.ERROR.toBytes());
             }
 
             catch(IOException exc2) {

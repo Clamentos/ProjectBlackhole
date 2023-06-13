@@ -1,7 +1,5 @@
 package io.github.clamentos.blackhole.web.dtos;
 
-import java.util.List;
-
 public enum Type implements Streamable {
     
     BYTE(0),
@@ -21,8 +19,8 @@ public enum Type implements Streamable {
     }
 
     @Override
-    public List<Byte> toBytes() {
+    public byte[] toBytes() {
         
-        return(List.of((byte)val));
+        return(new byte[]{(byte)val});
     }
 }

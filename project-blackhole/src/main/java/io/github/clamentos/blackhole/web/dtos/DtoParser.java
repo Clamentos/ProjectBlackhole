@@ -40,7 +40,7 @@ public class DtoParser {
 
             session_id = new byte[32];
                 
-            for(int i = 0; i < 32; i++) {
+            for(int i = 0; i < session_id.length; i++) {
 
                 session_id[i] = input_stream.readByte();
             }
@@ -56,42 +56,24 @@ public class DtoParser {
         return(new Request(request_method, session_id, data_entries));
     }
 
-    public static Response respondRaw(ResponseStatus status, List<Byte> data) {
+    public static Response respondRaw(ResponseStatus status, byte[] data) {
 
-        List<DataEntry> entry = List.of(new DataEntry(Type.RAW, data.size(), data));
+        List<DataEntry> entry = List.of(new DataEntry(Type.RAW, data.length, data));
         return(new Response(status, entry));
     }
 
     public static Response respondText(ResponseStatus status, List<String> text) {
 
+        byte[][] data = new byte[text.size()][];
         List<DataEntry> entries = new ArrayList<>();
-        List<Byte> data;
 
-        for(String elem : text) {
+        for(int i = 0; i < text.size(); i++) {
 
-            data = new ArrayList<>();
-            
-            for(Byte b : elem.getBytes()) {
-
-                data.add(b);
-            }
-
-            entries.add(new DataEntry(Type.STRING, elem.length(), data));
+            data[i] = text.get(i).getBytes();
+            entries.add(new DataEntry(Type.STRING, data[i].length, data[i]));
         }
 
         return(new Response(status, entries));
-    }
-
-    public static byte[] streamify(List<Byte> bytes) {
-
-        byte[] result = new byte[bytes.size()];
-        
-        for(int i = 0; i < result.length; i++) {
-
-            result[i] = bytes.get(i);
-        }
-
-        return(result);
     }
 
     //____________________________________________________________________________________________________________________________________
@@ -100,7 +82,7 @@ public class DtoParser {
 
         Type type;
         Integer length;
-        List<Byte> data;
+        byte[] data;
 
         switch(input_stream.readByte()) {
 
@@ -174,14 +156,10 @@ public class DtoParser {
         return(new DataEntry(type, length, data));
     }
 
-    private static List<Byte> readData(int length, DataInputStream input_stream) throws IOException {
+    private static byte[] readData(int length, DataInputStream input_stream) throws IOException {
 
-        List<Byte> result = new ArrayList<>();
-
-        for(int i = 0; i < length; i++) {
-
-            result.add(input_stream.readByte());
-        }
+        byte[] result = new byte[length];
+        input_stream.read(result);
 
         return(result);
     }

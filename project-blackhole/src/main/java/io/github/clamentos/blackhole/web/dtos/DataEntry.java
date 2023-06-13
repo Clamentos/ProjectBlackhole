@@ -1,32 +1,29 @@
 package io.github.clamentos.blackhole.web.dtos;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public record DataEntry(
 
     Type data_type,
     Integer length,      // for all types except Type.STRING and Type.RAW, this field must be null
-    List<Byte> data
+    byte[] data
 
 ) implements Streamable {
 
     @Override
-    public List<Byte> toBytes() {
+    public byte[] toBytes() {
 
-        ArrayList<Byte> result = new ArrayList<>();
+        byte[] result = new byte[5 + data.length];
 
-        result.addAll(data_type.toBytes());
+        result[0] = data_type.toBytes()[0];
 
         if(length != null) {
 
-            result.add((byte)(length & 0x000000FF));
-            result.add((byte)((length & 0x0000FF00) >> 8));
-            result.add((byte)((length & 0x00FF0000) >> 16));
-            result.add((byte)((length & 0xFF000000) >> 24));
+            result[1] = (byte)(length & 0x000000FF);
+            result[2] = (byte)((length & 0x0000FF00) >> 8);
+            result[3] = (byte)((length & 0x00FF0000) >> 16);
+            result[4] = (byte)((length & 0xFF000000) >> 24);
         }
 
-        result.addAll(data);
+        System.arraycopy(data, 0, result, 5, data.length);
         return(result);
     }
 }
