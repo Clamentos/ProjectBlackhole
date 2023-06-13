@@ -6,6 +6,7 @@ import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.persistence.Repository;
 import io.github.clamentos.blackhole.web.servlets.Servlet;
 import io.github.clamentos.blackhole.web.servlets.UserServlet;
+import io.github.clamentos.blackhole.web.session.SessionService;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -52,10 +53,10 @@ public class ConfigurationProvider {
      * This method should be the first thing that gets called inside the main.
      * Calling this method will instantiate the servlets.
     */
-    public static void initServlets(Repository repository) {
+    public static void initServlets(Repository repository, SessionService session_service) {
 
         SERVLETS = new Servlet[1];
-        SERVLETS[0] = UserServlet.getInstance(repository);
+        SERVLETS[0] = UserServlet.getInstance(repository, session_service);
     }
 
     //____________________________________________________________________________________________________________________________________

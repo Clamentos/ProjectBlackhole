@@ -2,6 +2,10 @@ package io.github.clamentos.blackhole.persistence.entities;
 
 import java.sql.Blob;
 
+/**
+ * <p><b>Entity</b></p>
+ * Resource. Represents the nodes in the graph.
+*/
 public record Resource(
 
     long id,
@@ -13,7 +17,7 @@ public record Resource(
     Blob data,
 
     // FKs...
-    short blob_type_id,
+    short data_type_id,
     int user_id
 
 ) {}

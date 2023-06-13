@@ -6,17 +6,21 @@ import at.favre.lib.crypto.bcrypt.BCrypt;
 
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
+import io.github.clamentos.blackhole.persistence.EntityMapper;
 import io.github.clamentos.blackhole.persistence.QueryType;
 import io.github.clamentos.blackhole.persistence.QueryWrapper;
 import io.github.clamentos.blackhole.persistence.Repository;
+import io.github.clamentos.blackhole.persistence.entities.EndpointPermission;
 import io.github.clamentos.blackhole.persistence.entities.User;
+import io.github.clamentos.blackhole.web.dtos.DtoParser;
 import io.github.clamentos.blackhole.web.dtos.Request;
 import io.github.clamentos.blackhole.web.dtos.Response;
 import io.github.clamentos.blackhole.web.dtos.ResponseStatus;
+import io.github.clamentos.blackhole.web.session.SessionService;
 
 import java.sql.SQLException;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
 //________________________________________________________________________________________________________________________________________
@@ -31,14 +35,17 @@ public class UserServlet implements Servlet {
 
     private final Logger LOGGER;
     private Repository repository;
-    // session service
+    private SessionService session_service;
+    private DtoParser parser;
 
     //____________________________________________________________________________________________________________________________________
 
-    private UserServlet(Repository repository) {
+    private UserServlet(Repository repository, SessionService session_service) {
 
         LOGGER = Logger.getInstance();
         this.repository = repository;
+        this.session_service = session_service;
+        parser = DtoParser.getInstance();
         LOGGER.log("User servlet instantiated", LogLevel.SUCCESS);
     }
 
@@ -50,7 +57,7 @@ public class UserServlet implements Servlet {
      * If the instance doesn't exist, create it.
      * @return The UserServlet instance.
      */
-    public static UserServlet getInstance(Repository repository) {
+    public static UserServlet getInstance(Repository repository, SessionService session_service) {
 
         UserServlet temp = INSTANCE;
 
@@ -61,7 +68,7 @@ public class UserServlet implements Servlet {
 
             if(temp == null) {
 
-                INSTANCE = temp = new UserServlet(repository);
+                INSTANCE = temp = new UserServlet(repository, session_service);
             }
 
             lock.unlock();
@@ -108,66 +115,53 @@ public class UserServlet implements Servlet {
 
         String username = new String(request.data_entries().get(0).data());
         String password = new String(request.data_entries().get(1).data());
-        ArrayList<Object> parameters = new ArrayList<>();
-        User user = null;
+        User user;
+        List<EndpointPermission> perms;
+        QueryWrapper fetch_permissions;
 
-        parameters.add(username);
+        QueryWrapper fetch_user = new QueryWrapper(
 
-        QueryWrapper query = new QueryWrapper(
-            
             QueryType.SELECT,
             "SELECT * FROM Users WHERE username = ?",
-            parameters
+            username
         );
 
-        repository.execute(query);
+        repository.execute(fetch_user, true);
 
-        while(true) {
+        try {
 
-            if(query.getStatus() == true) {
+            if(fetch_user.getStatus() == true) {
 
-                try {
+                user = EntityMapper.resultToUser(fetch_user.getResult(), 0x0000003F);
 
-                    while(query.getResult().next()) {
-
-                        user = new User(
-
-                            query.getResult().getInt("id"),
-                            query.getResult().getString("username"),
-                            query.getResult().getString("email"),
-                            query.getResult().getString("password_hash"),
-                            query.getResult().getInt("registration_date"),
-                            query.getResult().getInt("last_updated")
-                        );
-                    }
-
-                    if(user == null) {
-
-                        // no such user found
-                        return(new Response(ResponseStatus.ERROR, null));
-                    }
+                if(user != null) {
 
                     if(BCrypt.verifyer().verify(password.toCharArray(), user.password_hash()).verified) {
 
-                        // generate session
-                        // response OK with session id
-                        // TODO: this
-                        LOGGER.log("User " + user.id() + " logged in", LogLevel.INFO);
+                        fetch_permissions = new QueryWrapper(
+
+                            QueryType.SELECT,
+                            "SELECT * FROM EndpointPermissions WHERE user_id = ?",
+                            user.id()
+                        );
+
+                        repository.execute(fetch_permissions, true);
+
+                        if(fetch_permissions.getStatus() == true) {
+
+                            perms = EntityMapper.resultToEndpointPermissions(fetch_permissions.getResult(), 0x0000000F);
+                            return(parser.createResponse(ResponseStatus.OK, session_service.insertSession(perms)));
+                        }
                     }
                 }
-
-                catch(SQLException exc) {
-
-                    //...
-                }
-
-                return(null); // TODO: this
             }
 
-            if(query.getStatus() == null) {
+            return(new Response(ResponseStatus.ERROR, null));
+        }
 
-                return(new Response(ResponseStatus.ERROR, null));
-            }
+        catch(SQLException exc) {
+
+            return(new Response(ResponseStatus.ERROR, null));
         }
     }
 

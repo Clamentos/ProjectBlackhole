@@ -3,6 +3,7 @@ package io.github.clamentos.blackhole.persistence;
 //________________________________________________________________________________________________________________________________________
 
 import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.List;
 
 //________________________________________________________________________________________________________________________________________
@@ -28,6 +29,17 @@ public class QueryWrapper {
         this.sql = sql;
         this.parameters = parameters;
         result = null;
+    }
+
+    public QueryWrapper(QueryType query_type, String sql, Object parameter) {
+
+        status = null;
+        this.query_type = query_type;
+        this.sql = sql;
+        parameters = new ArrayList<>();
+        result = null;
+
+        parameters.add(parameter);
     }
 
     //____________________________________________________________________________________________________________________________________

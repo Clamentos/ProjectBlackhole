@@ -1,5 +1,9 @@
 package io.github.clamentos.blackhole.persistence.entities;
 
+/**
+ * <p><b>Entity</b></p>
+ * User.
+*/
 public record User(
 
     int id,

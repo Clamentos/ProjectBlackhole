@@ -32,7 +32,7 @@ public class LogPrinter {
         String level = "[ " + log_level.getColor() + log_level.getValue() + "\u001B[0m ]";
         String msg = log_level.getColor() + message + "\u001B[0m";
 
-        System.out.println(head + " --- " + level + " --- " + msg);
+        System.out.println(level + " --- " + head + " --- " + msg);
     }
 
     /**
@@ -50,7 +50,7 @@ public class LogPrinter {
         String now =  LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss.SSS"));
         String head = "[ " + now + " ]";
         String level = "[ " + log_level.getValue() + " ]";
-        String actual = head + " --- " + level + " --- " + message + "\n";
+        String actual = level + " --- " + head + " --- " + message + "\n";
 
         try {
 

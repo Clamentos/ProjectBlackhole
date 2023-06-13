@@ -16,6 +16,9 @@ import java.util.concurrent.BlockingQueue;
 
 //________________________________________________________________________________________________________________________________________
 
+/**
+ * Query thread that actually executes the queries.
+*/
 public class QueryWorker extends Worker<QueryWrapper> {
 
     private final Logger LOGGER;

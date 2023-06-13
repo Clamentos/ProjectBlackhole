@@ -7,15 +7,16 @@ public record DataEntry(
 
     Type data_type,
     Integer length,      // for all types except Type.STRING and Type.RAW, this field must be null
-    byte[] data
+    List<Byte> data
 
-) {
+) implements Streamable {
 
-    public List<Byte> streamify() {
+    @Override
+    public List<Byte> toBytes() {
 
         ArrayList<Byte> result = new ArrayList<>();
 
-        result.add(data_type.streamify());
+        result.addAll(data_type.toBytes());
 
         if(length != null) {
 
@@ -25,11 +26,7 @@ public record DataEntry(
             result.add((byte)((length & 0xFF000000) >> 24));
         }
 
-        for(Byte elem : data) {
-
-            result.add(elem);
-        }
-
+        result.addAll(data);
         return(result);
     }
 }

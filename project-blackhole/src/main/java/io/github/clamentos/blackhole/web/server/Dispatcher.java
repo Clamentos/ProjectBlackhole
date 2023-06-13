@@ -6,6 +6,7 @@ import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
 import io.github.clamentos.blackhole.web.dtos.DtoParser;
+import io.github.clamentos.blackhole.web.dtos.Response;
 import io.github.clamentos.blackhole.web.dtos.ResponseStatus;
 import io.github.clamentos.blackhole.web.servlets.Servlet;
 
@@ -14,6 +15,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
 //________________________________________________________________________________________________________________________________________
@@ -27,7 +29,6 @@ public class Dispatcher {
     private static ReentrantLock lock = new ReentrantLock();
 
     private final Logger LOGGER;
-    private final DtoParser PARSER;
     private HashMap<Byte, Servlet> servlets;
 
     //____________________________________________________________________________________________________________________________________
@@ -35,7 +36,6 @@ public class Dispatcher {
     private Dispatcher() {
 
         LOGGER = Logger.getInstance();
-        PARSER = DtoParser.getInstance();
         servlets = new HashMap<>();
         Servlet[] temp = ConfigurationProvider.SERVLETS;
 
@@ -84,9 +84,23 @@ public class Dispatcher {
     */
     public void dispatch(DataInputStream input_stream, DataOutputStream output_stream) {
 
+        Response response;
+        byte[] buff;
+        List<Byte> temp;
+        
         try {
 
-            servlets.get(input_stream.readByte()).handle(PARSER.parseRequest(input_stream));
+            response = servlets.get(input_stream.readByte()).handle(DtoParser.parseRequest(input_stream));
+            temp = response.toBytes();
+            buff = new byte[temp.size()];
+
+            for(int i = 0; i < buff.length; i++) {
+
+                buff[i] = temp.get(i);
+            }
+
+            output_stream.write(buff);
+            output_stream.flush();
         }
 
         catch(IOException exc) {
@@ -98,7 +112,7 @@ public class Dispatcher {
 
             try {
 
-                output_stream.write(ResponseStatus.ERROR.streamify());
+                output_stream.write(DtoParser.streamify(ResponseStatus.ERROR.toBytes()));
             }
 
             catch(IOException exc2) {

@@ -6,42 +6,15 @@ import java.io.DataInputStream;
 import java.io.IOException;
 
 import java.util.ArrayList;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.List;
 
 //________________________________________________________________________________________________________________________________________
 
 public class DtoParser {
 
-    private static volatile DtoParser INSTANCE;
-    private static ReentrantLock lock = new ReentrantLock();
-
     //____________________________________________________________________________________________________________________________________
-
-    /**
-     * Get the DtoParser instance.
-     * @return The DtoParser instance.
-     */
-    public static DtoParser getInstance() {
-
-        DtoParser temp = INSTANCE;
-
-        if(temp == null) {
-
-            lock.lock();
-            temp = INSTANCE;
-
-            if(temp == null) {
-
-                INSTANCE = temp = new DtoParser();
-            }
-
-            lock.unlock();
-        }
-
-        return(temp);
-    }
     
-    public Request parseRequest(DataInputStream input_stream) throws IOException {
+    public static Request parseRequest(DataInputStream input_stream) throws IOException {
 
         Method request_method;
         byte[] session_id;
@@ -74,7 +47,7 @@ public class DtoParser {
         }
 
         data_entries = new ArrayList<>();
-            
+
         while(input_stream.available() > 0) {
 
             data_entries.add(readDataEntry(input_stream));
@@ -83,13 +56,51 @@ public class DtoParser {
         return(new Request(request_method, session_id, data_entries));
     }
 
+    public static Response respondRaw(ResponseStatus status, List<Byte> data) {
+
+        List<DataEntry> entry = List.of(new DataEntry(Type.RAW, data.size(), data));
+        return(new Response(status, entry));
+    }
+
+    public static Response respondText(ResponseStatus status, List<String> text) {
+
+        List<DataEntry> entries = new ArrayList<>();
+        List<Byte> data;
+
+        for(String elem : text) {
+
+            data = new ArrayList<>();
+            
+            for(Byte b : elem.getBytes()) {
+
+                data.add(b);
+            }
+
+            entries.add(new DataEntry(Type.STRING, elem.length(), data));
+        }
+
+        return(new Response(status, entries));
+    }
+
+    public static byte[] streamify(List<Byte> bytes) {
+
+        byte[] result = new byte[bytes.size()];
+        
+        for(int i = 0; i < result.length; i++) {
+
+            result[i] = bytes.get(i);
+        }
+
+        return(result);
+    }
+
     //____________________________________________________________________________________________________________________________________
 
-    private DataEntry readDataEntry(DataInputStream input_stream) throws IOException {
+    private static DataEntry readDataEntry(DataInputStream input_stream) throws IOException {
 
         Type type;
         Integer length;
-        byte[] data;
+        List<Byte> data;
 
         switch(input_stream.readByte()) {
 
@@ -163,13 +174,13 @@ public class DtoParser {
         return(new DataEntry(type, length, data));
     }
 
-    private byte[] readData(int length, DataInputStream input_stream) throws IOException {
+    private static List<Byte> readData(int length, DataInputStream input_stream) throws IOException {
 
-        byte[] result = new byte[length];
+        List<Byte> result = new ArrayList<>();
 
         for(int i = 0; i < length; i++) {
 
-            result[i] = input_stream.readByte();
+            result.add(input_stream.readByte());
         }
 
         return(result);

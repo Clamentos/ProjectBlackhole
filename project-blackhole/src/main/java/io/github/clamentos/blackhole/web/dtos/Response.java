@@ -6,18 +6,20 @@ import java.util.List;
 public record Response(
 
     ResponseStatus response_status,
-    DataEntry[] data_entries
-) {
+    List<DataEntry> data_entries
 
-    public List<Byte> streamify() {
+) implements Streamable {
+
+    @Override
+    public List<Byte> toBytes() {
 
         ArrayList<Byte> result = new ArrayList<>();
 
-        result.add(response_status.streamify());
+        result.addAll(response_status.toBytes());
 
         for(DataEntry data : data_entries) {
 
-            result.addAll(data.streamify());
+            result.addAll(data.toBytes());
         }
 
         return(result);

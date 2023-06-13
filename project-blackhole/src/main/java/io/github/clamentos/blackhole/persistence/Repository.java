@@ -11,6 +11,9 @@ import java.util.concurrent.locks.ReentrantLock;
 
 //________________________________________________________________________________________________________________________________________
 
+/**
+ * Repository class responsible for managing the workers and inserting the queries into the queue.
+*/
 public class Repository {
 
     private static volatile Repository INSTANCE;
@@ -71,24 +74,83 @@ public class Repository {
 
     //____________________________________________________________________________________________________________________________________
 
-    // TODO: start workers
-    // TODO: stop workers
-
     /**
      * <p><b>This method is thread safe.</b></p>
      * Inserts the query into the queue for processing.
      * @param query : The query to be added.
+     * @param wait : Wait for the query to complete.
      */
-    public void execute(QueryWrapper query) {
+    public void execute(QueryWrapper query, boolean wait) {
 
         try {
 
             query_queue.put(query);
+
+            while(wait == true) {
+
+                if(query.getStatus() == true || query.getStatus() == false) {
+
+                    break;
+                }
+            }
         }
 
         catch(InterruptedException exc) {
 
             LOGGER.log("Interrupted while waiting on queue, InterruptedException: " + exc.getMessage(), LogLevel.NOTE);
+        }
+    }
+
+    /**
+     * <p><b>This method is thread safe.</b></p>
+     * Starts all the inactive {@link QueryWorker}.
+    */
+    public synchronized void startWorkers() {
+
+        for(QueryWorker worker : query_workers) {
+
+            if(worker.getRunning() == false) {
+
+                worker.start();
+            }
+        }
+    }
+
+    /**
+     * <p><b>This method is thread safe.</b></p>
+     * Stops all the active {@link QueryWorker}.
+     * @param wait : Waits for the workers to drain the query queue before stopping it.
+     *               If set to false, it will stop the workers as soon as they finish
+     *               processing the current query.
+    */
+    public synchronized void stopWorkers(boolean wait) {
+
+        if(wait == true) {
+
+            while(true) {
+
+                if(query_queue.size() == 0) {
+
+                    stopWorkers();
+                    break;
+                }
+            }
+        }
+
+        else {
+
+            stopWorkers();
+        }
+    }
+
+    //____________________________________________________________________________________________________________________________________
+
+    private void stopWorkers() {
+
+        for(QueryWorker worker : query_workers) {
+
+            worker.halt();
+            worker.interrupt();
         }
     }
 
