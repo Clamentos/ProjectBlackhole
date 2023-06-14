@@ -13,19 +13,29 @@ public record Response(
     public byte[] toBytes() {
 
         byte[] result;
-        byte[][] temp = new byte[data_entries.size()][];
+        byte[][] temp;
+        
+        if(data_entries != null) {
 
-        for(int i = 0; i < data_entries.size(); i++) {
+            temp = new byte[data_entries.size()][];
 
-            temp[i] = data_entries.get(i).toBytes();
+            for(int i = 0; i < data_entries.size(); i++) {
+
+                temp[i] = data_entries.get(i).toBytes();
+            }
+
+            result = new byte[(temp.length * temp[0].length) + 1];
+            result[0] = response_status.toBytes()[0];
+
+            for(int i = 0; i < result.length; i++) {
+
+                System.arraycopy(temp[i], 0, result, (i * temp[i].length) + 1, temp[i].length);
+            }
         }
 
-        result = new byte[(temp.length * temp[0].length) + 1];
-        result[0] = response_status.toBytes()[0];
+        else {
 
-        for(int i = 0; i < result.length; i++) {
-
-            System.arraycopy(temp[i], 0, result, (i * temp[i].length) + 1, temp[i].length);
+            result = new byte[]{response_status.toBytes()[0]};
         }
 
         return(result);

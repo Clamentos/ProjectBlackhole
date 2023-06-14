@@ -2,10 +2,12 @@ package io.github.clamentos.blackhole.persistence;
 
 //________________________________________________________________________________________________________________________________________
 
+import io.github.clamentos.blackhole.common.WorkerManager;
 import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
 
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -14,31 +16,19 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Repository class responsible for managing the workers and inserting the queries into the queue.
 */
-public class Repository {
+public class Repository extends WorkerManager<QueryWrapper, QueryWorker> {
 
     private static volatile Repository INSTANCE;
     private static ReentrantLock lock = new ReentrantLock();
 
     private final Logger LOGGER;
 
-    private LinkedBlockingQueue<QueryWrapper> query_queue;
-    private QueryWorker[] query_workers;
-
     //____________________________________________________________________________________________________________________________________
 
-    private Repository() throws InstantiationException {
+    private Repository(BlockingQueue<QueryWrapper> query_queue, QueryWorker[] query_workers) {
 
+        super(query_queue, query_workers);
         LOGGER = Logger.getInstance();
-        
-        query_queue = new LinkedBlockingQueue<>();
-        query_workers = new QueryWorker[ConfigurationProvider.DB_CONNECTIONS];
-
-        for(QueryWorker worker : query_workers) {
-
-            worker = new QueryWorker(query_queue);
-            worker.start();
-        }
-
         LOGGER.log("Repository instantiated and workers started", LogLevel.SUCCESS);
     }
 
@@ -49,12 +39,14 @@ public class Repository {
      * Get the Repository instance.
      * If the instance doesn't exist, create it with the values configured in
      * {@link ConfigurationProvider} and start the workers.
-     * @return The Repository instance.
-     * @throw InstantiationException if any of the workers cannot connect to the database.
+     * @return The Repository instance.       
     */
-    public static Repository getInstance() throws InstantiationException {
+    public static Repository getInstance() {
 
         Repository temp = INSTANCE;
+
+        LinkedBlockingQueue<QueryWrapper> query_queue;
+        QueryWorker[] query_workers;
 
         if(temp == null) {
 
@@ -63,7 +55,16 @@ public class Repository {
 
             if(temp == null) {
 
-                INSTANCE = temp = new Repository();
+                query_queue = new LinkedBlockingQueue<>();
+                query_workers = new QueryWorker[ConfigurationProvider.DB_CONNECTIONS];
+
+                for(QueryWorker worker : query_workers) {
+
+                    worker = new QueryWorker(query_queue);
+                    worker.start();
+                }
+
+                INSTANCE = temp = new Repository(query_queue, query_workers);
             }
 
             lock.unlock();
@@ -84,7 +85,7 @@ public class Repository {
 
         try {
 
-            query_queue.put(query);
+            super.getResourceQueue().put(query);
 
             while(wait == true) {
 
@@ -98,59 +99,6 @@ public class Repository {
         catch(InterruptedException exc) {
 
             LOGGER.log("Interrupted while waiting on queue, InterruptedException: " + exc.getMessage(), LogLevel.NOTE);
-        }
-    }
-
-    /**
-     * <p><b>This method is thread safe.</b></p>
-     * Starts all the inactive {@link QueryWorker}.
-    */
-    public synchronized void startWorkers() {
-
-        for(QueryWorker worker : query_workers) {
-
-            if(worker.getRunning() == false) {
-
-                worker.start();
-            }
-        }
-    }
-
-    /**
-     * <p><b>This method is thread safe.</b></p>
-     * Stops all the active {@link QueryWorker}.
-     * @param wait : Waits for the workers to drain the query queue before stopping it.
-     *               If set to false, it will stop the workers as soon as they finish
-     *               processing the current query.
-    */
-    public synchronized void stopWorkers(boolean wait) {
-
-        if(wait == true) {
-
-            while(true) {
-
-                if(query_queue.size() == 0) {
-
-                    stopWorkers();
-                    break;
-                }
-            }
-        }
-
-        else {
-
-            stopWorkers();
-        }
-    }
-
-    //____________________________________________________________________________________________________________________________________
-
-    private void stopWorkers() {
-
-        for(QueryWorker worker : query_workers) {
-
-            worker.halt();
-            worker.interrupt();
         }
     }
 

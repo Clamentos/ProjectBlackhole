@@ -102,13 +102,12 @@ public class UserServlet implements Servlet {
             case DELETE: return(null);
             case LOGIN: return(login(request));
 
-            default: return(null);
+            default: return(new Response(ResponseStatus.METHOD_NOT_ALLOWED, null));
         }
     }
 
     //____________________________________________________________________________________________________________________________________
 
-    // creates new user session
     private Response login(Request request) {
 
         User user;

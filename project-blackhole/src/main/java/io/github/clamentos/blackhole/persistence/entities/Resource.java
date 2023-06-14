@@ -8,16 +8,16 @@ import java.sql.Blob;
 */
 public record Resource(
 
-    long id,
+    Long id,
     String name,
     String description,
     String data_hash,
-    int creation_time,
-    int last_updated,
+    Integer creation_time,
+    Integer last_updated,
     Blob data,
 
     // FKs...
-    short data_type_id,
-    int user_id
+    Short data_type_id,
+    Integer user_id
 
 ) {}

@@ -4,17 +4,28 @@ package io.github.clamentos.blackhole;
 //________________________________________________________________________________________________________________________________________
 
 import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
+import io.github.clamentos.blackhole.common.config.Container;
 import io.github.clamentos.blackhole.common.exceptions.GlobalExceptionHandler;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
-import io.github.clamentos.blackhole.persistence.Repository;
-import io.github.clamentos.blackhole.web.server.Server;
-import io.github.clamentos.blackhole.web.session.SessionService;
+
+import java.io.IOException;
+
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Paths;
+
+import java.security.NoSuchAlgorithmException;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 //________________________________________________________________________________________________________________________________________
 
 /**
- * Main App class, just some random stuff for now...
+ * Main App class, initialize and start
  */
 public class App {
 
@@ -26,17 +37,38 @@ public class App {
         Logger logger = Logger.getInstance();
 
         try {
-            
-            SessionService session_service = SessionService.getInstance();
-            Repository repo = Repository.getInstance();
-            ConfigurationProvider.initServlets(repo, session_service);
-            Server web_server = Server.getInstance();
-            web_server.start();
+
+            Container.init();
+
+            // initialize db schema
+            if(ConfigurationProvider.INIT_SCHEMA) {
+
+                try {
+
+                    Connection db_connection = DriverManager.getConnection(
+
+                        ConfigurationProvider.DB_URL,
+                        ConfigurationProvider.DB_USERNAME,
+                        ConfigurationProvider.DB_PASWORD
+                    );
+
+                    Statement sql = db_connection.createStatement();
+                    sql.execute(Files.readString(Paths.get(ConfigurationProvider.SCHEMA_PATH)));
+                    db_connection.close();
+                }
+
+                catch(SQLException | InvalidPathException | IOException exc) {
+
+                    logger.log("Could not initialize schema, " + exc.getClass().getSimpleName() + ": " + exc.getMessage() + " skipping...", LogLevel.WARNING);
+                }
+            }
+
+            Container.web_server.start();
         }
 
-        catch(Exception exc) {
+        catch(NoSuchAlgorithmException exc) {
 
-            logger.log("Could not fully start the app, " + exc.getClass().getSimpleName() + ": " + exc.getMessage(), LogLevel.ERROR);
+            logger.log("Could not fully start the app, NoSuchAlgorithmException: " + exc.getMessage(), LogLevel.ERROR);
             System.exit(1);
         }
     }

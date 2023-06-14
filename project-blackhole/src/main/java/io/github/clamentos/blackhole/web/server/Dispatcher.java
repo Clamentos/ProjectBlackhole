@@ -3,6 +3,7 @@ package io.github.clamentos.blackhole.web.server;
 //________________________________________________________________________________________________________________________________________
 
 import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
+import io.github.clamentos.blackhole.common.config.Container;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
 import io.github.clamentos.blackhole.web.dtos.DtoParser;
@@ -36,7 +37,7 @@ public class Dispatcher {
 
         LOGGER = Logger.getInstance();
         servlets = new HashMap<>();
-        Servlet[] temp = ConfigurationProvider.SERVLETS;
+        Servlet[] temp = Container.servlets;
 
         for(Servlet servlet : temp) {
 

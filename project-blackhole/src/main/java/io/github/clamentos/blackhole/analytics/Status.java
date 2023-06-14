@@ -9,13 +9,13 @@ import java.lang.management.ThreadInfo;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * Simple immutable class that holds some application statistics, such as memory and thread info.
+ * Simple record that holds some application statistics, such as memory and thread info.
 */
 public record Status(
 
     MemoryUsage heap_info,
     MemoryUsage non_heap_info,
-    ThreadInfo[] thread_infos
+    ThreadInfo[] threads_info
 
 ) {
 
@@ -28,7 +28,7 @@ public record Status(
 
         heap_info =  ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
         non_heap_info = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
-        thread_infos = ManagementFactory.getThreadMXBean().getThreadInfo(ManagementFactory.getThreadMXBean().getAllThreadIds());
+        threads_info = ManagementFactory.getThreadMXBean().getThreadInfo(ManagementFactory.getThreadMXBean().getAllThreadIds());
     }
 
     //____________________________________________________________________________________________________________________________________

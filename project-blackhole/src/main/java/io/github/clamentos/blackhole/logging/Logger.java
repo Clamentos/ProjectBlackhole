@@ -2,8 +2,10 @@ package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
 
+import io.github.clamentos.blackhole.common.WorkerManager;
 import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -12,30 +14,19 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Logging class responsible for managing the logger threads and inserting the logs into the queue.
 */
-public class Logger {
+public class Logger extends WorkerManager<Log, LogWorker> {
 
     private static volatile Logger INSTANCE;
     private static ReentrantLock lock = new ReentrantLock();
 
     private LogLevel min_console_log_level;
-    private LinkedBlockingQueue<Log> logs;
-    private LogWorker[] log_workers;
 
     //____________________________________________________________________________________________________________________________________
 
-    private Logger() {
+    private Logger(BlockingQueue<Log> log_queue, LogWorker[] log_workers) {
         
+        super(log_queue, log_workers);
         min_console_log_level = ConfigurationProvider.MINIMUM_CONSOLE_LOG_LEVEL;
-        logs = new LinkedBlockingQueue<>(ConfigurationProvider.MAX_LOG_QUEUE_SIZE);
-
-        log_workers = new LogWorker[ConfigurationProvider.LOG_WORKERS];
-
-        for(LogWorker worker : log_workers) {
-
-            worker = new LogWorker(logs);
-            worker.start();
-        }
-
         LogPrinter.printToConsole("Logger instantiated and workers started", LogLevel.SUCCESS);
     }
 
@@ -52,6 +43,9 @@ public class Logger {
 
         Logger temp = INSTANCE;
 
+        LinkedBlockingQueue<Log> log_queue;
+        LogWorker[] log_workers;
+
         if(temp == null) {
 
             lock.lock();
@@ -59,7 +53,16 @@ public class Logger {
 
             if(temp == null) {
 
-                INSTANCE = temp = new Logger();
+                log_queue = new LinkedBlockingQueue<>(ConfigurationProvider.MAX_LOG_QUEUE_SIZE);
+                log_workers = new LogWorker[ConfigurationProvider.LOG_WORKERS];
+
+                for(LogWorker worker : log_workers) {
+
+                    worker = new LogWorker(log_queue);
+                    worker.start();
+                }
+
+                INSTANCE = temp = new Logger(log_queue, log_workers);
             }
 
             lock.unlock();
@@ -83,66 +86,13 @@ public class Logger {
 
             try {
 
-                logs.put(new Log(message, log_level));
+                super.getResourceQueue().put(new Log(message, log_level));
             }
     
             catch(InterruptedException exc) {
     
                 LogPrinter.printToConsole("Could not insert into the log queue, InterruptedException: " + exc.getMessage(), LogLevel.WARNING);
             }
-        }
-    }
-
-    /**
-     * <p><b>This method is thread safe.</b></p>
-     * Starts all the inactive {@link LogWorker}.
-    */
-    public synchronized void startWorkers() {
-
-        for(LogWorker worker : log_workers) {
-
-            if(worker.getRunning() == false) {
-
-                worker.start();
-            }
-        }
-    }
-
-    /**
-     * <p><b>This method is thread safe.</b></p>
-     * Stops all the active {@link LogWorker}.
-     * @param wait : Waits for the workers to drain the log queue before stopping it.
-     *               If set to false, it will stop the workers as soon as they finish
-     *               logging the current message.
-    */
-    public synchronized void stopWorkers(boolean wait) {
-
-        if(wait == true) {
-
-            while(true) {
-
-                if(logs.size() == 0) {
-
-                    stopWorkers();
-                    break;
-                }
-            }
-        }
-
-        else {
-
-            stopWorkers();
-        }
-    }
-
-    //____________________________________________________________________________________________________________________________________
-
-    private void stopWorkers() {
-
-        for(LogWorker worker : log_workers) {
-
-            worker.halt();
-            worker.interrupt();
         }
     }
 

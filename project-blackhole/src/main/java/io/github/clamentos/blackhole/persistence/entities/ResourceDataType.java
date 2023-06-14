@@ -6,6 +6,6 @@ package io.github.clamentos.blackhole.persistence.entities;
 */
 public record ResourceDataType(
 
-    short id,
+    Short id,
     String name
 ) {}

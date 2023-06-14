@@ -1,40 +1,71 @@
 package io.github.clamentos.blackhole.persistence;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+//________________________________________________________________________________________________________________________________________
 
 import io.github.clamentos.blackhole.persistence.entities.EndpointPermission;
 import io.github.clamentos.blackhole.persistence.entities.User;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import java.util.ArrayList;
+import java.util.List;
+
+//________________________________________________________________________________________________________________________________________
+
+/**
+ * Static class to map objects to and from entities. 
+*/
 public class EntityMapper {
-    
+
+    //____________________________________________________________________________________________________________________________________
+
+    /**
+     * <p><b>This method is thread safe.</b></p>
+     * Maps the {@link ResultSet} to a list of {@link User}.
+     * @param result : The {@link ResultSet} from the query.
+     * @param columns : A checklist of the columns to consider. The positions of the bits
+     *                  indicate the index of the column. The LSB is the first column.
+     * @return : The never null list of users. If none was mapped, the list will be empty.
+     * @throws SQLException If the mapping fails.
+    */
     public static List<User> resultToUsers(ResultSet result, int columns) throws SQLException {
 
         List<User> users = new ArrayList<>();
+        User temp;
 
-        while(result.next() == true) {
+        while(true) {
 
-            users.add(new User(
+            temp = resultToUser(result, columns);
 
-                ((columns & 0x00000001) > 0) ? result.getInt(0) : 0,
-                ((columns & 0x00000002) > 0) ? result.getString(1) : null,
-                ((columns & 0x00000004) > 0) ? result.getString(2) : null,
-                ((columns & 0x00000008) > 0) ? result.getString(3) : null,
-                ((columns & 0x00000010) > 0) ? result.getInt(4) : 0,
-                ((columns & 0x00000020) > 0) ? result.getInt(5) : 0
-            ));
+            if(temp != null) {
+
+                users.add(temp);
+            }
+
+            else {
+
+                break;
+            }
         }
 
         return(users);
     }
 
+    /**
+     * <p><b>This method is thread safe.</b></p>
+     * Maps the {@link ResultSet} to a single {@link User}.
+     * @param result : The {@link ResultSet} from the query.
+     * @param columns : A checklist of the columns to consider. The positions of the bits
+     *                  indicate the index of the column. The LSB is the first column.
+     * @return : The {@link User}, or {@code null} if there was no mapping.
+     * @throws SQLException If the mapping fails.
+    */
     public static User resultToUser(ResultSet result, int columns) throws SQLException {
 
         User user = null;
 
-        while(result.next() == true) {
+        if(result.next() == true) {
 
             user = new User(
 
@@ -50,6 +81,15 @@ public class EntityMapper {
         return(user);
     }
 
+    /**
+     * <p><b>This method is thread safe.</b></p>
+     * Maps the {@link ResultSet} to a list of {@link EndpointPermission}.
+     * @param result : The {@link ResultSet} from the query.
+     * @param columns : A checklist of the columns to consider. The positions of the bits
+     *                  indicate the index of the column. The LSB is the first column.
+     * @return : The never null list of permissions. If none was mapped, the list will be empty. 
+     * @throws SQLException If the mapping fails.
+    */
     public static List<EndpointPermission> resultToEndpointPermissions(ResultSet result, int columns) throws SQLException {
 
         List<EndpointPermission> perms = new ArrayList<>();
@@ -67,4 +107,6 @@ public class EntityMapper {
 
         return(perms);
     }
+
+    //____________________________________________________________________________________________________________________________________
 }

@@ -26,11 +26,14 @@ public class QueryWorker extends Worker<QueryWrapper> {
 
     //____________________________________________________________________________________________________________________________________
 
-    public QueryWorker(BlockingQueue<QueryWrapper> query_queue) throws InstantiationException {
+    /**
+     * Instantiate a new {@lonk QueryWorker}.
+     * @param query_queue : The resource queue from which the worker will consume.
+    */
+    public QueryWorker(BlockingQueue<QueryWrapper> query_queue) {
 
         super(query_queue);
         LOGGER = Logger.getInstance();
-        attempt();
         LOGGER.log("Query worker started", LogLevel.SUCCESS);
     }
 
@@ -44,7 +47,8 @@ public class QueryWorker extends Worker<QueryWrapper> {
     public void doWork(QueryWrapper query) {
 
         try {
-
+            
+            refresh();
             PreparedStatement statement = db_connection.prepareStatement(query.getSql());
 
             for(int i = 0; i < query.getParameters().size(); i++) {
@@ -85,43 +89,34 @@ public class QueryWorker extends Worker<QueryWrapper> {
     public void catchInterrupted(InterruptedException exc) {
 
         LOGGER.log("Interrupted while waiting on queue, InterruptedException: " + exc.getMessage(), LogLevel.NOTE);
+
+        if(super.getRunning() == false) {
+
+            try {
+
+                db_connection.close();
+            }
+
+            catch(SQLException exc2) {
+
+                LOGGER.log("Could not close the database connection, SQLException: " + exc.getMessage(), LogLevel.ERROR);
+            }
+        }
     }
 
     //____________________________________________________________________________________________________________________________________
 
-    private void attempt() throws InstantiationException {
+    private void refresh() throws SQLException {
 
-        for(int i = 0; i < ConfigurationProvider.MAX_DB_CONNECTION_RETRIES; i++) {
+        if(db_connection == null || db_connection.isValid(ConfigurationProvider.MAX_DB_CONNECTION_TIMEOUT) == false) {
 
-            try {
+            db_connection = DriverManager.getConnection(
 
-                db_connection = DriverManager.getConnection(
-
-                    ConfigurationProvider.DB_URL,
-                    ConfigurationProvider.DB_USERNAME,
-                    ConfigurationProvider.DB_PASWORD
-                );
-
-                return;
-            }
-
-            catch(SQLException exc) {
-
-                LOGGER.log("Could not connect to the database, SQLException: " + exc.getMessage(), LogLevel.ERROR);
-            }
-
-            try {
-
-                Thread.sleep(1000);
-            }
-
-            catch(InterruptedException exc) {
-
-                LOGGER.log("Interrupted while waiting on retries, InterruptedException: " + exc.getMessage(), LogLevel.NOTE);
-            }
+                ConfigurationProvider.DB_URL,
+                ConfigurationProvider.DB_USERNAME,
+                ConfigurationProvider.DB_PASWORD
+            );
         }
-
-        throw new InstantiationException("Retries exhausted while attempting to connect to the database.");
     }
 
     //____________________________________________________________________________________________________________________________________

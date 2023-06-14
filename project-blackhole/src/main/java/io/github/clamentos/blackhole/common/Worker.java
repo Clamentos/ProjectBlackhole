@@ -10,7 +10,7 @@ import java.util.concurrent.BlockingQueue;
 /**
  * Abstract worker thread class that can be started and stopped.
  * This worker periodically waits for resources to be placed in the queue before doing work.
- * @param <T> : The type of resource that the queue holds.
+ * @param <T> T : The type of resource that the queue holds.
 */
 public abstract class Worker<T> extends Thread {
  

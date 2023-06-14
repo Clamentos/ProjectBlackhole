@@ -7,10 +7,10 @@ package io.github.clamentos.blackhole.persistence.entities;
 */
 public record Edge(
 
-    int source,
-    int destination,
+    Integer source,
+    Integer destination,
     String data,
-    int creation_time,
-    int last_updated
+    Integer creation_time,
+    Integer last_updated
 
 ) {}

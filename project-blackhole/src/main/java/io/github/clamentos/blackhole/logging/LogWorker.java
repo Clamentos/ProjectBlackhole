@@ -92,7 +92,6 @@ public class LogWorker extends Worker<Log> {
 
                 current_log_file_size = files[found - 1].length();
                 current_file_writer = new BufferedWriter(new FileWriter(files[found - 1], true));
-                System.out.println("here");
 
                 return;
             }
