@@ -7,20 +7,19 @@ import at.favre.lib.crypto.bcrypt.BCrypt;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
 import io.github.clamentos.blackhole.persistence.EntityMapper;
-import io.github.clamentos.blackhole.persistence.QueryType;
-import io.github.clamentos.blackhole.persistence.QueryWrapper;
 import io.github.clamentos.blackhole.persistence.Repository;
-import io.github.clamentos.blackhole.persistence.entities.EndpointPermission;
 import io.github.clamentos.blackhole.persistence.entities.User;
+import io.github.clamentos.blackhole.persistence.query.QueryType;
+import io.github.clamentos.blackhole.persistence.query.QueryWrapper;
 import io.github.clamentos.blackhole.web.dtos.DtoParser;
 import io.github.clamentos.blackhole.web.dtos.Request;
 import io.github.clamentos.blackhole.web.dtos.Response;
 import io.github.clamentos.blackhole.web.dtos.ResponseStatus;
 import io.github.clamentos.blackhole.web.session.SessionService;
+import io.github.clamentos.blackhole.web.session.UserSession;
 
 import java.sql.SQLException;
 
-import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
 //________________________________________________________________________________________________________________________________________
@@ -113,7 +112,6 @@ public class UserServlet implements Servlet {
         User user;
         String username = new String(request.data_entries().get(0).data());
         String password = new String(request.data_entries().get(1).data());
-        List<EndpointPermission> perms;
         QueryWrapper fetch_permissions;
 
         QueryWrapper fetch_user = new QueryWrapper(
@@ -138,7 +136,7 @@ public class UserServlet implements Servlet {
                         fetch_permissions = new QueryWrapper(
 
                             QueryType.SELECT,
-                            "SELECT * FROM EndpointPermissions WHERE user_id = ?",
+                            "SELECT resource_id, flags FROM UserResourceAccesses WHERE user_id = ?",
                             user.id()
                         );
 
@@ -146,8 +144,16 @@ public class UserServlet implements Servlet {
 
                         if(fetch_permissions.getStatus() == true) {
 
-                            perms = EntityMapper.resultToEndpointPermissions(fetch_permissions.getResult(), 0x0000000F);
-                            return(DtoParser.respondRaw(ResponseStatus.OK, session_service.insertSession(perms)));
+                            return(DtoParser.respondRaw(
+
+                                ResponseStatus.OK,
+                                session_service.insertSession(new UserSession(
+                                    
+                                    user.id(),
+                                    user.role_id(),
+                                    EntityMapper.resultToPermMap(fetch_permissions.getResult())
+                                )))    
+                            );
                         }
                     }
                 }

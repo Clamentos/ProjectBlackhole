@@ -1,13 +1,14 @@
 package io.github.clamentos.blackhole.web.session;
 
-import io.github.clamentos.blackhole.persistence.entities.EndpointPermission;
+//________________________________________________________________________________________________________________________________________
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+
+//________________________________________________________________________________________________________________________________________
 
 public class SessionService {
 
@@ -17,11 +18,15 @@ public class SessionService {
     private SecureRandom rng;
     private ConcurrentHashMap<byte[], UserSession> user_sessions;
 
+    //____________________________________________________________________________________________________________________________________
+
     private SessionService() throws NoSuchAlgorithmException {
 
         rng = SecureRandom.getInstance("SHA1PRNG");
         user_sessions = new ConcurrentHashMap<>();
     }
+
+    //____________________________________________________________________________________________________________________________________
 
     /**
      * <p><b>This method is thread safe.</b></p>
@@ -49,18 +54,22 @@ public class SessionService {
         return(temp);
     }
 
+    //____________________________________________________________________________________________________________________________________
+
     public UserSession findSession(byte[] session_id) {
 
         return(user_sessions.get(session_id));
     }
 
-    public byte[] insertSession(List<EndpointPermission> permissions) {
+    public byte[] insertSession(UserSession session) {
 
         byte[] id = new byte[32];
 
         rng.nextBytes(id);
-        user_sessions.put(id, new UserSession(id, permissions));
+        user_sessions.put(id, session);
 
         return(id);
     }
+
+    //____________________________________________________________________________________________________________________________________
 }

@@ -5,11 +5,7 @@ import java.util.ArrayList;
 import io.github.clamentos.blackhole.persistence.EntityMapper;
 import io.github.clamentos.blackhole.web.dtos.Streamable;
 
-/**
- * <p><b>Entity</b></p>
- * Resource data type. Behaves like an enumeration.
-*/
-public record ResourceDataType(
+public record Role(
 
     Short id,
     String name

@@ -1,4 +1,4 @@
-package io.github.clamentos.blackhole.persistence;
+package io.github.clamentos.blackhole.persistence.query;
 
 //________________________________________________________________________________________________________________________________________
 

@@ -6,6 +6,8 @@ import io.github.clamentos.blackhole.common.Worker;
 import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
+import io.github.clamentos.blackhole.persistence.query.QueryType;
+import io.github.clamentos.blackhole.persistence.query.QueryWrapper;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

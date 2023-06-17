@@ -2,14 +2,15 @@ package io.github.clamentos.blackhole.persistence;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.persistence.entities.EndpointPermission;
 import io.github.clamentos.blackhole.persistence.entities.User;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -74,38 +75,69 @@ public class EntityMapper {
                 ((columns & 0x00000004) > 0) ? result.getString(2) : null,
                 ((columns & 0x00000008) > 0) ? result.getString(3) : null,
                 ((columns & 0x00000010) > 0) ? result.getInt(4) : 0,
-                ((columns & 0x00000020) > 0) ? result.getInt(5) : 0
+                ((columns & 0x00000020) > 0) ? result.getInt(5) : 0,
+                ((columns & 0x00000021) > 0) ? result.getShort(6) : 0
             );
         }
 
         return(user);
     }
 
-    /**
-     * <p><b>This method is thread safe.</b></p>
-     * Maps the {@link ResultSet} to a list of {@link EndpointPermission}.
-     * @param result : The {@link ResultSet} from the query.
-     * @param columns : A checklist of the columns to consider. The positions of the bits
-     *                  indicate the index of the column. The LSB is the first column.
-     * @return : The never null list of permissions. If none was mapped, the list will be empty. 
-     * @throws SQLException If the mapping fails.
-    */
-    public static List<EndpointPermission> resultToEndpointPermissions(ResultSet result, int columns) throws SQLException {
+    public static Map<Long, Byte> resultToPermMap(ResultSet result) throws SQLException {
 
-        List<EndpointPermission> perms = new ArrayList<>();
-
+        Map<Long, Byte> perms = new HashMap<>();
+        
         while(result.next() == true) {
 
-            perms.add(new EndpointPermission(
-
-                ((columns & 0x00000001) > 0) ? result.getLong(0) : 0,
-                ((columns & 0x00000002) > 0) ? result.getInt(1) : 0,
-                ((columns & 0x00000004) > 0) ? result.getShort(2) : 0,
-                ((columns & 0x00000008) > 0) ? result.getShort(3) : 0
-            ));
+            perms.put(result.getLong(0), result.getByte(1));
         }
 
         return(perms);
+    }
+
+    //____________________________________________________________________________________________________________________________________
+
+    public static List<Byte> numToBytes(long number, int length) {
+
+        List<Byte> result = new ArrayList<>();
+        
+        for(int i = 0; i < length; i++) {
+
+            result.add((byte)(number & (255 << i * 8) >> i * 8));
+        }
+
+        return(result);
+    }
+
+    public static byte[] listToArray(List<Byte> list) {
+
+        byte[] result;
+
+        if(list == null) {
+
+            return(new byte[0]);
+        }
+
+        result = new byte[list.size()];
+
+        for(int i = 0; i < list.size(); i++) {
+
+            result[i] = list.get(i);
+        }
+
+        return(result);
+    }
+
+    public static List<Byte> stringToList(String str) {
+
+        ArrayList<Byte> result = new ArrayList<>();
+
+        for(Byte ch : str.getBytes()) {
+
+            result.add(ch);
+        }
+
+        return(result);
     }
 
     //____________________________________________________________________________________________________________________________________

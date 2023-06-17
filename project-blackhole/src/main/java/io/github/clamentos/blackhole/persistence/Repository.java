@@ -6,6 +6,7 @@ import io.github.clamentos.blackhole.common.WorkerManager;
 import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
+import io.github.clamentos.blackhole.persistence.query.QueryWrapper;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
