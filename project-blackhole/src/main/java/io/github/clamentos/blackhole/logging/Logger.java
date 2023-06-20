@@ -56,10 +56,10 @@ public class Logger extends WorkerManager<Log, LogWorker> {
                 log_queue = new LinkedBlockingQueue<>(ConfigurationProvider.MAX_LOG_QUEUE_SIZE);
                 log_workers = new LogWorker[ConfigurationProvider.LOG_WORKERS];
 
-                for(LogWorker worker : log_workers) {
+                for(int i = 0; i <log_workers.length; i++) {
 
-                    worker = new LogWorker(log_queue);
-                    worker.start();
+                    log_workers[i] = new LogWorker(i, log_queue);
+                    log_workers[i].start();
                 }
 
                 INSTANCE = temp = new Logger(log_queue, log_workers);

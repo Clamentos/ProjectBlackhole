@@ -30,11 +30,12 @@ public class QueryWorker extends Worker<QueryWrapper> {
 
     /**
      * Instantiate a new {@lonk QueryWorker}.
+     * @param identifier : The worker identifier.
      * @param query_queue : The resource queue from which the worker will consume.
     */
-    public QueryWorker(BlockingQueue<QueryWrapper> query_queue) {
+    public QueryWorker(int identifier, BlockingQueue<QueryWrapper> query_queue) {
 
-        super(query_queue);
+        super(identifier, query_queue);
         LOGGER = Logger.getInstance();
         LOGGER.log("Query worker started", LogLevel.SUCCESS);
     }

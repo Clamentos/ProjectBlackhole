@@ -3,6 +3,7 @@ package io.github.clamentos.blackhole.persistence;
 //________________________________________________________________________________________________________________________________________
 
 import io.github.clamentos.blackhole.persistence.entities.User;
+import io.github.clamentos.blackhole.web.session.UserSession;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -10,7 +11,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -20,6 +20,20 @@ import java.util.Map;
 public class EntityMapper {
 
     //____________________________________________________________________________________________________________________________________
+
+    public static UserSession resultToSession(ResultSet result, int user_id, byte post_permissions) throws SQLException {
+
+        HashMap<Long, Byte> resource_perms = new HashMap<>();
+        HashMap<Integer, Byte> user_perms = new HashMap<>();
+
+        if(result.next() == true) {
+
+            resource_perms.put(result.getLong(0), result.getByte(1));
+            user_perms.put(result.getInt(2), result.getByte(3));
+        }
+
+        return(new UserSession(user_id, post_permissions, user_perms, resource_perms));
+    }
 
     /**
      * <p><b>This method is thread safe.</b></p>
@@ -70,74 +84,19 @@ public class EntityMapper {
 
             user = new User(
 
-                ((columns & 0x00000001) > 0) ? result.getInt(0) : 0,
+                ((columns & 0x00000001) > 0) ? result.getInt(0) : null,
                 ((columns & 0x00000002) > 0) ? result.getString(1) : null,
                 ((columns & 0x00000004) > 0) ? result.getString(2) : null,
                 ((columns & 0x00000008) > 0) ? result.getString(3) : null,
-                ((columns & 0x00000010) > 0) ? result.getInt(4) : 0,
-                ((columns & 0x00000020) > 0) ? result.getInt(5) : 0,
-                ((columns & 0x00000021) > 0) ? result.getShort(6) : 0
+                ((columns & 0x00000010) > 0) ? result.getInt(4) : null,
+                ((columns & 0x00000020) > 0) ? result.getInt(5) : null,
+                ((columns & 0x00000020) > 0) ? result.getBoolean(6) : null,
+                ((columns & 0x00000021) > 0) ? result.getByte(7) : null,
+                ((columns & 0x00000020) > 0) ? result.getString(8) : null
             );
         }
 
         return(user);
-    }
-
-    public static Map<Long, Byte> resultToPermMap(ResultSet result) throws SQLException {
-
-        Map<Long, Byte> perms = new HashMap<>();
-        
-        while(result.next() == true) {
-
-            perms.put(result.getLong(0), result.getByte(1));
-        }
-
-        return(perms);
-    }
-
-    //____________________________________________________________________________________________________________________________________
-
-    public static List<Byte> numToBytes(long number, int length) {
-
-        List<Byte> result = new ArrayList<>();
-        
-        for(int i = 0; i < length; i++) {
-
-            result.add((byte)(number & (255 << i * 8) >> i * 8));
-        }
-
-        return(result);
-    }
-
-    public static byte[] listToArray(List<Byte> list) {
-
-        byte[] result;
-
-        if(list == null) {
-
-            return(new byte[0]);
-        }
-
-        result = new byte[list.size()];
-
-        for(int i = 0; i < list.size(); i++) {
-
-            result[i] = list.get(i);
-        }
-
-        return(result);
-    }
-
-    public static List<Byte> stringToList(String str) {
-
-        ArrayList<Byte> result = new ArrayList<>();
-
-        for(Byte ch : str.getBytes()) {
-
-            result.add(ch);
-        }
-
-        return(result);
     }
 
     //____________________________________________________________________________________________________________________________________

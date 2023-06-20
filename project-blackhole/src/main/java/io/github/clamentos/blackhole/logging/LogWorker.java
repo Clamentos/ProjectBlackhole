@@ -26,11 +26,12 @@ public class LogWorker extends Worker<Log> {
 
     /**
      * Instantiates a new log worker on the given log queue.
+     * @param identifier : The log worker identifier.
      * @param logs_queue : The log queue on which the thread will consume and log.
      */
-    public LogWorker(BlockingQueue<Log> logs_queue) {
+    public LogWorker(int identifier, BlockingQueue<Log> logs_queue) {
 
-        super(logs_queue);
+        super(identifier, logs_queue);
         findEligible();
         LogPrinter.printToConsole("Log worker started", LogLevel.SUCCESS);
     }

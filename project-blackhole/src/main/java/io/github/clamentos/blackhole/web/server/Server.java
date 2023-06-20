@@ -67,10 +67,10 @@ public class Server extends WorkerManager<Socket, RequestWorker> {
                 socket_queue = new LinkedBlockingQueue<>(ConfigurationProvider.MAX_REQUEST_QUEUE_SIZE);
                 request_workers = new RequestWorker[ConfigurationProvider.REQUEST_WORKERS];
 
-                for(RequestWorker worker : request_workers) {
+                for(int i = 0; i < request_workers.length; i++) {
 
-                    worker = new RequestWorker(socket_queue);
-                    worker.start();
+                    request_workers[i] = new RequestWorker(i, socket_queue);
+                    request_workers[i].start();
                 }
 
                 INSTANCE = temp = new Server(socket_queue, request_workers);

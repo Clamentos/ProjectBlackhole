@@ -1,8 +1,9 @@
 package io.github.clamentos.blackhole.persistence.entities;
 
-public record RoleResourceAccess(
+public record AllowUserToResource(
 
-    Short role_id,
+    Integer user_id,
     Long resource_id,
     Byte flags
+
 ) {}

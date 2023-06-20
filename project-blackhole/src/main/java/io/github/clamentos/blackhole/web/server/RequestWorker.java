@@ -30,11 +30,12 @@ public class RequestWorker extends Worker<Socket> {
 
     /**
      * Instantiates a new log worker on the given sockets queue.
+     * @param identifier : The worker identifier.
      * @param sockets_queue : The sockets queue on which the thread will consume and handle.
      */
-    public RequestWorker(BlockingQueue<Socket> sockets_queue) {
+    public RequestWorker(int identifier, BlockingQueue<Socket> sockets_queue) {
 
-        super(sockets_queue);
+        super(identifier, sockets_queue);
         LOGGER = Logger.getInstance();
         dispatcher = Dispatcher.getInstance();
         LOGGER.log("Request worker started", LogLevel.SUCCESS);

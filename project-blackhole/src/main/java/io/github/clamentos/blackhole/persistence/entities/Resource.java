@@ -1,6 +1,6 @@
 package io.github.clamentos.blackhole.persistence.entities;
 
-import io.github.clamentos.blackhole.persistence.EntityMapper;
+import io.github.clamentos.blackhole.common.utility.Converter;
 import io.github.clamentos.blackhole.web.dtos.Streamable;
 
 import java.sql.Blob;
@@ -15,14 +15,16 @@ public record Resource(
     Long id,
     String name,
     String description,
-    String data_hash,
-    Integer creation_time,
+    Integer creation_date,
     Integer last_updated,
+    Boolean visible,
+    String data_hash,
+    Byte datatype,
     Blob data,
 
     // FKs...
-    Short data_type_id,
-    Integer user_id
+    Integer owner_user_id,
+    Integer basic_category
 
 ) implements Streamable {
 
@@ -31,16 +33,17 @@ public record Resource(
 
         ArrayList<Byte> temp = new ArrayList<>();
 
-        if(id != null) temp.addAll(EntityMapper.numToBytes(id, 8));
-        if(name != null) temp.addAll(EntityMapper.stringToList(name));
-        if(description != null) temp.addAll(EntityMapper.stringToList(description));
-        if(data_hash != null) temp.addAll(EntityMapper.stringToList(data_hash));
-        if(creation_time != null) temp.addAll(EntityMapper.numToBytes(creation_time, 4));
-        if(last_updated != null) temp.addAll(EntityMapper.numToBytes(last_updated, 4));
+        if(id != null) temp.addAll(Converter.numToBytes(id, 8));
+        if(name != null) temp.addAll(Converter.stringToList(name));
+        if(description != null) temp.addAll(Converter.stringToList(description));
+        if(creation_date != null) temp.addAll(Converter.numToBytes(creation_date, 4));
+        if(last_updated != null) temp.addAll(Converter.numToBytes(last_updated, 4));
+        if(visible != null) temp.add(visible ? (byte)1 : (byte)0);
+        if(data_hash != null) temp.addAll(Converter.stringToList(data_hash));
         // TODO: blob streams...
-        if(data_type_id != null) temp.addAll(EntityMapper.numToBytes(data_type_id, 2));
-        if(user_id != null) temp.addAll(EntityMapper.numToBytes(user_id, 4));
+        if(owner_user_id != null) temp.addAll(Converter.numToBytes(owner_user_id, 4));
+        if(basic_category != null) temp.addAll(Converter.numToBytes(basic_category, 4));
 
-        return(EntityMapper.listToArray(temp));
+        return(Converter.listToArray(temp));
     }
 }

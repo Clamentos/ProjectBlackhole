@@ -59,10 +59,10 @@ public class Repository extends WorkerManager<QueryWrapper, QueryWorker> {
                 query_queue = new LinkedBlockingQueue<>();
                 query_workers = new QueryWorker[ConfigurationProvider.DB_CONNECTIONS];
 
-                for(QueryWorker worker : query_workers) {
+                for(int i = 0; i < query_workers.length; i++) {
 
-                    worker = new QueryWorker(query_queue);
-                    worker.start();
+                    query_workers[i] = new QueryWorker(i, query_queue);
+                    query_workers[i].start();
                 }
 
                 INSTANCE = temp = new Repository(query_queue, query_workers);

@@ -7,13 +7,13 @@ import java.util.ArrayList;
 
 /**
  * <p><b>Entity</b></p>
- * Resource Tag, used to categorize resources.
+ * Join table between two {@link Resource}.
+ * This entity represents the edges in the graph.
 */
-public record Tag(
-    
-    Integer id,
-    String name,
-    Integer creation_date
+public record Relation(
+
+    Integer source,
+    Integer destination
 
 ) implements Streamable {
 
@@ -22,9 +22,8 @@ public record Tag(
 
         ArrayList<Byte> temp = new ArrayList<>();
 
-        if(id != null) temp.addAll(Converter.numToBytes(id, 4));
-        if(name != null) temp.addAll(Converter.stringToList(name));
-        if(creation_date != null) temp.addAll(Converter.numToBytes(creation_date, 4));
+        if(source != null) temp.addAll(Converter.numToBytes(source, 4));
+        if(destination != null) temp.addAll(Converter.numToBytes(destination, 4));
 
         return(Converter.listToArray(temp));
     }

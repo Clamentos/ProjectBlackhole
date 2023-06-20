@@ -15,17 +15,20 @@ import java.util.concurrent.BlockingQueue;
 public abstract class Worker<T> extends Thread {
  
     private boolean running;
+    private int identifier;
     private BlockingQueue<T> resource_queue;
 
     //____________________________________________________________________________________________________________________________________
 
     /**
      * Instantiates a new worker on the given resource queue.
+     * @param identifier : The worker identifier.
      * @param resource_queue : The queue on which the thread will consume and do work.
     */
-    public Worker(BlockingQueue<T> resource_queue) {
+    public Worker(int identifier, BlockingQueue<T> resource_queue) {
 
         Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
+        this.identifier = identifier;
         this.resource_queue = resource_queue;
         running = false;
     }
@@ -51,6 +54,15 @@ public abstract class Worker<T> extends Thread {
                 catchInterrupted(exc);
             }
         }
+    }
+
+    /**
+     * Get the current worker identifier.
+     * @return the inìdentifier.
+    */
+    public int getIdentifier() {
+
+        return(identifier);
     }
 
     /**

@@ -32,6 +32,11 @@ public class ConfigurationProvider {
     public static final int MAX_REQUEST_QUEUE_SIZE = 10_000_000;
     public static final int MAX_SERVER_START_RETRIES = 3;
 
+    public static final boolean NEED_SESSION_FOR_TAG_CREATE = false;
+    public static final boolean NEED_SESSION_FOR_TAG_READ = false;
+    public static final boolean NEED_SESSION_FOR_TAG_UPDATE = false;
+    public static final boolean NEED_SESSION_FOR_TAG_DELETE = false;
+
     //____________________________________________________________________________________________________________________________________
 
     public static final String DB_URL = "jdbc:postgresql://localhost:5432/db_prova";

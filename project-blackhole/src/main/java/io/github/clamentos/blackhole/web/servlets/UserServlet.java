@@ -16,7 +16,6 @@ import io.github.clamentos.blackhole.web.dtos.Request;
 import io.github.clamentos.blackhole.web.dtos.Response;
 import io.github.clamentos.blackhole.web.dtos.ResponseStatus;
 import io.github.clamentos.blackhole.web.session.SessionService;
-import io.github.clamentos.blackhole.web.session.UserSession;
 
 import java.sql.SQLException;
 
@@ -117,7 +116,7 @@ public class UserServlet implements Servlet {
         QueryWrapper fetch_user = new QueryWrapper(
 
             QueryType.SELECT,
-            "SELECT * FROM Users WHERE username = ?",
+            "SELECT U.id, U.password_hash, U.post_permission FROM Users U WHERE U.username = ?",
             username
         );
 
@@ -127,7 +126,7 @@ public class UserServlet implements Servlet {
 
             if(fetch_user.getStatus() == true) {
 
-                user = EntityMapper.resultToUser(fetch_user.getResult(), 0x0000003F);
+                user = EntityMapper.resultToUser(fetch_user.getResult(), 0x00000089); //1,4,8
 
                 if(user != null) {
 
@@ -136,7 +135,7 @@ public class UserServlet implements Servlet {
                         fetch_permissions = new QueryWrapper(
 
                             QueryType.SELECT,
-                            "SELECT resource_id, flags FROM UserResourceAccesses WHERE user_id = ?",
+                            "SELECT UR.resource_id, UR.flags, UU.target_user_id, UU.flags FROM  AllowUsersToResources UR JOIN AllowUsersToUsers UU ON UR.user_id = UU.user_id WHERE UR.user_id = ?",
                             user.id()
                         );
 
@@ -147,12 +146,7 @@ public class UserServlet implements Servlet {
                             return(DtoParser.respondRaw(
 
                                 ResponseStatus.OK,
-                                session_service.insertSession(new UserSession(
-                                    
-                                    user.id(),
-                                    user.role_id(),
-                                    EntityMapper.resultToPermMap(fetch_permissions.getResult())
-                                )))    
+                                session_service.insertSession(EntityMapper.resultToSession(fetch_permissions.getResult(), user.id(), user.post_permissions())))    
                             );
                         }
                     }

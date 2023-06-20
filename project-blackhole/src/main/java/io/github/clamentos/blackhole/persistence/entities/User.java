@@ -1,9 +1,9 @@
 package io.github.clamentos.blackhole.persistence.entities;
 
-import java.util.ArrayList;
-
-import io.github.clamentos.blackhole.persistence.EntityMapper;
+import io.github.clamentos.blackhole.common.utility.Converter;
 import io.github.clamentos.blackhole.web.dtos.Streamable;
+
+import java.util.ArrayList;
 
 /**
  * <p><b>Entity</b></p>
@@ -15,9 +15,11 @@ public record User(
     String username,
     String email,
     String password_hash,
-    Integer registration_time,
+    Integer creation_date,
     Integer last_updated,
-    Short role_id
+    Boolean visible,
+    Byte post_permissions,
+    String about
 
 ) implements Streamable {
 
@@ -26,14 +28,16 @@ public record User(
 
         ArrayList<Byte> temp = new ArrayList<>();
 
-        if(id != null) temp.addAll(EntityMapper.numToBytes(id, 4));
-        if(username != null) temp.addAll(EntityMapper.stringToList(username));
-        if(email != null) temp.addAll(EntityMapper.stringToList(email));
-        if(password_hash != null) temp.addAll(EntityMapper.stringToList(password_hash));
-        if(registration_time != null) temp.addAll(EntityMapper.numToBytes(registration_time, 4));
-        if(last_updated != null) temp.addAll(EntityMapper.numToBytes(last_updated, 4));
-        if(role_id != null) temp.addAll(EntityMapper.numToBytes(role_id, 2));
+        if(id != null) temp.addAll(Converter.numToBytes(id, 4));
+        if(username != null) temp.addAll(Converter.stringToList(username));
+        if(email != null) temp.addAll(Converter.stringToList(email));
+        if(password_hash != null) temp.addAll(Converter.stringToList(password_hash));
+        if(creation_date != null) temp.addAll(Converter.numToBytes(creation_date, 4));
+        if(last_updated != null) temp.addAll(Converter.numToBytes(last_updated, 4));
+        if(visible != null) temp.add(visible ? (byte)1 : (byte)0);
+        if(post_permissions != null) temp.addAll(Converter.numToBytes(post_permissions, 1));
+        if(about != null) temp.addAll(Converter.stringToList(about));
 
-        return(EntityMapper.listToArray(temp));
+        return(Converter.listToArray(temp));
     }
 }
