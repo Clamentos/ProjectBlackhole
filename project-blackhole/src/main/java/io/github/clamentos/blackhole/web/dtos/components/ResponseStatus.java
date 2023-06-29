@@ -1,4 +1,6 @@
-package io.github.clamentos.blackhole.web.dtos;
+package io.github.clamentos.blackhole.web.dtos.components;
+
+import io.github.clamentos.blackhole.common.framework.Streamable;
 
 public enum ResponseStatus implements Streamable {
 

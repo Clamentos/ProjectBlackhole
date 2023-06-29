@@ -71,5 +71,10 @@ public class SessionService {
         return(id);
     }
 
+    public void removeSession(byte[] session_id) {
+
+        user_sessions.remove(session_id);
+    }
+
     //____________________________________________________________________________________________________________________________________
 }

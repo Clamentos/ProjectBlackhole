@@ -1,8 +1,6 @@
 package io.github.clamentos.blackhole.web.server;
 
-//________________________________________________________________________________________________________________________________________
-
-import io.github.clamentos.blackhole.common.Worker;
+import io.github.clamentos.blackhole.common.framework.Worker;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
 
@@ -52,12 +50,15 @@ public class RequestWorker extends Worker<Socket> {
 
         DataInputStream in;
         DataOutputStream out;
+        byte[] data;
         
         try {
 
             in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
             out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
-            dispatcher.dispatch(in, out);
+            data = dispatcher.dispatch(in.readAllBytes());
+            out.write(data);
+            out.flush();
             socket.close();
         }
 

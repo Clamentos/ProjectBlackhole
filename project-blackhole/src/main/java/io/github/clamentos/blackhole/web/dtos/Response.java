@@ -1,43 +1,46 @@
 package io.github.clamentos.blackhole.web.dtos;
 
-import java.util.List;
+//________________________________________________________________________________________________________________________________________
 
+import io.github.clamentos.blackhole.common.framework.Streamable;
+import io.github.clamentos.blackhole.web.dtos.components.ResponseStatus;
+
+//________________________________________________________________________________________________________________________________________
+
+/**
+ * Response class.
+ * This class holds all the fields and data that can be sent through a stream.
+*/
 public record Response(
 
     ResponseStatus response_status,
-    List<DataEntry> data_entries
+    Streamable data
 
 ) implements Streamable {
+
+    //____________________________________________________________________________________________________________________________________
 
     @Override
     public byte[] toBytes() {
 
+        byte[] status_bytes;
+        byte[] data_bytes;
         byte[] result;
-        byte[][] temp;
-        
-        if(data_entries != null) {
 
-            temp = new byte[data_entries.size()][];
+        status_bytes = response_status.toBytes();
 
-            for(int i = 0; i < data_entries.size(); i++) {
+        if(data != null) {
 
-                temp[i] = data_entries.get(i).toBytes();
-            }
-
-            result = new byte[(temp.length * temp[0].length) + 1];
-            result[0] = response_status.toBytes()[0];
-
-            for(int i = 0; i < result.length; i++) {
-
-                System.arraycopy(temp[i], 0, result, (i * temp[i].length) + 1, temp[i].length);
-            }
+            data_bytes = data.toBytes();
+            result = new byte[status_bytes.length + data_bytes.length];
+            System.arraycopy(status_bytes, 0, result, 0, 1);
+            System.arraycopy(data_bytes, 0, result, 1, data_bytes.length);
+            
+            return(result);
         }
 
-        else {
-
-            result = new byte[]{response_status.toBytes()[0]};
-        }
-
-        return(result);
+        return(status_bytes);
     }
+
+    //____________________________________________________________________________________________________________________________________
 }

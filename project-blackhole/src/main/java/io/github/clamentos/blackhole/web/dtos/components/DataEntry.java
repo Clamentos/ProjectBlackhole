@@ -1,4 +1,6 @@
-package io.github.clamentos.blackhole.web.dtos;
+package io.github.clamentos.blackhole.web.dtos.components;
+
+import io.github.clamentos.blackhole.common.framework.Streamable;
 
 public record DataEntry(
 
@@ -27,3 +29,10 @@ public record DataEntry(
         return(result);
     }
 }
+
+/*
+ * if data_type == Type.ARRAY then:
+ * 
+ *     length: number of elements in the array
+ *     data:   the array itseld (composed of type + length + data, as usual)
+*/

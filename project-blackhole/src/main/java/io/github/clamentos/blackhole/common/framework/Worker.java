@@ -1,4 +1,4 @@
-package io.github.clamentos.blackhole.common;
+package io.github.clamentos.blackhole.common.framework;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -8,24 +8,25 @@ import java.util.concurrent.BlockingQueue;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * Abstract worker thread class that can be started and stopped.
- * This worker periodically waits for resources to be placed in the queue before doing work.
- * @param <T> T : The type of resource that the queue holds.
+ * <p>Abstract worker thread class that can be started and stopped.</p>
+ * <p>This worker periodically waits for resources to be placed in the queue before doing work.</p>
+ * @param <R> R : The type of resource that the queue holds.
 */
-public abstract class Worker<T> extends Thread {
+public abstract class Worker<R> extends Thread implements WorkerSpec {
  
     private boolean running;
     private int identifier;
-    private BlockingQueue<T> resource_queue;
+    private BlockingQueue<R> resource_queue;
 
     //____________________________________________________________________________________________________________________________________
 
     /**
-     * Instantiates a new worker on the given resource queue.
+     * <p><b>This method is thread safe.</b></p>
+     * Instantiates a new worker with the given resource queue.
      * @param identifier : The worker identifier.
      * @param resource_queue : The queue on which the thread will consume and do work.
     */
-    public Worker(int identifier, BlockingQueue<T> resource_queue) {
+    public Worker(int identifier, BlockingQueue<R> resource_queue) {
 
         Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
         this.identifier = identifier;
@@ -38,7 +39,7 @@ public abstract class Worker<T> extends Thread {
     @Override
     public void run() {
 
-        T elem;
+        R elem;
         running = true;
 
         while(running == true) {
@@ -57,40 +58,45 @@ public abstract class Worker<T> extends Thread {
     }
 
     /**
-     * Get the current worker identifier.
-     * @return the inìdentifier.
+     * <p><b>This method is thread safe.</b></p>
+     * {@inheritDoc}
     */
+    @Override
     public int getIdentifier() {
 
         return(identifier);
     }
 
     /**
-     * Get the current status of the worker.
-     * @return {@code true} if running, {@code false} if not.
+     * <p><b>This method is thread safe.</b></p>
+     * {@inheritDoc}
     */
+    @Override
     public boolean getRunning() {
 
         return(running);
     }
 
     /**
-     * Sets the running flag of the worker.
+     * <p><b>This method is thread safe.</b></p>
+     * {@inheritDoc}
      * This method does not guarantee that the worker will stop as it may still be blocked on the queue.
      * After calling {@code halt()} the worker must also be interrupted
-     * by calling the {@code interrupt()} method, which will cause the {@link Worker} to check the running flag.
+     * by calling the {@code interrupt()} method,
+     * which will cause the {@link Worker} to check the running flag.
     */
+    @Override
     public void halt() {
 
         running = false;
     }
 
     /**
-     * Method that does the actual processing.
-     * After fetching the resource from the queue, the {@link Worker} will call this method.
+     * <p>Method that does the actual processing.</p>
+     * <p>After fetching the resource from the queue, the {@link Worker} will call this method.</p>
      * @param resource : The resource.
     */
-    public abstract void doWork(T resource);
+    public abstract void doWork(R resource);
 
     /**
      * Method to handle the potential {@link InterruptedException} thrown while waiting on the queue.

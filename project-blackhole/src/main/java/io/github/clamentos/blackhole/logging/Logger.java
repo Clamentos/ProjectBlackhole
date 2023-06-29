@@ -2,8 +2,8 @@ package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.common.WorkerManager;
 import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
+import io.github.clamentos.blackhole.common.framework.WorkerManager;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -12,6 +12,7 @@ import java.util.concurrent.locks.ReentrantLock;
 //________________________________________________________________________________________________________________________________________
 
 /**
+ * <p><b>This class is a singleton.</b></p>
  * Logging class responsible for managing the logger threads and inserting the logs into the queue.
 */
 public class Logger extends WorkerManager<Log, LogWorker> {
@@ -26,15 +27,15 @@ public class Logger extends WorkerManager<Log, LogWorker> {
     private Logger(BlockingQueue<Log> log_queue, LogWorker[] log_workers) {
         
         super(log_queue, log_workers);
-        min_console_log_level = ConfigurationProvider.MINIMUM_CONSOLE_LOG_LEVEL;
-        LogPrinter.printToConsole("Logger instantiated and workers started", LogLevel.SUCCESS);
+        min_console_log_level = ConfigurationProvider.MIN_CONSOLE_LOG_LEVEL;
+        LogPrinter.printToConsole("Logger instantiated and workers started.", LogLevel.SUCCESS);
     }
 
     //____________________________________________________________________________________________________________________________________
 
     /**
      * <p><b>This method is thread safe.</b></p>
-     * Gets the Logger instance.
+     * <p>Gets the Logger instance.</p>
      * If the instance doesn't exist, create it with the values configured in
      * {@link ConfigurationProvider} and start the workers.
      * @return The Logger instance.
@@ -54,7 +55,7 @@ public class Logger extends WorkerManager<Log, LogWorker> {
             if(temp == null) {
 
                 log_queue = new LinkedBlockingQueue<>(ConfigurationProvider.MAX_LOG_QUEUE_SIZE);
-                log_workers = new LogWorker[ConfigurationProvider.LOG_WORKERS];
+                log_workers = new LogWorker[ConfigurationProvider.NUM_LOG_WORKERS];
 
                 for(int i = 0; i <log_workers.length; i++) {
 
@@ -75,7 +76,7 @@ public class Logger extends WorkerManager<Log, LogWorker> {
 
     /**
      * <p><b>This method is thread safe.</b></p>
-     * Adds the message to the log queue.
+     * <p>Adds the message to the log queue.</p>
      * If there is no space in the queue, this method will block the thread.
      * @param message : The message to be logged.
      * @param log_level : The severity of the message.

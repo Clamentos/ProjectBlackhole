@@ -2,9 +2,10 @@ package io.github.clamentos.blackhole.common.config;
 
 //________________________________________________________________________________________________________________________________________
 
+import io.github.clamentos.blackhole.common.framework.Servlet;
 import io.github.clamentos.blackhole.persistence.Repository;
 import io.github.clamentos.blackhole.web.server.Server;
-import io.github.clamentos.blackhole.web.servlets.Servlet;
+import io.github.clamentos.blackhole.web.servlets.TagServlet;
 import io.github.clamentos.blackhole.web.servlets.UserServlet;
 import io.github.clamentos.blackhole.web.session.SessionService;
 
@@ -13,7 +14,9 @@ import java.security.NoSuchAlgorithmException;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * This class is responsible for initializing and injecting some hardcoded dependencies.
+ * <p>Static dependency injector.</p>
+ * <p>Use the method {@link Container#init()} at the beginning of the main
+ * to initialize and inject the dependencies.</p>
 */
 public class Container {
 
@@ -25,17 +28,18 @@ public class Container {
     //____________________________________________________________________________________________________________________________________
 
     /**
-     * <p><b>This method is NOT thread safe and should be called at the beginning.</b></p>
-     * This method will instantiate the specified objects.
+     * <p><b>This method is NOT thread safe and should be called at the beginning of everything.</b></p>
+     * This method will instantiate and inject the specified objects (primarely the servlets).
      * @throws NoSuchAlgorithmException if the method fails to instantiate the {@link SessionService}.
     */
     public static void init() throws NoSuchAlgorithmException {
         
         repository = Repository.getInstance();
         session_service = SessionService.getInstance();
-
-        servlets = new Servlet[1];
+        servlets = new Servlet[2];
+        
         servlets[0] = UserServlet.getInstance(repository, session_service);
+        servlets[1] = TagServlet.getInstance(repository, session_service);
 
         web_server = Server.getInstance();
     }

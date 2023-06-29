@@ -12,10 +12,11 @@ import java.util.concurrent.locks.ReentrantLock;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * Global exception handler class.
- * Every thread should specify this class as its default exception handler,
+ * <p><b>This class is a singleton.</b></p>
+ * <p>Global exception handler.</p>
+ * <p>Every thread should specify this class as its default exception handler,
  * in order to handle unexpected exceptions that would otherwise cause the thread
- * to terminate.
+ * to terminate.</p>
 */
 public class GlobalExceptionHandler implements UncaughtExceptionHandler {
 
@@ -25,9 +26,11 @@ public class GlobalExceptionHandler implements UncaughtExceptionHandler {
     //____________________________________________________________________________________________________________________________________
 
     /**
-     * Get the GlobalExceptionHandler instance. If the instance doesn't exist, create it.
+     * <p><b>This method is thread safe.</b></p>
+     * <p>Get the GlobalExceptionHandler instance.
+     * If the instance doesn't exist, create it.</p>
      * @return The GlobalExceptionHandler instance.
-     */
+    */
     public static GlobalExceptionHandler getInstance() {
 
         GlobalExceptionHandler temp = INSTANCE;
@@ -51,8 +54,8 @@ public class GlobalExceptionHandler implements UncaughtExceptionHandler {
     //____________________________________________________________________________________________________________________________________
 
     /**
-     * Catch the uncaught exception!
-     * As of now, this method will only print the exception to the console.
+     * <p>Catch the uncaught exception!
+     * As of now, this method will only print the exception to the console.</p>
      * @param thread : The thread that threw the exception.
      * @param exc : The actual exception.
     */

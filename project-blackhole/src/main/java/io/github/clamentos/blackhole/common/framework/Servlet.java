@@ -1,14 +1,16 @@
-package io.github.clamentos.blackhole.web.servlets;
+package io.github.clamentos.blackhole.common.framework;
 
 //________________________________________________________________________________________________________________________________________
 
 import io.github.clamentos.blackhole.web.dtos.Request;
 import io.github.clamentos.blackhole.web.dtos.Response;
+import io.github.clamentos.blackhole.web.dtos.components.Entities;
 
 //________________________________________________________________________________________________________________________________________
 
 /**
- * Servlet interface. Servlets must implement this interface in order to be considered.
+ * <p>Servlet interface.</p>
+ * <p>Servlets must implement this interface in order to be injected.</p>
 */
 public interface Servlet {
 
@@ -16,13 +18,13 @@ public interface Servlet {
     
     /**
      * Get the resource_id mathing the servlet.
-     * @return The mathing reasource_id
+     * @return The mathing reasource
     */
-    public byte matches();
+    public Entities matches();
 
     /**
-     * Handle a request.
-     * @param request : The request object.
+     * Handle the request.
+     * @param request : The raw input request.
      * @return The response.
     */
     public Response handle(Request request);
@@ -52,6 +54,7 @@ public interface Servlet {
  *         5: double -> length = 8
  *         6: string -> length = use length(4)
  *         7: raw -> length = use length(4)
+ *         8: array -> length = number of elements. No data for this entry
  * 
  *  
  * 

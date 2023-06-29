@@ -1,9 +1,7 @@
 package io.github.clamentos.blackhole.persistence;
 
-//________________________________________________________________________________________________________________________________________
-
-import io.github.clamentos.blackhole.common.Worker;
 import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
+import io.github.clamentos.blackhole.common.framework.Worker;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
 import io.github.clamentos.blackhole.persistence.query.QueryType;
@@ -29,6 +27,7 @@ public class QueryWorker extends Worker<QueryWrapper> {
     //____________________________________________________________________________________________________________________________________
 
     /**
+     * <p><b>This method is thread safe.</b></p>
      * Instantiate a new {@lonk QueryWorker}.
      * @param identifier : The worker identifier.
      * @param query_queue : The resource queue from which the worker will consume.
@@ -43,6 +42,7 @@ public class QueryWorker extends Worker<QueryWrapper> {
     //____________________________________________________________________________________________________________________________________
 
     /**
+     * <p><b>This method is thread safe.</b></p>
      * Method that executes the queries.
      * @param query : The query to execute.
     */
@@ -86,6 +86,7 @@ public class QueryWorker extends Worker<QueryWrapper> {
     }
 
     /**
+     * <p><b>This method is thread safe.</b></p>
      * {@inheritDoc}
     */
     @Override

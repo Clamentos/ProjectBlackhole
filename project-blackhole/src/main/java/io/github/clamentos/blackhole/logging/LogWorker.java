@@ -2,8 +2,8 @@ package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.common.Worker;
 import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
+import io.github.clamentos.blackhole.common.framework.Worker;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -28,7 +28,7 @@ public class LogWorker extends Worker<Log> {
      * Instantiates a new log worker on the given log queue.
      * @param identifier : The log worker identifier.
      * @param logs_queue : The log queue on which the thread will consume and log.
-     */
+    */
     public LogWorker(int identifier, BlockingQueue<Log> logs_queue) {
 
         super(identifier, logs_queue);

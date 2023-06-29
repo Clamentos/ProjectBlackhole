@@ -4,16 +4,13 @@ package io.github.clamentos.blackhole.web.server;
 
 import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 import io.github.clamentos.blackhole.common.config.Container;
+import io.github.clamentos.blackhole.common.framework.Servlet;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
-import io.github.clamentos.blackhole.web.dtos.DtoParser;
+import io.github.clamentos.blackhole.web.dtos.Request;
 import io.github.clamentos.blackhole.web.dtos.Response;
-import io.github.clamentos.blackhole.web.dtos.ResponseStatus;
-import io.github.clamentos.blackhole.web.servlets.Servlet;
-
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import io.github.clamentos.blackhole.web.dtos.components.Entities;
+import io.github.clamentos.blackhole.web.dtos.components.ResponseStatus;
 
 import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -29,7 +26,7 @@ public class Dispatcher {
     private static ReentrantLock lock = new ReentrantLock();
 
     private final Logger LOGGER;
-    private HashMap<Byte, Servlet> servlets;
+    private HashMap<Entities, Servlet> servlets;
 
     //____________________________________________________________________________________________________________________________________
 
@@ -79,36 +76,22 @@ public class Dispatcher {
     /**
      * <p><b>This method is thread safe.</b></p>
      * Dispatch the request to the proper servlet.
-     * @param input_stream : The stream for reading data.
-     * @param output_stream : The stream for writing data.
+     * @param raw_request : The raw request bytes.
+     * @return The raw response bytes.
     */
-    public void dispatch(DataInputStream input_stream, DataOutputStream output_stream) {
+    public byte[] dispatch(byte[] raw_request) {
 
-        Response response;
-        
+        Request request;
+
         try {
 
-            response = servlets.get(input_stream.readByte()).handle(DtoParser.parseRequest(input_stream));
-            output_stream.write(response.toBytes());
-            output_stream.flush();
+            request = new Request(raw_request);
+            return(servlets.get(request.getEntityType()).handle(request).toBytes());
         }
 
-        catch(IOException exc) {
+        catch(IllegalArgumentException exc) {
 
-            LOGGER.log("Could not read from socket stream, IOException: " + exc.getMessage(), LogLevel.WARNING);
-        }
-
-        catch(NullPointerException exc) {
-
-            try {
-
-                output_stream.write(ResponseStatus.ERROR.toBytes());
-            }
-
-            catch(IOException exc2) {
-
-                LOGGER.log("Could not write to socket stream, IOException: " + exc2.getMessage(), LogLevel.WARNING);
-            }
+            return(new Response(ResponseStatus.ERROR, null).toBytes());
         }
     }
 

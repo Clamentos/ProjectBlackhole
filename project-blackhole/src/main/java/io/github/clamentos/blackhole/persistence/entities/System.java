@@ -1,4 +1,4 @@
-package io.github.clamentos.blackhole.analytics;
+package io.github.clamentos.blackhole.persistence.entities;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -11,7 +11,7 @@ import java.lang.management.ThreadInfo;
 /**
  * Simple record that holds some application statistics, such as memory and thread info.
 */
-public record Status(
+public record System(
 
     MemoryUsage heap_info,
     MemoryUsage non_heap_info,
@@ -24,7 +24,7 @@ public record Status(
     /**
      * Aquire an snapshot of the current application status.
     */
-    public Status {
+    public System {
 
         heap_info =  ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
         non_heap_info = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();

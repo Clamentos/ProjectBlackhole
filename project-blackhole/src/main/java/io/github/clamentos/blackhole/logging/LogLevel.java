@@ -7,10 +7,10 @@ import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * Enumeration listing al the log levels.
+ * <p>Enumeration listing al the log levels.</p>
  * Each entry is composed of the log level name + color + destination.
  * The destination must be configured in the {@link ConfigurationProvider}.
- * The log levels in increasing order are:
+ * <p>The log levels in increasing order are:</p>
  * <ol>
  *     <li>DEBUG</li>
  *     <li>INFO</li>

@@ -3,19 +3,21 @@ package io.github.clamentos.blackhole.web.servlets;
 //________________________________________________________________________________________________________________________________________
 
 import at.favre.lib.crypto.bcrypt.BCrypt;
-
+import io.github.clamentos.blackhole.common.framework.Servlet;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
-import io.github.clamentos.blackhole.persistence.EntityMapper;
 import io.github.clamentos.blackhole.persistence.Repository;
 import io.github.clamentos.blackhole.persistence.entities.User;
 import io.github.clamentos.blackhole.persistence.query.QueryType;
 import io.github.clamentos.blackhole.persistence.query.QueryWrapper;
-import io.github.clamentos.blackhole.web.dtos.DtoParser;
 import io.github.clamentos.blackhole.web.dtos.Request;
 import io.github.clamentos.blackhole.web.dtos.Response;
-import io.github.clamentos.blackhole.web.dtos.ResponseStatus;
+import io.github.clamentos.blackhole.web.dtos.UserDetails;
+import io.github.clamentos.blackhole.web.dtos.components.Entities;
+import io.github.clamentos.blackhole.web.dtos.components.ResponseStatus;
+import io.github.clamentos.blackhole.web.dtos.queries.UserLogin;
 import io.github.clamentos.blackhole.web.session.SessionService;
+import io.github.clamentos.blackhole.web.session.UserSession;
 
 import java.sql.SQLException;
 
@@ -52,7 +54,7 @@ public class UserServlet implements Servlet {
      * Get the UserServlet instance.
      * If the instance doesn't exist, create it.
      * @return The UserServlet instance.
-     */
+    */
     public static UserServlet getInstance(Repository repository, SessionService session_service) {
 
         UserServlet temp = INSTANCE;
@@ -81,9 +83,9 @@ public class UserServlet implements Servlet {
      * Always 1 in this case.
     */
     @Override
-    public byte matches() {
+    public Entities matches() {
 
-        return(1);
+        return(Entities.USER);
     }
 
     /**
@@ -92,7 +94,7 @@ public class UserServlet implements Servlet {
     @Override
     public Response handle(Request request) {
 
-        switch(request.method()) {
+        switch(request.getMethod()) {
 
             case CREATE: return(null);
             case READ: return(null);
@@ -109,15 +111,17 @@ public class UserServlet implements Servlet {
     private Response login(Request request) {
 
         User user;
-        String username = new String(request.data_entries().get(0).data());
-        String password = new String(request.data_entries().get(1).data());
+        UserLogin login_info;
+        QueryWrapper fetch_user;
         QueryWrapper fetch_permissions;
+        UserSession session;
 
-        QueryWrapper fetch_user = new QueryWrapper(
+        login_info = UserLogin.deserialize(request.getData());
+        fetch_user = new QueryWrapper(
 
             QueryType.SELECT,
             "SELECT U.id, U.password_hash, U.post_permission FROM Users U WHERE U.username = ?",
-            username
+            login_info.username()
         );
 
         repository.execute(fetch_user, true);
@@ -126,11 +130,11 @@ public class UserServlet implements Servlet {
 
             if(fetch_user.getStatus() == true) {
 
-                user = EntityMapper.resultToUser(fetch_user.getResult(), 0x00000089); //1,4,8
+                user = User.mapSingle(null, 0b0010001001);
 
                 if(user != null) {
 
-                    if(BCrypt.verifyer().verify(password.toCharArray(), user.password_hash()).verified) {
+                    if(BCrypt.verifyer().verify(login_info.password().toCharArray(), user.password_hash()).verified) {
 
                         fetch_permissions = new QueryWrapper(
 
@@ -143,10 +147,17 @@ public class UserServlet implements Servlet {
 
                         if(fetch_permissions.getStatus() == true) {
 
-                            return(DtoParser.respondRaw(
+                            session = UserSession.mapSingle(fetch_permissions.getResult(), user.id());
+                            byte[] session_id = session_service.insertSession(session);
+                            UserDetails details = new UserDetails(session_id);
 
-                                ResponseStatus.OK,
-                                session_service.insertSession(EntityMapper.resultToSession(fetch_permissions.getResult(), user.id(), user.post_permissions())))    
+                            return(
+
+                                new Response(
+
+                                    ResponseStatus.OK,
+                                    details
+                                )
                             );
                         }
                     }

@@ -3,6 +3,7 @@ package io.github.clamentos.blackhole.persistence.query;
 //________________________________________________________________________________________________________________________________________
 
 import java.sql.ResultSet;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,8 +11,8 @@ import java.util.List;
 
 /**
  * Custom query object that acts as a bridge between the servlets and the query workers.
+ * The provided getter and setter methods are all standard and thread safe.
 */
-// TODO: finish docs
 public class QueryWrapper {
 
     private Boolean status;
@@ -22,6 +23,13 @@ public class QueryWrapper {
 
     //____________________________________________________________________________________________________________________________________
 
+    /**
+     * <p><b>This method is thread safe.</b></p>
+     * Instantiate a new {@link QueryWrapper} with the given parameters.
+     * @param query_type : The query type, from the {@link QueryType} enum.
+     * @param sql : The actual SQL string. Use the '?' to denote a parameter.
+     * @param parameters : The query parameter list. Parameters must be ordered correctly.
+    */
     public QueryWrapper(QueryType query_type, String sql, List<Object> parameters) {
 
         status = null;
@@ -31,6 +39,13 @@ public class QueryWrapper {
         result = null;
     }
 
+    /**
+     * <p><b>This method is thread safe.</b></p>
+     * Instantiate a new {@link QueryWrapper} with the given parameters.
+     * @param query_type : The query type, from the {@link QueryType} enum.
+     * @param sql : The actual SQL string. Use the '?' to denote a parameter.
+     * @param parameter : The query parameter.
+    */
     public QueryWrapper(QueryType query_type, String sql, Object parameter) {
 
         status = null;

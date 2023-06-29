@@ -1,9 +1,7 @@
 package io.github.clamentos.blackhole.web.server;
 
-//________________________________________________________________________________________________________________________________________
-
-import io.github.clamentos.blackhole.common.WorkerManager;
 import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
+import io.github.clamentos.blackhole.common.framework.WorkerManager;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
 
@@ -65,7 +63,7 @@ public class Server extends WorkerManager<Socket, RequestWorker> {
             if(temp == null) {
 
                 socket_queue = new LinkedBlockingQueue<>(ConfigurationProvider.MAX_REQUEST_QUEUE_SIZE);
-                request_workers = new RequestWorker[ConfigurationProvider.REQUEST_WORKERS];
+                request_workers = new RequestWorker[ConfigurationProvider.NUM_REQUEST_WORKERS];
 
                 for(int i = 0; i < request_workers.length; i++) {
 
@@ -146,7 +144,7 @@ public class Server extends WorkerManager<Socket, RequestWorker> {
                 try {
 
                     server_socket = new ServerSocket(ConfigurationProvider.SERVER_PORT);
-                    server_socket.setSoTimeout(ConfigurationProvider.CONNECTION_TIMEOUT);
+                    server_socket.setSoTimeout(ConfigurationProvider.MAX_CONNECTION_TIMEOUT);
                     server_running = true;
 
                     return(true);

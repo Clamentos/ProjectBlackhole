@@ -1,7 +1,7 @@
 package io.github.clamentos.blackhole.persistence.entities;
 
+import io.github.clamentos.blackhole.common.framework.Streamable;
 import io.github.clamentos.blackhole.common.utility.Converter;
-import io.github.clamentos.blackhole.web.dtos.Streamable;
 
 import java.util.ArrayList;
 
