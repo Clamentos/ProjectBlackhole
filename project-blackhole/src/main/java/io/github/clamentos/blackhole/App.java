@@ -7,7 +7,7 @@ import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 import io.github.clamentos.blackhole.common.config.Container;
 import io.github.clamentos.blackhole.common.exceptions.GlobalExceptionHandler;
 import io.github.clamentos.blackhole.logging.LogLevel;
-import io.github.clamentos.blackhole.logging.Logger;
+import io.github.clamentos.blackhole.logging.LogPrinter;
 
 import java.io.IOException;
 
@@ -33,12 +33,11 @@ public class App {
 
     public static void main(String[] args) {
 
-        Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
-        Logger logger = Logger.getInstance();
-
         try {
 
+            ConfigurationProvider.init();
             Container.init();
+            Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
 
             // initialize db schema
             if(ConfigurationProvider.INIT_SCHEMA) {
@@ -59,7 +58,7 @@ public class App {
 
                 catch(SQLException | InvalidPathException | IOException exc) {
 
-                    logger.log("Could not initialize schema, " + exc.getClass().getSimpleName() + ": " + exc.getMessage() + " skipping...", LogLevel.WARNING);
+                    LogPrinter.printToConsole("Could not initialize schema, " + exc.getClass().getSimpleName() + ": " + exc.getMessage() + " skipping...", LogLevel.WARNING);
                 }
             }
 
@@ -68,7 +67,7 @@ public class App {
 
         catch(NoSuchAlgorithmException exc) {
 
-            logger.log("Could not fully start the app, NoSuchAlgorithmException: " + exc.getMessage(), LogLevel.ERROR);
+            LogPrinter.printToConsole("Could not fully start the app, NoSuchAlgorithmException: " + exc.getMessage(), LogLevel.ERROR);
             System.exit(1);
         }
     }

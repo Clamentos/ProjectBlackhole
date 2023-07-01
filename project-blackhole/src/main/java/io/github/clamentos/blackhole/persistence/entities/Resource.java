@@ -8,7 +8,21 @@ import java.util.ArrayList;
 
 /**
  * <p><b>Entity</b></p>
- * Resource. Represents the nodes in the graph.
+ * This class corresponds to the <b>Resources</b> entity in the database.
+ * The order of the fields must match the db schema.
+ * <ol>
+ *     <li>{@code Integer id}: unique, not null</li>
+ *     <li>{@code String name}: unique, not null, max 128 long</li>
+ *     <li>{@code String description}: not null, max 1024 long</li>
+ *     <li>{@code Integer creation_date}: not null</li>
+ *     <li>{@code Integer last_updated}: not null</li>
+ *     <li>{@code Boolean visible}: not null</li>
+ *     <li>{@code String data_hash}: not null, max 22 long</li>
+ *     <li>{@code Byte datatype}: not null</li>
+ *     <li>{@code Blob data}</li>
+ *     <li>{@code Integer owner_user_id}: not null</li>
+ *     <li>{@code Integer basic_category}: not null</li>
+ * </ol>
 */
 public record Resource(
 
@@ -28,6 +42,8 @@ public record Resource(
 
 ) implements Streamable {
 
+    // TODO: finish...
+
     @Override
     public byte[] toBytes() {
 
@@ -40,7 +56,7 @@ public record Resource(
         if(last_updated != null) temp.addAll(Converter.numToBytes(last_updated, 4));
         if(visible != null) temp.add(visible ? (byte)1 : (byte)0);
         if(data_hash != null) temp.addAll(Converter.stringToList(data_hash));
-        // TODO: blob streams...
+        // blob streams...
         if(owner_user_id != null) temp.addAll(Converter.numToBytes(owner_user_id, 4));
         if(basic_category != null) temp.addAll(Converter.numToBytes(basic_category, 4));
 

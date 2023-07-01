@@ -5,6 +5,7 @@ package io.github.clamentos.blackhole.common.config;
 import io.github.clamentos.blackhole.common.framework.Servlet;
 import io.github.clamentos.blackhole.persistence.Repository;
 import io.github.clamentos.blackhole.web.server.Server;
+import io.github.clamentos.blackhole.web.servlets.EchoServlet;
 import io.github.clamentos.blackhole.web.servlets.TagServlet;
 import io.github.clamentos.blackhole.web.servlets.UserServlet;
 import io.github.clamentos.blackhole.web.session.SessionService;
@@ -28,7 +29,7 @@ public class Container {
     //____________________________________________________________________________________________________________________________________
 
     /**
-     * <p><b>This method is NOT thread safe and should be called at the beginning of everything.</b></p>
+     * <p><b>This method is NOT thread safe and should be called at the beginning of everything after initializing the {@link ConfigurationProvider}.</b></p>
      * This method will instantiate and inject the specified objects (primarely the servlets).
      * @throws NoSuchAlgorithmException if the method fails to instantiate the {@link SessionService}.
     */
@@ -36,10 +37,11 @@ public class Container {
         
         repository = Repository.getInstance();
         session_service = SessionService.getInstance();
-        servlets = new Servlet[2];
+        servlets = new Servlet[3];
         
         servlets[0] = UserServlet.getInstance(repository, session_service);
         servlets[1] = TagServlet.getInstance(repository, session_service);
+        servlets[2] = EchoServlet.getInstance();
 
         web_server = Server.getInstance();
     }

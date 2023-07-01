@@ -22,7 +22,7 @@ import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 */
 public enum LogLevel {
 
-    DEBUG("DEBUG ", "\u001B[30m", ConfigurationProvider.DEBUG_LEVEL_TO_FILE),
+    DEBUG("DEBUG  ", "\u001B[30m", ConfigurationProvider.DEBUG_LEVEL_TO_FILE),
     INFO("INFO   ", "\u001B[34m", ConfigurationProvider.INFO_LEVEL_TO_FILE),
     SUCCESS("SUCCESS", "\u001B[32m", ConfigurationProvider.SUCCESS_LEVEL_TO_FILE),
     NOTE("NOTE   ", "\u001B[35m", ConfigurationProvider.NOTE_LEVEL_TO_FILE),

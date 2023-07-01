@@ -1,10 +1,10 @@
 package io.github.clamentos.blackhole.persistence.entities;
 
-import io.github.clamentos.blackhole.common.framework.Streamable;
-
 //________________________________________________________________________________________________________________________________________
 
+import io.github.clamentos.blackhole.common.framework.Streamable;
 import io.github.clamentos.blackhole.common.utility.Converter;
+import io.github.clamentos.blackhole.web.dtos.components.DataEntry;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -16,7 +16,26 @@ import java.util.List;
 
 /**
  * <p><b>Entity</b></p>
- * The User.
+ * This class corresponds to the <b>Users</b> entity in the database.
+ * The order of the fields must match the db schema.
+ * <ol>
+ *     <li>{@code Integer id}: unique, not null</li>
+ *     <li>{@code String username}: unique, not null, max 32 long</li>
+ *     <li>{@code String email}: unique, not null, max 64 long</li>
+ *     <li>{@code String password_hash}: not null, max 128 long</li>
+ *     <li>{@code Integer creation_date}: not null</li>
+ *     <li>{@code Integer last_updated}: not null</li>
+ *     <li>{@code Byte post_permissions}: not null</li>
+ *     <li>{@code String about}: max 1024 long</li>
+ *     <li>{@code Byte flags}: not null</li>
+ * </ol>
+ * The column {@link User#flags} is a small list of account flags:
+ * <ol>
+ *     <li>{@code 0b00000001}: enabled</li>
+ *     <li>{@code 0b00000010}: expired</li>
+ *     <li>{@code 0b00000100}: password expired</li>
+ *     <li>{@code 0b00001000}: private</li>
+ * </ol>
 */
 public record User(
 
@@ -26,14 +45,18 @@ public record User(
     String password_hash,
     Integer creation_date,
     Integer last_updated,
-    Boolean visible,
     Byte post_permissions,
-    String about
+    String about,
+    Byte flags
 
 ) implements Streamable {
 
     //____________________________________________________________________________________________________________________________________
 
+    /**
+     * <p><b>This method is thread safe.</b></p>
+     * {@inheritDoc}
+    */
     @Override
     public byte[] toBytes() {
 
@@ -45,11 +68,84 @@ public record User(
         if(password_hash != null) temp.addAll(Converter.stringToList(password_hash));
         if(creation_date != null) temp.addAll(Converter.numToBytes(creation_date, 4));
         if(last_updated != null) temp.addAll(Converter.numToBytes(last_updated, 4));
-        if(visible != null) temp.add(visible ? (byte)1 : (byte)0);
         if(post_permissions != null) temp.addAll(Converter.numToBytes(post_permissions, 1));
         if(about != null) temp.addAll(Converter.stringToList(about));
+        if(flags != null) temp.addAll(Converter.numToBytes(flags, 1));
 
         return(Converter.listToArray(temp));
+    }
+
+    /**
+     * <p><b>This method is thread safe.</b></p>
+     * Deserialize the list of {@link DataEntry} in a list of {@link User}.
+     * @param entries : The list of {@link DataEntry}.
+     * @return The never null list of {@link User}.
+     * @throw IllegalArgumentException If the input list is null, empty
+     *        or if a {@link DataEntry} is not of correct type.
+    */
+    public static List<User> deserialize(List<DataEntry> entries) throws IllegalArgumentException {
+
+        ArrayList<User> users = new ArrayList<>();
+        int fields;
+        int i;
+
+        Integer id;
+        String username;
+        String email;
+        String password_hash;
+        Integer creation_date;
+        Integer last_updated;
+        Byte post_permissions;
+        String about;
+        Byte flags;
+
+        if(entries == null || entries.size() == 0) {
+
+            throw new IllegalArgumentException("User list cannot be null nor empty");
+        }
+
+        i = 0;
+
+        while(i < entries.size()) {
+
+            fields = Converter.entryToInt(entries.get(i));
+            i++;
+
+            id = null;
+            username = null;
+            email = null;
+            password_hash = null;
+            creation_date = null;
+            last_updated = null;
+            post_permissions = null;
+            about = null;
+            flags = null;
+
+            if((fields & 0b0000000001) > 0) {id = Converter.entryToInt(entries.get(i)); i++;}
+            if((fields & 0b0000000010) > 0) {username = Converter.entryToString(entries.get(i)); i++;}
+            if((fields & 0b0000000100) > 0) {email = Converter.entryToString(entries.get(i)); i++;}
+            if((fields & 0b0000001000) > 0) {password_hash = Converter.entryToString(entries.get(i)); i++;}
+            if((fields & 0b0000010000) > 0) {creation_date = Converter.entryToInt(entries.get(i)); i++;}
+            if((fields & 0b0000100000) > 0) {last_updated = Converter.entryToInt(entries.get(i)); i++;}
+            if((fields & 0b0001000000) > 0) {post_permissions = Converter.entryToByte(entries.get(i)); i++;}
+            if((fields & 0b0010000000) > 0) {about = Converter.entryToString(entries.get(i)); i++;}
+            if((fields & 0b0100000000) > 0) {flags = Converter.entryToByte(entries.get(i)); i++;}
+
+            users.add(new User(
+
+                id,
+                username,
+                email,
+                password_hash,
+                creation_date,
+                last_updated,
+                post_permissions,
+                about,
+                flags
+            ));
+        }
+
+        return(users);
     }
 
     /**
@@ -107,9 +203,9 @@ public record User(
                 ((columns & 0b0000001000) > 0) ? result.getString(3) : null,
                 ((columns & 0b0000010000) > 0) ? result.getInt(4) : null,
                 ((columns & 0b0000100000) > 0) ? result.getInt(5) : null,
-                ((columns & 0b0001000000) > 0) ? result.getBoolean(6) : null,
-                ((columns & 0b0010000000) > 0) ? result.getByte(7) : null,
-                ((columns & 0b0100000000) > 0) ? result.getString(8) : null
+                ((columns & 0b0001000000) > 0) ? result.getByte(6) : null,
+                ((columns & 0b0010000000) > 0) ? result.getString(7) : null,
+                ((columns & 0b0100000000) > 0) ? result.getByte(8) : null
             );
         }
 

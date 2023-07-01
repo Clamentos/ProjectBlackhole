@@ -90,6 +90,27 @@ public class Converter {
 
     /**
      * <p><b>This method is thread safe.</b></p>
+     * Converts an array of bytes to a list of bytes.
+     * @param array : The array to be converted.
+     * @return The never null list of bytes representing the array.
+    */
+    public static List<Byte> ArrayToList(byte[] array) {
+
+        ArrayList<Byte> result = new ArrayList<>();
+
+        if(array != null) {
+
+            for(int i = 0; i < array.length; i++) {
+
+                result.add(array[i]);
+            }
+        }
+
+        return(result);
+    }
+
+    /**
+     * <p><b>This method is thread safe.</b></p>
      * Converts a string to a list of bytes.
      * @param str : The string to be converted.
      * @return The list of bytes representing the string.
@@ -171,6 +192,40 @@ public class Converter {
 
         throw new IllegalArgumentException("Unexpected type. Expected: INT or NULL, got: " + entry.data_type().toString());
     }
+
+
+
+    /**
+     * <p><b>This method is thread safe.</b></p>
+     * Extracts the data from the passed {@link DataEntry} with type checks.
+     * @param entry : The data entry used to extract the actual data.
+     * @return The data represented as a single long.
+     * @throws IllegalArgumentException If the type of the entry is not {@link Type#LONG}.
+    */
+    public static long entryToLong(DataEntry entry) throws IllegalArgumentException {
+
+        if(entry.data_type().equals(Type.LONG) == true) return(bytesToNum(entry.data(), 0, 8));
+        throw new IllegalArgumentException("Unexpected type. Expected: LONG, got: " + entry.data_type().toString());
+    }
+
+    /**
+     * <p><b>This method is thread safe.</b></p>
+     * Extracts the data from the passed {@link DataEntry} with type checks.
+     * @param entry : The data entry used to extract the actual data.
+     * @return The data represented as a single Long ({@code null} is allowed).
+     * @throws IllegalArgumentException If the type of the entry is not
+     *                                  {@link Type#LONG} nor {@link Type#NULL}.
+    */
+    public static Long entryToLongNullable(DataEntry entry) throws IllegalArgumentException {
+
+        if(entry.data_type().equals(Type.NULL) == true) return(null);
+        if(entry.data_type().equals(Type.LONG) == true) return(bytesToNum(entry.data(), 0, 8));
+
+        throw new IllegalArgumentException("Unexpected type. Expected: LONG or NULL, got: " + entry.data_type().toString());
+    }
+
+
+
 
     /**
      * <p><b>This method is thread safe.</b></p>

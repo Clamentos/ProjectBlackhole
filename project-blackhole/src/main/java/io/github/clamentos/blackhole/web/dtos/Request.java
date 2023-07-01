@@ -32,8 +32,9 @@ public class Request {
      * Instantiates a new {@link Request} object.
      * @param data : The input data array, usually taken from a stream.
      * @throws IllegalArgumentException If the data holds any illegal value.
+     * @throws ArrayIndexOutOfBoundsException If the data is incomplete.
     */
-    public Request(byte[] data) throws IllegalArgumentException {
+    public Request(byte[] data) throws IllegalArgumentException, ArrayIndexOutOfBoundsException {
 
         Entities resource;
         Method method;
@@ -47,6 +48,7 @@ public class Request {
             case 1: resource = Entities.USER; break;
             case 2: resource = Entities.TAG; break;
             case 3: resource = Entities.RESOURCE; break;
+            case 4: resource = Entities.ECHO; break;
 
             default: throw new IllegalArgumentException("Unknown resource type.");
         }

@@ -1,12 +1,10 @@
 package io.github.clamentos.blackhole.persistence.entities;
 
-import io.github.clamentos.blackhole.common.framework.Streamable;
-
 //________________________________________________________________________________________________________________________________________
 
+import io.github.clamentos.blackhole.common.framework.Streamable;
 import io.github.clamentos.blackhole.common.utility.Converter;
 import io.github.clamentos.blackhole.web.dtos.components.DataEntry;
-import io.github.clamentos.blackhole.web.dtos.components.Type;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -18,7 +16,13 @@ import java.util.List;
 
 /**
  * <p><b>Entity</b></p>
- * Resource Tag, used to categorize resources.
+ * This class corresponds to the <b>Tags</b> entity in the database.
+ * The order of the fields must match the db schema.
+ * <ol>
+ *     <li>{@code Integer id}: unique, not null</li>
+ *     <li>{@code String name}: unique, not null, max 32 long</li>
+ *     <li>{@code Integer creation_date}: not null</li>
+ * </ol>
 */
 public record Tag(
     
@@ -52,29 +56,49 @@ public record Tag(
      * @param entries : The list of {@link DataEntry}.
      * @return The never null list of {@link Tag}.
      * @throw IllegalArgumentException If the input list is null, empty
-     *        or if a {@link DataEntry} is not of type {@code Type.STRING}.
+     *        or if a {@link DataEntry} is not of correct type.
     */
-    public static List<Tag> deserialize(List<DataEntry> entries) throws IllegalArgumentException {
+    public static List<Tag> deserialize(List<DataEntry> entries, int expected_fields) throws IllegalArgumentException {
 
         ArrayList<Tag> tags = new ArrayList<>();
+        int i;
+        int fields;
+
+        Integer id;
+        String name;
+        Integer creation_date;
 
         if(entries == null || entries.size() == 0) {
 
-            throw new IllegalArgumentException("Tag name list cannot be null nor empty");
+            throw new IllegalArgumentException("Tag list cannot be null nor empty");
         }
 
-        for(DataEntry entry : entries) {
+        i = 0;
 
-            if(entry.data_type().equals(Type.STRING) == false) {
+        while(i < entries.size()) {
 
-                throw new IllegalArgumentException("Invalid type. Expected STRING, got: " + entry.data_type().toString());
+            fields = Converter.entryToInt(entries.get(i));
+
+            if(fields != expected_fields) {
+
+                throw new IllegalArgumentException("Unexpected field list. Expected: " + expected_fields + ", got: " + fields);
             }
 
+            i++;
+            
+            id = null;
+            name = null;
+            creation_date = null;
+
+            if((fields & 0b000001) > 0) {id = Converter.entryToInt(entries.get(i)); i++;}
+            if((fields & 0b000010) > 0) {name = Converter.entryToString(entries.get(i)); i++;}
+            if((fields & 0b010000) > 0) {creation_date = Converter.entryToInt(entries.get(i)); i++;}
+
             tags.add(new Tag(
-                
-                null,
-                new String(entry.data()),
-                null
+
+                id,
+                name,
+                creation_date
             ));
         }
 
@@ -90,9 +114,9 @@ public record Tag(
      * @return The never null list of tags. If none was mapped, the list will be empty.
      * @throws SQLException If the mapping fails.
     */
-    public static List<Tag> mapMany(ResultSet result, int columns) throws SQLException {
+    public static List<Streamable> mapMany(ResultSet result, int columns) throws SQLException {
 
-        ArrayList<Tag> tags = new ArrayList<>();
+        ArrayList<Streamable> tags = new ArrayList<>();
         Tag temp;
 
         while(true) {

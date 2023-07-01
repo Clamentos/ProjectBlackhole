@@ -4,6 +4,7 @@ package io.github.clamentos.blackhole.web.servlets;
 
 import at.favre.lib.crypto.bcrypt.BCrypt;
 import io.github.clamentos.blackhole.common.framework.Servlet;
+import io.github.clamentos.blackhole.common.framework.Streamable;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
 import io.github.clamentos.blackhole.persistence.Repository;
@@ -20,7 +21,7 @@ import io.github.clamentos.blackhole.web.session.SessionService;
 import io.github.clamentos.blackhole.web.session.UserSession;
 
 import java.sql.SQLException;
-
+import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
 //________________________________________________________________________________________________________________________________________
@@ -115,6 +116,8 @@ public class UserServlet implements Servlet {
         QueryWrapper fetch_user;
         QueryWrapper fetch_permissions;
         UserSession session;
+        UserDetails details;
+        ArrayList<Streamable> result;
 
         login_info = UserLogin.deserialize(request.getData());
         fetch_user = new QueryWrapper(
@@ -147,18 +150,13 @@ public class UserServlet implements Servlet {
 
                         if(fetch_permissions.getStatus() == true) {
 
-                            session = UserSession.mapSingle(fetch_permissions.getResult(), user.id());
+                            session = UserSession.mapSingle(fetch_permissions.getResult(), user.id(), user.post_permissions());
                             byte[] session_id = session_service.insertSession(session);
-                            UserDetails details = new UserDetails(session_id);
-
-                            return(
-
-                                new Response(
-
-                                    ResponseStatus.OK,
-                                    details
-                                )
-                            );
+                            details = new UserDetails(session_id);
+                            result = new ArrayList<>();
+                            result.add(details);
+                            
+                            return(new Response(ResponseStatus.OK, result));
                         }
                     }
                 }

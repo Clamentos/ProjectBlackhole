@@ -76,7 +76,7 @@ public class Dispatcher {
     /**
      * <p><b>This method is thread safe.</b></p>
      * Dispatch the request to the proper servlet.
-     * @param raw_request : The raw request bytes.
+     * @param raw_request : The raw request from the input stream.
      * @return The raw response bytes.
     */
     public byte[] dispatch(byte[] raw_request) {
@@ -89,8 +89,9 @@ public class Dispatcher {
             return(servlets.get(request.getEntityType()).handle(request).toBytes());
         }
 
-        catch(IllegalArgumentException exc) {
+        catch(IllegalArgumentException | ArrayIndexOutOfBoundsException exc) {
 
+            LOGGER.log("Request was bad, " + exc.getClass().getSimpleName() + ": " + exc.getMessage(), LogLevel.NOTE);
             return(new Response(ResponseStatus.ERROR, null).toBytes());
         }
     }

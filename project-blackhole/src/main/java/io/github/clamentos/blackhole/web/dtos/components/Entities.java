@@ -5,5 +5,6 @@ public enum Entities {
     SYSTEM,
     USER,
     TAG,
-    RESOURCE
+    RESOURCE,
+    ECHO
 }

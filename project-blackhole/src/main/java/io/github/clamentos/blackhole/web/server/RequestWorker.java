@@ -50,15 +50,20 @@ public class RequestWorker extends Worker<Socket> {
 
         DataInputStream in;
         DataOutputStream out;
-        byte[] data;
+        byte[] in_data;
+        byte[] out_data;
         
         try {
 
             in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
             out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
-            data = dispatcher.dispatch(in.readAllBytes());
-            out.write(data);
+            in_data = new byte[in.readInt()];
+
+            in_data = in.readNBytes(in_data.length);
+            out_data = dispatcher.dispatch(in_data);
+            out.write(out_data);
             out.flush();
+            
             socket.close();
         }
 

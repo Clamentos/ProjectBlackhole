@@ -28,7 +28,7 @@ public class Logger extends WorkerManager<Log, LogWorker> {
         
         super(log_queue, log_workers);
         min_console_log_level = ConfigurationProvider.MIN_CONSOLE_LOG_LEVEL;
-        LogPrinter.printToConsole("Logger instantiated and workers started.", LogLevel.SUCCESS);
+        LogPrinter.printToConsole("Logger instantiated and workers started", LogLevel.SUCCESS);
     }
 
     //____________________________________________________________________________________________________________________________________
