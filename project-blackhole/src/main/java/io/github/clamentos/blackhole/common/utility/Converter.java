@@ -144,7 +144,7 @@ public class Converter {
     */
     public static byte entryToByte(DataEntry entry) throws IllegalArgumentException {
 
-        if(entry.data_type().equals(Type.BYTE) == true) return(entry.data()[0]);
+        if(entry.data_type().equals(Type.BYTE) == true) return((byte)entry.data());
         throw new IllegalArgumentException("Unexpected type. Expected: BYTE, got: " + entry.data_type().toString());
     }
 
@@ -159,7 +159,7 @@ public class Converter {
     public static Byte entryToByteNullable(DataEntry entry) throws IllegalArgumentException {
 
         if(entry.data_type().equals(Type.NULL) == true) return(null);
-        if(entry.data_type().equals(Type.BYTE) == true) return(entry.data()[0]);
+        if(entry.data_type().equals(Type.BYTE) == true) return((byte)entry.data());
 
         throw new IllegalArgumentException("Unexpected type. Expected: BYTE or NULL, got: " + entry.data_type().toString());
     }
@@ -173,7 +173,7 @@ public class Converter {
     */
     public static int entryToInt(DataEntry entry) throws IllegalArgumentException {
 
-        if(entry.data_type().equals(Type.INT) == true) return((int)bytesToNum(entry.data(), 0, 4));
+        if(entry.data_type().equals(Type.INT) == true) return((int)entry.data());
         throw new IllegalArgumentException("Unexpected type. Expected: INT, got: " + entry.data_type().toString());
     }
 
@@ -188,7 +188,7 @@ public class Converter {
     public static Integer entryToIntNullable(DataEntry entry) throws IllegalArgumentException {
 
         if(entry.data_type().equals(Type.NULL) == true) return(null);
-        if(entry.data_type().equals(Type.INT) == true) return((int)bytesToNum(entry.data(), 0, 4));
+        if(entry.data_type().equals(Type.INT) == true) return((int)entry.data());
 
         throw new IllegalArgumentException("Unexpected type. Expected: INT or NULL, got: " + entry.data_type().toString());
     }
@@ -204,7 +204,7 @@ public class Converter {
     */
     public static long entryToLong(DataEntry entry) throws IllegalArgumentException {
 
-        if(entry.data_type().equals(Type.LONG) == true) return(bytesToNum(entry.data(), 0, 8));
+        if(entry.data_type().equals(Type.LONG) == true) return((long)entry.data());
         throw new IllegalArgumentException("Unexpected type. Expected: LONG, got: " + entry.data_type().toString());
     }
 
@@ -219,13 +219,10 @@ public class Converter {
     public static Long entryToLongNullable(DataEntry entry) throws IllegalArgumentException {
 
         if(entry.data_type().equals(Type.NULL) == true) return(null);
-        if(entry.data_type().equals(Type.LONG) == true) return(bytesToNum(entry.data(), 0, 8));
+        if(entry.data_type().equals(Type.LONG) == true) return((long)entry.data());
 
         throw new IllegalArgumentException("Unexpected type. Expected: LONG or NULL, got: " + entry.data_type().toString());
     }
-
-
-
 
     /**
      * <p><b>This method is thread safe.</b></p>
@@ -238,7 +235,7 @@ public class Converter {
     public static String entryToString(DataEntry entry) throws IllegalArgumentException {
 
         if(entry.data_type().equals(Type.NULL) == true) return(null);
-        if(entry.data_type().equals(Type.STRING) == true) return(new String(entry.data()));
+        if(entry.data_type().equals(Type.STRING) == true) return((String)entry.data());
 
         throw new IllegalArgumentException("Unexpected type. Expected: STRING or NULL, got: " + entry.data_type().toString());
     }

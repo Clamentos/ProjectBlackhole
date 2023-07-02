@@ -25,6 +25,7 @@ public class LogWorker extends Worker<Log> {
     //____________________________________________________________________________________________________________________________________
 
     /**
+     * <p><b>This method is thread safe.</b></p>
      * Instantiates a new log worker on the given log queue.
      * @param identifier : The log worker identifier.
      * @param logs_queue : The log queue on which the thread will consume and log.
@@ -39,6 +40,7 @@ public class LogWorker extends Worker<Log> {
     //____________________________________________________________________________________________________________________________________
 
     /**
+     * <p><b>This method is thread safe.</b></p>
      * Method that prints the aquired log.
      * @param log : The log to log.
     */
@@ -67,7 +69,7 @@ public class LogWorker extends Worker<Log> {
     @Override
     public void catchInterrupted(InterruptedException exc) {
 
-        LogPrinter.printToConsole("Interrupted while waiting on queue, InterruptedException: " + exc.getMessage(), LogLevel.NOTE);
+        LogPrinter.printToConsole("LogWorker.doWork > Interrupted while waiting on queue, InterruptedException: " + exc.getMessage(), LogLevel.NOTE);
     }
 
     //____________________________________________________________________________________________________________________________________
@@ -102,7 +104,7 @@ public class LogWorker extends Worker<Log> {
 
         catch(IOException exc) {
 
-            LogPrinter.printToConsole("Could not access file, IOException: " + exc.getMessage(), LogLevel.ERROR);
+            LogPrinter.printToConsole("LogWorker.findEligible > Could not access file, IOException: " + exc.getMessage(), LogLevel.ERROR);
         }
     }
 
@@ -125,7 +127,7 @@ public class LogWorker extends Worker<Log> {
 
         catch(IOException exc) {
 
-            LogPrinter.printToConsole("Could not access file, IOException: " + exc.getMessage(), LogLevel.ERROR);
+            LogPrinter.printToConsole("LogWorker.createNewLogFile > Could not access file, IOException: " + exc.getMessage(), LogLevel.ERROR);
         }
     }
 

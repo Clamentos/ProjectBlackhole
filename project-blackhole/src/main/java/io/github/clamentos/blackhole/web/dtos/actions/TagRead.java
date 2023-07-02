@@ -1,9 +1,13 @@
-package io.github.clamentos.blackhole.web.dtos.queries;
+package io.github.clamentos.blackhole.web.dtos.actions;
+
+//________________________________________________________________________________________________________________________________________
 
 import io.github.clamentos.blackhole.common.utility.Converter;
 import io.github.clamentos.blackhole.web.dtos.components.DataEntry;
 
 import java.util.List;
+
+//________________________________________________________________________________________________________________________________________
 
 public record TagRead(
 
@@ -15,6 +19,8 @@ public record TagRead(
     Integer start_date,
     Integer end_date
 ) {
+
+    //____________________________________________________________________________________________________________________________________
 
     public static TagRead deserialize(List<DataEntry> entries) throws IllegalArgumentException {
 
@@ -53,9 +59,11 @@ public record TagRead(
 
         else {
 
-            throw new IllegalArgumentException("Query mode must be 0 or 1. Passed: " + query_mode);
+            throw new IllegalArgumentException("Query mode must be 0 or 1, got: " + query_mode);
         }
     }
+
+    //____________________________________________________________________________________________________________________________________
 }
 
 /*

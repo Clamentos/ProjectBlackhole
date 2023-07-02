@@ -19,8 +19,9 @@ import java.util.Properties;
 
 /**
  * <p>Global configuration constants.<p/>
- * <p>This class will read (just after class loading) the configuration file in /resources.
- * If no file or configurations are defined, then defaults will be used.</p>
+ * <p>Use the method {@link ConfigurationProvider#init}
+ * to read the configuration file in the directory {@code /resources}.
+ * If no file or configurations are defined, then the defaults will be used.</p>
 */
 public class ConfigurationProvider {
 
@@ -70,8 +71,10 @@ public class ConfigurationProvider {
     //____________________________________________________________________________________________________________________________________
 
     /**
-     * <p><b>This method is NOT thread safe and should be called at the beginning of everything.</b></p>
-     * This method will initialize all the configuration constants.
+     * <p><b>This method is thread safe.</p></b>
+     * <p><b>{@code init()} MUST be called at the beginning of everything in the main.</b></p>
+     * This method will initialize all the configuration constants
+     * from the configuration file in {@code /resources}.
     */
     public static void init() {
 
@@ -129,13 +132,14 @@ public class ConfigurationProvider {
 
         catch(InvalidPathException | IOException exc) {
             
-            LogPrinter.printToConsole("Could not initialize, the defaults will be used. " + exc.getClass().getSimpleName() + ": " + exc.getMessage(), LogLevel.NOTE);
+            LogPrinter.printToConsole("ConfigurationProvider.init > Could not initialize, the defaults will be used. " + exc.getClass().getSimpleName() + ": " + exc.getMessage(), LogLevel.NOTE);
         }
-
-        Field[] fields = ConfigurationProvider.class.getFields();
 
         try {
 
+            Field[] fields = ConfigurationProvider.class.getFields();
+
+            // just for pretty printing
             int amt;
             String padding;
 
@@ -152,7 +156,7 @@ public class ConfigurationProvider {
         // if it somewhat fails, not a big deal...
         catch(IllegalAccessException exc) {
 
-            LogPrinter.printToConsole("Could not access property to print it. IllegalAccessException: " + exc.getMessage(), LogLevel.NOTE);
+            LogPrinter.printToConsole("ConfigurationProvider.init > Could not access property to print it, IllegalAccessException: " + exc.getMessage(), LogLevel.NOTE);
         }
     }
 

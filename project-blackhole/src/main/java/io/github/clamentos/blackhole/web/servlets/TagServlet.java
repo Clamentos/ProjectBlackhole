@@ -4,7 +4,7 @@ package io.github.clamentos.blackhole.web.servlets;
 
 import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 import io.github.clamentos.blackhole.common.framework.Servlet;
-import io.github.clamentos.blackhole.common.framework.Streamable;
+import io.github.clamentos.blackhole.common.framework.Reducible;
 import io.github.clamentos.blackhole.common.utility.Converter;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
@@ -12,13 +12,14 @@ import io.github.clamentos.blackhole.persistence.Repository;
 import io.github.clamentos.blackhole.persistence.entities.Tag;
 import io.github.clamentos.blackhole.persistence.query.QueryType;
 import io.github.clamentos.blackhole.persistence.query.QueryWrapper;
+import io.github.clamentos.blackhole.web.dtos.ErrorDetails;
 import io.github.clamentos.blackhole.web.dtos.Request;
 import io.github.clamentos.blackhole.web.dtos.Response;
+import io.github.clamentos.blackhole.web.dtos.actions.TagRead;
 import io.github.clamentos.blackhole.web.dtos.components.Method;
 import io.github.clamentos.blackhole.web.dtos.components.DataEntry;
 import io.github.clamentos.blackhole.web.dtos.components.Entities;
 import io.github.clamentos.blackhole.web.dtos.components.ResponseStatus;
-import io.github.clamentos.blackhole.web.dtos.queries.TagRead;
 import io.github.clamentos.blackhole.web.session.SessionService;
 import io.github.clamentos.blackhole.web.session.UserSession;
 
@@ -96,14 +97,21 @@ public class TagServlet implements Servlet {
     @Override
     public Response handle(Request request) {
 
-        switch(request.getMethod()) {
+        List<Reducible> error_details;
+
+        switch(request.method()) {
 
             case CREATE: return(createOrUpdate(request, false));
             case READ: return(read(request));
             case UPDATE: return(createOrUpdate(request, true));
             case DELETE: return(delete(request));
 
-            default: return(new Response(ResponseStatus.METHOD_NOT_ALLOWED, null));
+            default:
+
+                error_details = new ArrayList<>();
+                error_details.add(new ErrorDetails(""));
+            
+            return(new Response(ResponseStatus.METHOD_NOT_ALLOWED, error_details));
         }
     }
 
@@ -113,16 +121,17 @@ public class TagServlet implements Servlet {
 
         List<Tag> tags;
         ArrayList<Object> parameters;
+        List<Reducible> error_details;
         QueryWrapper insert;
         int now;
 
         parameters = new ArrayList<>();
-        checkSession(request.getSessionId(), request.getMethod());
+        checkSession(request.session_id(), request.method());
         now = (int)(System.currentTimeMillis() / 60_000);
 
         if(update == false) {
 
-            tags = Tag.deserialize(request.getData(), 0b0010);
+            tags = Tag.deserialize(request.data(), 0b010);
 
             for(Tag tag : tags) {
 
@@ -140,7 +149,7 @@ public class TagServlet implements Servlet {
 
         else {
 
-            tags = Tag.deserialize(request.getData(), 0b0011);
+            tags = Tag.deserialize(request.data(), 0b011);
             
             for(Tag tag : tags) {
 
@@ -164,15 +173,18 @@ public class TagServlet implements Servlet {
         }
 
         LOGGER.log("TagServlet::createOrUpdate request failed", LogLevel.WARNING);
-        return(new Response(ResponseStatus.ERROR, null));
+        error_details = new ArrayList<>();
+        error_details.add(new ErrorDetails(insert.getErrorCause()));
+
+        return(new Response(ResponseStatus.ERROR, error_details));
     }
 
     private Response read(Request request) {
 
-        TagRead read = TagRead.deserialize(request.getData());
+        TagRead read = TagRead.deserialize(request.data());
         ArrayList<Object> params = new ArrayList<>();
         ArrayList<String> columns = new ArrayList<>();
-        List<Streamable> result;
+        List<Reducible> result;
         QueryWrapper select;
         String query;
 
@@ -261,7 +273,7 @@ public class TagServlet implements Servlet {
         List<Integer> ids = new ArrayList<>();
         QueryWrapper delete;
 
-        for(DataEntry entry : request.getData()) {
+        for(DataEntry entry : request.data()) {
 
             ids.add(Converter.entryToInt(entry));
         }

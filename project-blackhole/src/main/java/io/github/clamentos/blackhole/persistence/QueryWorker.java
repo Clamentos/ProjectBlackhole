@@ -1,5 +1,7 @@
 package io.github.clamentos.blackhole.persistence;
 
+//________________________________________________________________________________________________________________________________________
+
 import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 import io.github.clamentos.blackhole.common.framework.Worker;
 import io.github.clamentos.blackhole.logging.LogLevel;
@@ -81,7 +83,8 @@ public class QueryWorker extends Worker<QueryWrapper> {
         catch(SQLException exc) {
 
             query.setStatus(false);
-            LOGGER.log("Could not execute query, SQLException: " + exc.getMessage(), LogLevel.ERROR);
+            query.setErrorCause(exc.getLocalizedMessage());
+            LOGGER.log("QueryWorker.doWork > Could not execute query, SQLException: " + exc.getMessage(), LogLevel.ERROR);
         }
     }
 
@@ -92,7 +95,7 @@ public class QueryWorker extends Worker<QueryWrapper> {
     @Override
     public void catchInterrupted(InterruptedException exc) {
 
-        LOGGER.log("Interrupted while waiting on queue, InterruptedException: " + exc.getMessage(), LogLevel.NOTE);
+        LOGGER.log("QueryWorker.catchInterrupted > Interrupted while waiting on queue, InterruptedException: " + exc.getMessage(), LogLevel.NOTE);
 
         if(super.getRunning() == false) {
 
@@ -103,7 +106,7 @@ public class QueryWorker extends Worker<QueryWrapper> {
 
             catch(SQLException exc2) {
 
-                LOGGER.log("Could not close the database connection, SQLException: " + exc.getMessage(), LogLevel.ERROR);
+                LOGGER.log("QueryWorker.catchInterrupted > Could not close the database connection, SQLException: " + exc.getMessage(), LogLevel.ERROR);
             }
         }
     }

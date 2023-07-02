@@ -1,5 +1,7 @@
 package io.github.clamentos.blackhole.persistence;
 
+//________________________________________________________________________________________________________________________________________
+
 import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 import io.github.clamentos.blackhole.common.framework.WorkerManager;
 import io.github.clamentos.blackhole.logging.LogLevel;
@@ -97,7 +99,7 @@ public class Repository extends WorkerManager<QueryWrapper, QueryWorker> {
 
         catch(InterruptedException exc) {
 
-            LOGGER.log("Interrupted while waiting on queue, InterruptedException: " + exc.getMessage(), LogLevel.NOTE);
+            LOGGER.log("Repository.execute > Interrupted while waiting on queue, InterruptedException: " + exc.getMessage(), LogLevel.NOTE);
         }
     }
 

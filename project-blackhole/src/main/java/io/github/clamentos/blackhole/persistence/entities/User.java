@@ -2,9 +2,10 @@ package io.github.clamentos.blackhole.persistence.entities;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.common.framework.Streamable;
+import io.github.clamentos.blackhole.common.framework.Reducible;
 import io.github.clamentos.blackhole.common.utility.Converter;
 import io.github.clamentos.blackhole.web.dtos.components.DataEntry;
+import io.github.clamentos.blackhole.web.dtos.components.Type;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -49,7 +50,7 @@ public record User(
     String about,
     Byte flags
 
-) implements Streamable {
+) implements Reducible {
 
     //____________________________________________________________________________________________________________________________________
 
@@ -58,21 +59,20 @@ public record User(
      * {@inheritDoc}
     */
     @Override
-    public byte[] toBytes() {
+    public List<DataEntry> reduce() {
 
-        ArrayList<Byte> temp = new ArrayList<>();
+        List<DataEntry> result = new ArrayList<>();
 
-        if(id != null) temp.addAll(Converter.numToBytes(id, 4));
-        if(username != null) temp.addAll(Converter.stringToList(username));
-        if(email != null) temp.addAll(Converter.stringToList(email));
-        if(password_hash != null) temp.addAll(Converter.stringToList(password_hash));
-        if(creation_date != null) temp.addAll(Converter.numToBytes(creation_date, 4));
-        if(last_updated != null) temp.addAll(Converter.numToBytes(last_updated, 4));
-        if(post_permissions != null) temp.addAll(Converter.numToBytes(post_permissions, 1));
-        if(about != null) temp.addAll(Converter.stringToList(about));
-        if(flags != null) temp.addAll(Converter.numToBytes(flags, 1));
+        result.add(id == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.INT, id));
+        result.add(username == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.STRING, username));
+        result.add(email == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.STRING, email));
+        result.add(creation_date == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.INT, creation_date));
+        result.add(last_updated == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.INT, last_updated));
+        result.add(post_permissions == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.BYTE, post_permissions));
+        result.add(about == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.STRING, about));
+        result.add(flags == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.BYTE, flags));
 
-        return(Converter.listToArray(temp));
+        return(result);
     }
 
     /**

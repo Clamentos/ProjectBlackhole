@@ -35,9 +35,9 @@ public class Logger extends WorkerManager<Log, LogWorker> {
 
     /**
      * <p><b>This method is thread safe.</b></p>
-     * <p>Gets the Logger instance.</p>
+     * <p>Get the Logger instance.
      * If the instance doesn't exist, create it with the values configured in
-     * {@link ConfigurationProvider} and start the workers.
+     * {@link ConfigurationProvider} and start the workers.</p>
      * @return The Logger instance.
     */
     public static Logger getInstance() {
@@ -77,7 +77,7 @@ public class Logger extends WorkerManager<Log, LogWorker> {
     /**
      * <p><b>This method is thread safe.</b></p>
      * <p>Adds the message to the log queue.</p>
-     * If there is no space in the queue, this method will block the thread.
+     * If there is no space in the queue, this method will block.
      * @param message : The message to be logged.
      * @param log_level : The severity of the message.
     */
@@ -92,7 +92,7 @@ public class Logger extends WorkerManager<Log, LogWorker> {
     
             catch(InterruptedException exc) {
     
-                LogPrinter.printToConsole("Could not insert into the log queue, InterruptedException: " + exc.getMessage(), LogLevel.WARNING);
+                LogPrinter.printToConsole("Logger.log > Could not insert into the log queue, InterruptedException: " + exc.getMessage(), LogLevel.WARNING);
             }
         }
     }

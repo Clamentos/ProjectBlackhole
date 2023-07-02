@@ -10,12 +10,13 @@ import java.util.List;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * Custom query object that acts as a bridge between the servlets and the query workers.
+ * <p>Custom query object that acts as a bridge between the servlets and the query workers.</p>
  * The provided getter and setter methods are all standard and thread safe.
 */
 public class QueryWrapper {
 
     private Boolean status;
+    private String error_cause;
     private QueryType query_type;
     private String sql;
     private List<Object> parameters;
@@ -33,6 +34,7 @@ public class QueryWrapper {
     public QueryWrapper(QueryType query_type, String sql, List<Object> parameters) {
 
         status = null;
+        error_cause = null;
         this.query_type = query_type;
         this.sql = sql;
         this.parameters = parameters;
@@ -49,6 +51,7 @@ public class QueryWrapper {
     public QueryWrapper(QueryType query_type, String sql, Object parameter) {
 
         status = null;
+        error_cause = null;
         this.query_type = query_type;
         this.sql = sql;
         parameters = new ArrayList<>();
@@ -62,6 +65,11 @@ public class QueryWrapper {
     public Boolean getStatus() {
 
         return(status);
+    }
+
+    public String getErrorCause() {
+
+        return(error_cause);
     }
     
     public QueryType getQueryType() {
@@ -89,6 +97,11 @@ public class QueryWrapper {
     public void setStatus(Boolean status) {
 
         this.status = status;
+    }
+
+    public void setErrorCause(String error_cause) {
+
+        this.error_cause = error_cause;
     }
     
     public void setResult(ResultSet result) {

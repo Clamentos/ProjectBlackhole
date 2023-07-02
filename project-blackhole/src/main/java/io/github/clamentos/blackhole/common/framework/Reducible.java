@@ -2,32 +2,25 @@ package io.github.clamentos.blackhole.common.framework;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.web.dtos.Request;
-import io.github.clamentos.blackhole.web.dtos.Response;
-import io.github.clamentos.blackhole.web.dtos.components.Entities;
+import io.github.clamentos.blackhole.web.dtos.components.DataEntry;
+import java.util.List;
 
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p>Servlet interface.</p>
- * <p>Servlets must implement this interface in order to be injected.</p>
+ * <p>Reducible interface.</p>
+ * <p>Used to indicate that the implementing classes can be transformed into a list of {@link DataEntry}.</p>
 */
-public interface Servlet {
+@FunctionalInterface
+public interface Reducible {
 
     //____________________________________________________________________________________________________________________________________
     
     /**
-     * Get the resource_id matching the servlet.
-     * @return The (never null) matching reasource.
+     * Transform {@code this} into a list of {@link DataEntry} in order to later be streamed into bytes.
+     * @return A never null list {@link DataEntry} representing {@code this}.
     */
-    public Entities matches();
-
-    /**
-     * Handle the request.
-     * @param request : The input request.
-     * @return The (never null) response.
-    */
-    public Response handle(Request request);
+    List<DataEntry> reduce();
 
     //____________________________________________________________________________________________________________________________________
 }

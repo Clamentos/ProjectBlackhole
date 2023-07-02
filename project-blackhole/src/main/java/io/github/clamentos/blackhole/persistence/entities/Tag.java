@@ -2,9 +2,10 @@ package io.github.clamentos.blackhole.persistence.entities;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.common.framework.Streamable;
+import io.github.clamentos.blackhole.common.framework.Reducible;
 import io.github.clamentos.blackhole.common.utility.Converter;
 import io.github.clamentos.blackhole.web.dtos.components.DataEntry;
+import io.github.clamentos.blackhole.web.dtos.components.Type;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -30,7 +31,7 @@ public record Tag(
     String name,
     Integer creation_date
 
-) implements Streamable {
+) implements Reducible {
 
     //____________________________________________________________________________________________________________________________________
 
@@ -39,15 +40,15 @@ public record Tag(
      * {@inheritDoc}
     */
     @Override
-    public byte[] toBytes() {
+    public List<DataEntry> reduce() {
 
-        ArrayList<Byte> temp = new ArrayList<>();
+        List<DataEntry> result = new ArrayList<>();
 
-        if(id != null) temp.addAll(Converter.numToBytes(id, 4));
-        if(name != null) temp.addAll(Converter.stringToList(name));
-        if(creation_date != null) temp.addAll(Converter.numToBytes(creation_date, 4));
+        result.add(id == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.INT, id));
+        result.add(name == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.STRING, name));
+        result.add(creation_date == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.INT, creation_date));
 
-        return(Converter.listToArray(temp));
+        return(result);
     }
 
     /**
@@ -114,9 +115,9 @@ public record Tag(
      * @return The never null list of tags. If none was mapped, the list will be empty.
      * @throws SQLException If the mapping fails.
     */
-    public static List<Streamable> mapMany(ResultSet result, int columns) throws SQLException {
+    public static List<Reducible> mapMany(ResultSet result, int columns) throws SQLException {
 
-        ArrayList<Streamable> tags = new ArrayList<>();
+        ArrayList<Reducible> tags = new ArrayList<>();
         Tag temp;
 
         while(true) {

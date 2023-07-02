@@ -16,8 +16,8 @@ import java.security.NoSuchAlgorithmException;
 
 /**
  * <p>Static dependency injector.</p>
- * <p>Use the method {@link Container#init()} at the beginning of the main
- * to initialize and inject the dependencies.</p>
+ * <p>Use the method {@link Container#init} after initializing the {@link ConfigurationProvider}
+ * to inject the dependencies.</p>
 */
 public class Container {
 
@@ -29,9 +29,10 @@ public class Container {
     //____________________________________________________________________________________________________________________________________
 
     /**
-     * <p><b>This method is NOT thread safe and should be called at the beginning of everything after initializing the {@link ConfigurationProvider}.</b></p>
+     * <p><b>This method is NOT thread safe and should be called at the beginning of everything
+     * after initializing the {@link ConfigurationProvider}.</b></p>
      * This method will instantiate and inject the specified objects (primarely the servlets).
-     * @throws NoSuchAlgorithmException if the method fails to instantiate the {@link SessionService}.
+     * @throws NoSuchAlgorithmException If the method fails to instantiate the {@link SessionService}.
     */
     public static void init() throws NoSuchAlgorithmException {
         

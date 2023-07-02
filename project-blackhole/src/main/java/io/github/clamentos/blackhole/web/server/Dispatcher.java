@@ -85,14 +85,14 @@ public class Dispatcher {
 
         try {
 
-            request = new Request(raw_request);
-            return(servlets.get(request.getEntityType()).handle(request).toBytes());
+            request = Request.deserialize(raw_request);
+            return(servlets.get(request.resource()).handle(request).stream());
         }
 
         catch(IllegalArgumentException | ArrayIndexOutOfBoundsException exc) {
 
             LOGGER.log("Request was bad, " + exc.getClass().getSimpleName() + ": " + exc.getMessage(), LogLevel.NOTE);
-            return(new Response(ResponseStatus.ERROR, null).toBytes());
+            return(new Response(ResponseStatus.ERROR, null).stream());
         }
     }
 

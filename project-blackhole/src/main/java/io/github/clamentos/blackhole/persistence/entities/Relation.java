@@ -2,9 +2,10 @@ package io.github.clamentos.blackhole.persistence.entities;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.common.framework.Streamable;
+import io.github.clamentos.blackhole.common.framework.Reducible;
 import io.github.clamentos.blackhole.common.utility.Converter;
 import io.github.clamentos.blackhole.web.dtos.components.DataEntry;
+import io.github.clamentos.blackhole.web.dtos.components.Type;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -28,7 +29,7 @@ public record Relation(
     Long source,
     Long destination
 
-) implements Streamable {
+) implements Reducible {
 
     //____________________________________________________________________________________________________________________________________
 
@@ -37,14 +38,14 @@ public record Relation(
      * {@inheritDoc}
     */
     @Override
-    public byte[] toBytes() {
+    public List<DataEntry> reduce() {
 
-        ArrayList<Byte> temp = new ArrayList<>();
+        List<DataEntry> result = new ArrayList<>();
 
-        if(source != null) temp.addAll(Converter.numToBytes(source, 8));
-        if(destination != null) temp.addAll(Converter.numToBytes(destination, 8));
+        result.add(source == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.LONG, source));
+        result.add(destination == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.LONG, destination));
 
-        return(Converter.listToArray(temp));
+        return(result);
     }
 
     /**

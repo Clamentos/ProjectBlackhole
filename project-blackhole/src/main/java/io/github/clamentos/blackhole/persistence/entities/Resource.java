@@ -1,10 +1,13 @@
 package io.github.clamentos.blackhole.persistence.entities;
 
-import io.github.clamentos.blackhole.common.framework.Streamable;
-import io.github.clamentos.blackhole.common.utility.Converter;
+import io.github.clamentos.blackhole.common.framework.Reducible;
+import io.github.clamentos.blackhole.web.dtos.components.DataEntry;
+import io.github.clamentos.blackhole.web.dtos.components.Type;
 
 import java.sql.Blob;
+
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <p><b>Entity</b></p>
@@ -31,35 +34,36 @@ public record Resource(
     String description,
     Integer creation_date,
     Integer last_updated,
-    Boolean visible,
+    Byte visibility,
     String data_hash,
     Byte datatype,
     Blob data,
 
     // FKs...
     Integer owner_user_id,
-    Integer basic_category
+    Integer basic_category_id
 
-) implements Streamable {
+) implements Reducible {
 
     // TODO: finish...
 
     @Override
-    public byte[] toBytes() {
+    public List<DataEntry> reduce() {
 
-        ArrayList<Byte> temp = new ArrayList<>();
+        List<DataEntry> result = new ArrayList<>();
 
-        if(id != null) temp.addAll(Converter.numToBytes(id, 8));
-        if(name != null) temp.addAll(Converter.stringToList(name));
-        if(description != null) temp.addAll(Converter.stringToList(description));
-        if(creation_date != null) temp.addAll(Converter.numToBytes(creation_date, 4));
-        if(last_updated != null) temp.addAll(Converter.numToBytes(last_updated, 4));
-        if(visible != null) temp.add(visible ? (byte)1 : (byte)0);
-        if(data_hash != null) temp.addAll(Converter.stringToList(data_hash));
-        // blob streams...
-        if(owner_user_id != null) temp.addAll(Converter.numToBytes(owner_user_id, 4));
-        if(basic_category != null) temp.addAll(Converter.numToBytes(basic_category, 4));
+        result.add(id == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.INT, id));
+        result.add(name == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.STRING, name));
+        result.add(description == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.STRING, description));
+        result.add(creation_date == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.INT, creation_date));
+        result.add(last_updated == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.INT, last_updated));
+        result.add(visibility == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.BYTE, visibility));
+        result.add(data_hash == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.STRING, data_hash));
+        result.add(datatype == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.BYTE, data_hash));
+        //blob...
+        result.add(owner_user_id == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.INT, owner_user_id));
+        result.add(basic_category_id == null ? new DataEntry(Type.NULL, null) : new DataEntry(Type.INT, basic_category_id));
 
-        return(Converter.listToArray(temp));
+        return(result);
     }
 }

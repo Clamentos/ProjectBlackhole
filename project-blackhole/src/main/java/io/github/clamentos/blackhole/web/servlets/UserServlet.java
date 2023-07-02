@@ -3,8 +3,9 @@ package io.github.clamentos.blackhole.web.servlets;
 //________________________________________________________________________________________________________________________________________
 
 import at.favre.lib.crypto.bcrypt.BCrypt;
+
 import io.github.clamentos.blackhole.common.framework.Servlet;
-import io.github.clamentos.blackhole.common.framework.Streamable;
+import io.github.clamentos.blackhole.common.framework.Reducible;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
 import io.github.clamentos.blackhole.persistence.Repository;
@@ -14,13 +15,14 @@ import io.github.clamentos.blackhole.persistence.query.QueryWrapper;
 import io.github.clamentos.blackhole.web.dtos.Request;
 import io.github.clamentos.blackhole.web.dtos.Response;
 import io.github.clamentos.blackhole.web.dtos.UserDetails;
+import io.github.clamentos.blackhole.web.dtos.actions.UserLogin;
 import io.github.clamentos.blackhole.web.dtos.components.Entities;
 import io.github.clamentos.blackhole.web.dtos.components.ResponseStatus;
-import io.github.clamentos.blackhole.web.dtos.queries.UserLogin;
 import io.github.clamentos.blackhole.web.session.SessionService;
 import io.github.clamentos.blackhole.web.session.UserSession;
 
 import java.sql.SQLException;
+
 import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -95,7 +97,7 @@ public class UserServlet implements Servlet {
     @Override
     public Response handle(Request request) {
 
-        switch(request.getMethod()) {
+        switch(request.method()) {
 
             case CREATE: return(null);
             case READ: return(null);
@@ -117,9 +119,9 @@ public class UserServlet implements Servlet {
         QueryWrapper fetch_permissions;
         UserSession session;
         UserDetails details;
-        ArrayList<Streamable> result;
+        ArrayList<Reducible> result;
 
-        login_info = UserLogin.deserialize(request.getData());
+        login_info = UserLogin.deserialize(request.data());
         fetch_user = new QueryWrapper(
 
             QueryType.SELECT,

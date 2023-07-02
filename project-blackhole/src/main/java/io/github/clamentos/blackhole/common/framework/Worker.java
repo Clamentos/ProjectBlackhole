@@ -9,7 +9,7 @@ import java.util.concurrent.BlockingQueue;
 
 /**
  * <p>Abstract worker thread class that can be started and stopped.</p>
- * <p>This worker periodically waits for resources to be placed in the queue before doing work.</p>
+ * <p>This worker blocks and waits for resources to be placed in the queue before doing work.</p>
  * @param <R> R : The type of resource that the queue holds.
 */
 public abstract class Worker<R> extends Thread implements WorkerSpec {
@@ -28,16 +28,17 @@ public abstract class Worker<R> extends Thread implements WorkerSpec {
     */
     public Worker(int identifier, BlockingQueue<R> resource_queue) {
 
-        Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
+        running = false;
         this.identifier = identifier;
         this.resource_queue = resource_queue;
-        running = false;
     }
 
     //____________________________________________________________________________________________________________________________________
 
     @Override
     public void run() {
+
+        Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
 
         R elem;
         running = true;
@@ -81,8 +82,8 @@ public abstract class Worker<R> extends Thread implements WorkerSpec {
      * <p><b>This method is thread safe.</b></p>
      * {@inheritDoc}
      * This method does not guarantee that the worker will stop as it may still be blocked on the queue.
-     * After calling {@code halt()} the worker must also be interrupted
-     * by calling the {@code interrupt()} method,
+     * After calling {@link Worker#halt} the worker must also be interrupted
+     * by calling the {@link Worker#interrupt} method,
      * which will cause the {@link Worker} to check the running flag.
     */
     @Override

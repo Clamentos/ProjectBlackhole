@@ -19,7 +19,7 @@ public class LogPrinter {
 
     /**
      * <p><b>This method is partially thread safe.</b></p>
-     * <p>(Thread safe on a line-per-line basys. Interleaved lines are possible)</p>
+     * <p>(Thread safe on a line-per-line basys. Interleaved lines are possible).</p>
      * Prints the message to the standard out with the given log level.
      * @param message : The message to be printed.
      * @param log_level : The severity of the message.
@@ -37,13 +37,13 @@ public class LogPrinter {
 
     /**
      * <p><b>This method is partially thread safe.</b></p>
-     * <p>(Thread safe on a line-per-line basys. Interleaved lines are possible)</p>
+     * <p>(Thread safe on a line-per-line basys. Interleaved lines are possible).</p>
      * Prints the message to the specified file with the given log level.
      * @param message : The message to be printed
      * @param log_level : The severity of the message.
      * @param file_writer : The destination file.
      * @throws NullPointerException If either {@code log_level} or {@code file_writer} are null.
-     * @returns The number of bytes written to the file.
+     * @return The number of bytes written to the file.
     */
     public static long printToFile(String message, LogLevel log_level, BufferedWriter file_writer) {
 
@@ -62,7 +62,7 @@ public class LogPrinter {
 
         catch(IOException exc) {
 
-            printToConsole("Could not write to log file, IOException: " + exc.getMessage() + ". Writing to console instead", LogLevel.WARNING);
+            printToConsole("LogPrinter.printToFile > Could not write to log file, IOException: " + exc.getMessage() + ". Writing to console instead", LogLevel.WARNING);
             printToConsole(message, log_level);
 
             return(0);

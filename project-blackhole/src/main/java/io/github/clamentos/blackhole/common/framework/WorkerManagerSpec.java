@@ -7,7 +7,7 @@ import java.util.concurrent.BlockingQueue;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p>Worker manager interface</p>
+ * <p>Worker manager interface.</p>
  * Simple interface to define basic managing methods for any worker manager.
  * @param <R> R : The type of resource that the queue holds.
 */
@@ -26,7 +26,7 @@ public interface WorkerManagerSpec<R> {
 
     /**
      * Stops all the active {@link Worker}.
-     * @param wait : Waits for the workers to drain the {@code resource_queue} before stopping them.
+     * @param wait : Waits for the workers to drain the {@link Worker#resource_queue} before stopping them.
      *               If set to {@code false}, it will stop the workers as soon as they finish
      *               processing the current resource.
     */

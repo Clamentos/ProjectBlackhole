@@ -1,8 +1,11 @@
 package io.github.clamentos.blackhole.web.dtos.components;
 
-import io.github.clamentos.blackhole.common.framework.Streamable;
+//________________________________________________________________________________________________________________________________________
 
-public enum Type implements Streamable {
+/**
+ * Simple enumeration containing all the possible types of types.
+*/
+public enum Type {
     
     BYTE(0),
     SHORT(1),
@@ -14,17 +17,22 @@ public enum Type implements Streamable {
     RAW(7),
     NULL(8);
 
+    //____________________________________________________________________________________________________________________________________
+
     private int val;
+
+    //____________________________________________________________________________________________________________________________________
 
     private Type(int val) {
 
         this.val = val;
     }
 
-    @Override
-    public byte[] toBytes() {
-        
-        return(new byte[]{(byte)val});
+    //____________________________________________________________________________________________________________________________________
+
+    public int getVal() {
+
+        return(val);
     }
 
     public String toString() {
@@ -44,4 +52,6 @@ public enum Type implements Streamable {
             default: return("NDF");
         }
     }
+
+    //____________________________________________________________________________________________________________________________________
 }

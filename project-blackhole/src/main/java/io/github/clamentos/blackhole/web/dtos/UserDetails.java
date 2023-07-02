@@ -1,16 +1,20 @@
 package io.github.clamentos.blackhole.web.dtos;
 
-import io.github.clamentos.blackhole.common.framework.Streamable;
+import io.github.clamentos.blackhole.common.framework.Reducible;
+import io.github.clamentos.blackhole.web.dtos.components.DataEntry;
+import io.github.clamentos.blackhole.web.dtos.components.Type;
+
+import java.util.List;
 
 public record UserDetails(
 
     byte[] session_id
 
-) implements Streamable {
+) implements Reducible {
 
     @Override
-    public byte[] toBytes() {
+    public List<DataEntry> reduce() {
 
-        return(session_id);
+        return(List.of(new DataEntry(Type.RAW, session_id)));
     }
 }
