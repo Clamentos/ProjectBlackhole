@@ -81,9 +81,9 @@ public class RequestWorker extends Worker<Socket> {
             }
 
             out.flush();
-            /*in.close();
+            in.close();
             out.close();
-            socket.close();*/
+            socket.close();
         }
 
         catch(IOException exc) {

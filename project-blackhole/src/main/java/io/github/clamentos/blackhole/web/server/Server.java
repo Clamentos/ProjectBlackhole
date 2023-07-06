@@ -1,22 +1,24 @@
 package io.github.clamentos.blackhole.web.server;
 
+//________________________________________________________________________________________________________________________________________
+
 import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 import io.github.clamentos.blackhole.common.framework.WorkerManager;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
 
 import java.io.IOException;
+
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
+
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+
 import java.util.Iterator;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantLock;
@@ -210,51 +212,58 @@ public class Server extends WorkerManager<Socket, RequestWorker> {
     //____________________________________________________________________________________________________________________________________
 
     // potential replacement for the current blocking
-    public void testNIO() throws IOException {
+    public void testNIO() {
 
         Selector mux;
         ServerSocketChannel server_socket;
-        Set<SelectionKey> selected_keys;
-        Iterator<SelectionKey> selected_keys_iterator;
-        ByteBuffer data_buffer = ByteBuffer.allocate(1024);
+        Iterator<SelectionKey> keys;
 
-        mux = Selector.open();
+        try {
 
-        server_socket = ServerSocketChannel.open();
-        server_socket.bind(new InetSocketAddress("127.0.0.1", 8080));
-        server_socket.configureBlocking(false);
-        server_socket.register(mux, SelectionKey.OP_ACCEPT);
+            mux = Selector.open();
 
-        while(true) {
+            server_socket = ServerSocketChannel.open();
+            server_socket.configureBlocking(false);
+            server_socket.register(mux, SelectionKey.OP_ACCEPT);
+            server_socket.bind(new InetSocketAddress("127.0.0.1", 8080));   // do the retries
 
-            mux.select();
-            selected_keys = mux.selectedKeys();
-            selected_keys_iterator = selected_keys.iterator();
+            while(true) {
 
-            while(selected_keys_iterator.hasNext()) {
+                mux.select();
+                keys = mux.selectedKeys().iterator();
 
-                SelectionKey temp = selected_keys_iterator.next();
+                while(keys.hasNext()) {
 
-                if(temp.isAcceptable() == true) {
+                    SelectionKey selected = keys.next();
 
-                    SocketChannel client = server_socket.accept();
-                    client.configureBlocking(false);
-                    client.register(mux, SelectionKey.OP_READ);
-                    client.socket().setSoTimeout(10_000);
-                }
+                    if(selected.isAcceptable() == true) {
 
-                if(temp.isReadable() == true) {
+                        SocketChannel client = server_socket.accept();
+                        client.configureBlocking(false);
+                        client.register(mux, SelectionKey.OP_READ);
+                        client.socket().setSoTimeout(ConfigurationProvider.CONNECTION_TIMEOUT);
+                    }
 
-                    // put into worker queue
-                    SocketChannel client = (SocketChannel)temp.channel();
-                    client.read(data_buffer);
-                    data_buffer.flip();
-                    client.write(data_buffer);
-                    data_buffer.clear();
+                    if(selected.isReadable() == true) {
+
+                        // put into worker queue
+                        //...
+                    }
+
+                    keys.remove();
                 }
             }
+        }
 
-            selected_keys_iterator.remove();
+        catch(Exception exc) {
+
+            LOGGER.log(
+
+                "Server.testNIO > Could not serve channel, " +
+                exc.getClass().getSimpleName() + ": " +
+                exc.getMessage(),
+                LogLevel.ERROR
+            );
         }
     }
 }
