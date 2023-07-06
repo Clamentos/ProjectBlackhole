@@ -24,6 +24,7 @@ import io.github.clamentos.blackhole.web.session.UserSession;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
 //________________________________________________________________________________________________________________________________________
@@ -126,14 +127,14 @@ public class UserServlet implements Servlet {
 
             QueryType.SELECT,
             "SELECT U.id, U.password_hash, U.post_permission FROM Users U WHERE U.username = ?",
-            login_info.username()
+            List.of(List.of(login_info.username()))
         );
 
         repository.execute(fetch_user, true);
 
         try {
 
-            if(fetch_user.getStatus() == true) {
+            if(fetch_user.getStatus() == 1) {
 
                 user = User.mapSingle(null, 0b0010001001);
 
@@ -145,12 +146,12 @@ public class UserServlet implements Servlet {
 
                             QueryType.SELECT,
                             "SELECT UR.resource_id, UR.flags, UU.target_user_id, UU.flags FROM  AllowUsersToResources UR JOIN AllowUsersToUsers UU ON UR.user_id = UU.user_id WHERE UR.user_id = ?",
-                            user.id()
+                            List.of(List.of(user.id()))
                         );
 
                         repository.execute(fetch_permissions, true);
 
-                        if(fetch_permissions.getStatus() == true) {
+                        if(fetch_permissions.getStatus() == 1) {
 
                             session = UserSession.mapSingle(fetch_permissions.getResult(), user.id(), user.post_permissions());
                             byte[] session_id = session_service.insertSession(session);

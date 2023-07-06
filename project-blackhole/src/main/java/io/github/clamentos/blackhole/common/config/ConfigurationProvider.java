@@ -1,3 +1,4 @@
+// maybe make the fields read-only?
 package io.github.clamentos.blackhole.common.config;
 
 //________________________________________________________________________________________________________________________________________
@@ -25,9 +26,7 @@ import java.util.Properties;
 */
 public class ConfigurationProvider {
 
-    //____________________________________________________________________________________________________________________________________
-
-    public static int NUM_LOG_WORKERS = 1;
+    public static int NUM_LOG_WORKERS;
     public static int MAX_LOG_QUEUE_SIZE = 10_000;
     public static int MAX_LOG_FILE_SIZE = 10_000_000;
 
@@ -44,29 +43,33 @@ public class ConfigurationProvider {
 
     public static int SERVER_PORT = 8080;
     public static int NUM_REQUEST_WORKERS = 1;
-    public static int MAX_CONNECTION_TIMEOUT = 1_000;
+    public static int CONNECTION_TIMEOUT = 5_000;
     public static int MAX_REQUEST_QUEUE_SIZE = 1_000_000;
     public static int MAX_SERVER_START_RETRIES = 5;
+    public static int STREAM_BUFFER_SIZE = 1_000;
 
-    public static long SESSION_DURATION = 14_400_000;
+    public static long SESSION_DURATION = 14_400_000;    // 4h in ms
 
     public static boolean NEED_SESSION_FOR_TAG_CREATE = true;
     public static boolean NEED_SESSION_FOR_TAG_READ = true;
     public static boolean NEED_SESSION_FOR_TAG_UPDATE = true;
     public static boolean NEED_SESSION_FOR_TAG_DELETE = true;
+    //...
 
     //____________________________________________________________________________________________________________________________________
 
     public static String DB_URL = null;
     public static String DB_USERNAME = null;
-    public static String DB_PASWORD = null;
+    public static String DB_PASSWORD = null;
 
     public static int DB_CONNECTIONS = 1;
     public static int MAX_DB_CONNECTION_RETRIES = 5;
-    public static int MAX_DB_CONNECTION_TIMEOUT = 1_000;
+    public static int DB_CONNECTION_TIMEOUT = 5_000;
 
     public static boolean INIT_SCHEMA = false;
-    public static String SCHEMA_PATH = null;
+    public static boolean LOAD_DATA_TO_DB = false;
+    public static String SCHEMA_PATH = "resources/Schema.sql";
+    public static String DB_DATA_PATH = "resources/Data.sql";
 
     //____________________________________________________________________________________________________________________________________
 
@@ -97,9 +100,10 @@ public class ConfigurationProvider {
 
             SERVER_PORT = Integer.parseInt((String)prop.getOrDefault("SERVER_PORT", "8080"));
             NUM_REQUEST_WORKERS = Integer.parseInt((String)prop.getOrDefault("NUM_REQUEST_WORKERS", "1"));
-            MAX_CONNECTION_TIMEOUT = Integer.parseInt((String)prop.getOrDefault("MAX_CONNECTION_TIMEOUT", "1000"));
+            CONNECTION_TIMEOUT = Integer.parseInt((String)prop.getOrDefault("CONNECTION_TIMEOUT", "5000"));
             MAX_REQUEST_QUEUE_SIZE = Integer.parseInt((String)prop.getOrDefault("MAX_REQUEST_QUEUE_SIZE", "1000000"));
             MAX_SERVER_START_RETRIES = Integer.parseInt((String)prop.getOrDefault("MAX_SERVER_START_RETRIES", "5"));
+            STREAM_BUFFER_SIZE = Integer.parseInt((String)prop.getOrDefault("STREAM_BUFFER_SIZE", "1000"));
 
             SESSION_DURATION = Long.parseLong((String)prop.getOrDefault("SESSION_DURATION", "14400000"));
 
@@ -110,13 +114,15 @@ public class ConfigurationProvider {
 
             DB_URL = (String)prop.getOrDefault("DB_URL", null);
             DB_USERNAME = (String)prop.getOrDefault("DB_USERNAME", null);
-            DB_PASWORD = (String)prop.getOrDefault("DB_PASWORD", null);
+            DB_PASSWORD = (String)prop.getOrDefault("DB_PASSWORD", null);
             DB_CONNECTIONS = Integer.parseInt((String)prop.getOrDefault("DB_CONNECTIONS", "1"));
             MAX_DB_CONNECTION_RETRIES = Integer.parseInt((String)prop.getOrDefault("MAX_DB_CONNECTION_RETRIES", "1"));
-            MAX_DB_CONNECTION_TIMEOUT = Integer.parseInt((String)prop.getOrDefault("MAX_DB_CONNECTION_TIMEOUT", "1000"));
+            DB_CONNECTION_TIMEOUT = Integer.parseInt((String)prop.getOrDefault("DB_CONNECTION_TIMEOUT", "5000"));
             INIT_SCHEMA = Boolean.parseBoolean((String)prop.getOrDefault("INIT_SCHEMA", "false"));
-            SCHEMA_PATH = (String)prop.getOrDefault("SCHEMA_PATH", null);
-            
+            LOAD_DATA_TO_DB = Boolean.parseBoolean((String)prop.getOrDefault("LOAD_DATA_TO_DB", "false"));
+            SCHEMA_PATH = (String)prop.getOrDefault("SCHEMA_PATH", "resources/Schema.sql");
+            DB_DATA_PATH = (String)prop.getOrDefault("DB_DATA_PATH", "resources/Data.sql");
+
             switch((String)prop.getOrDefault("MIN_CONSOLE_LOG_LEVEL", "INFO")) {
 
                 case "DEBUG": MIN_CONSOLE_LOG_LEVEL = LogLevel.DEBUG; break;
@@ -139,7 +145,7 @@ public class ConfigurationProvider {
 
             Field[] fields = ConfigurationProvider.class.getFields();
 
-            // just for pretty printing
+            // just for pretty printing (27 is the longest field name)
             int amt;
             String padding;
 
@@ -152,8 +158,7 @@ public class ConfigurationProvider {
             }
         }
 
-        // should never happen...
-        // if it somewhat fails, not a big deal...
+        // should never happen... if it somewhat fails, not a big deal...
         catch(IllegalAccessException exc) {
 
             LogPrinter.printToConsole("ConfigurationProvider.init > Could not access property to print it, IllegalAccessException: " + exc.getMessage(), LogLevel.NOTE);

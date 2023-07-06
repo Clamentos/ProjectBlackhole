@@ -45,7 +45,7 @@ public record DataEntry(
             break;
 
             case 1: 
-            
+
                 type = Type.SHORT;
                 stuff = (short)bytesToNum(data, pos + 1, 2);
                 offset[0] += 3;
@@ -112,7 +112,7 @@ public record DataEntry(
             default: throw new IllegalArgumentException("Unknown type: " + data[pos]);
         }
 
-        return(new DataEntry(type, data));
+        return(new DataEntry(type, stuff));
     }
 
     //____________________________________________________________________________________________________________________________________
@@ -224,9 +224,9 @@ public record DataEntry(
 
         long result = 0;
 
-        for(int i = 0; i < len; i++) {
+        for(int i = len - 1; i >= 0; i--) {
 
-            result = result | (data[i] << i * 8);
+            result = result | (data[i + offset] << (len - 1 - i) * 8);
         }
 
         return(result);

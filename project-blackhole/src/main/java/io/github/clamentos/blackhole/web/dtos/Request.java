@@ -32,7 +32,7 @@ public record Request(
      * Instantiates a new {@link Request} object.
      * @param data : The input data array, usually taken from a stream.
      * @throws IllegalArgumentException If the data holds any illegal value.
-     * @throws ArrayIndexOutOfBoundsException If the data is incomplete.
+     * @throws ArrayIndexOutOfBoundsException If the data is incomplete or badly formatted.
     */
     public static Request deserialize(byte[] data) throws IllegalArgumentException, ArrayIndexOutOfBoundsException {
 

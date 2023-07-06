@@ -1,1 +1,13 @@
 -- DB schema goes here...
+BEGIN TRANSACTION;
+
+DROP TABLE Tags;
+
+CREATE TABLE IF NOT EXISTS Tags (
+
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(32) NOT NULL UNIQUE,
+    creation_date INT NOT NULL
+);
+
+COMMIT;

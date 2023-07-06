@@ -1,3 +1,4 @@
+// maybe auto scanning via annotations?
 package io.github.clamentos.blackhole.common.config;
 
 //________________________________________________________________________________________________________________________________________

@@ -1,13 +1,17 @@
 package io.github.clamentos.blackhole.web.server;
 
+//________________________________________________________________________________________________________________________________________
+
+import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
+import io.github.clamentos.blackhole.common.exceptions.Error;
+import io.github.clamentos.blackhole.common.exceptions.ErrorWrapper;
 import io.github.clamentos.blackhole.common.framework.Worker;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
+import io.github.clamentos.blackhole.web.dtos.Response;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 
 import java.net.Socket;
@@ -30,7 +34,7 @@ public class RequestWorker extends Worker<Socket> {
      * Instantiates a new log worker on the given sockets queue.
      * @param identifier : The worker identifier.
      * @param sockets_queue : The sockets queue on which the thread will consume and handle.
-     */
+    */
     public RequestWorker(int identifier, BlockingQueue<Socket> sockets_queue) {
 
         super(identifier, sockets_queue);
@@ -48,28 +52,43 @@ public class RequestWorker extends Worker<Socket> {
     @Override
     public void doWork(Socket socket) {
 
-        DataInputStream in;
-        DataOutputStream out;
-        byte[] in_data;
-        byte[] out_data;
+        BufferedInputStream in;
+        BufferedOutputStream out;
+        byte[] data;
         
         try {
 
-            in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
-            out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
-            in_data = new byte[in.readInt()];
+            socket.setSoTimeout(ConfigurationProvider.CONNECTION_TIMEOUT);
+            in = new BufferedInputStream(socket.getInputStream(), ConfigurationProvider.STREAM_BUFFER_SIZE);
+            out = new BufferedOutputStream(socket.getOutputStream(), ConfigurationProvider.STREAM_BUFFER_SIZE);
 
-            in_data = in.readNBytes(in_data.length);
-            out_data = dispatcher.dispatch(in_data);
-            out.write(out_data);
+            data = read(in);
+
+            if(data != null) {
+
+                out.write(dispatcher.dispatch(data));
+            }
+
+            else {
+
+                Response failure = Response.create(
+
+                    "Could not properly read the request",
+                    new ErrorWrapper(Error.BAD_FORMATTING)
+                );
+
+                out.write(failure.stream());
+            }
+
             out.flush();
-            
-            socket.close();
+            /*in.close();
+            out.close();
+            socket.close();*/
         }
 
         catch(IOException exc) {
 
-            LOGGER.log("Could not dispatch the request, IOException: " + exc.getMessage(), LogLevel.WARNING);
+            LOGGER.log("RequestWorker.doWork > Could not dispatch the request, IOException: " + exc.getMessage(), LogLevel.WARNING);
         }
     }
 
@@ -79,7 +98,48 @@ public class RequestWorker extends Worker<Socket> {
     @Override
     public void catchInterrupted(InterruptedException exc) {
 
-        LOGGER.log("Interrupted while waiting on queue, InterruptedException: " + exc.getMessage(), LogLevel.NOTE);
+        LOGGER.log("RequestWorker.doWork > Interrupted while waiting on queue, InterruptedException: " + exc.getMessage(), LogLevel.NOTE);
+    }
+
+    //____________________________________________________________________________________________________________________________________
+
+    private byte[] read(BufferedInputStream in) {
+
+        int data_length;
+        int temp;
+        byte[] data;
+
+        try {
+
+            data_length = 0;
+
+            for(int i = 3; i >= 0; i--) {
+
+                temp = in.read();
+
+                if(temp == -1) {
+
+                    return(null);
+                }
+
+                data_length = data_length | (temp << i);
+            }
+
+            data = in.readNBytes(data_length);
+
+            if(data.length != data_length) {
+
+                return(null);
+            }
+
+            return(data);
+        }
+
+        catch(IOException exc) {
+
+            LOGGER.log("RequestWorker.doWork > Could not dispatch the request, IOException: " + exc.getMessage(), LogLevel.WARNING);
+            return(null);
+        }
     }
 
     //____________________________________________________________________________________________________________________________________

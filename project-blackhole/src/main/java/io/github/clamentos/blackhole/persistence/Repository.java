@@ -81,7 +81,7 @@ public class Repository extends WorkerManager<QueryWrapper, QueryWorker> {
      * Inserts the query into the queue for processing.
      * @param query : The query to be added.
      * @param wait : Wait for the query to complete.
-     */
+    */
     public void execute(QueryWrapper query, boolean wait) {
 
         try {
@@ -90,7 +90,7 @@ public class Repository extends WorkerManager<QueryWrapper, QueryWorker> {
 
             while(wait == true) {
 
-                if(query.getStatus() == true || query.getStatus() == false) {
+                if(query.getStatus() == 1 || query.getStatus() == -1) {
 
                     break;
                 }

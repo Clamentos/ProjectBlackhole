@@ -4,8 +4,8 @@ package io.github.clamentos.blackhole.persistence.query;
 
 import java.sql.ResultSet;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -15,11 +15,11 @@ import java.util.List;
 */
 public class QueryWrapper {
 
-    private Boolean status;
-    private String error_cause;
+    private AtomicInteger status;    // 0: not executed yet, 1: OK, -1: ERROR, exception will be set
+    private Exception exception;
     private QueryType query_type;
     private String sql;
-    private List<Object> parameters;
+    private List<List<Object>> parameters;
     private ResultSet result;
 
     //____________________________________________________________________________________________________________________________________
@@ -31,45 +31,26 @@ public class QueryWrapper {
      * @param sql : The actual SQL string. Use the '?' to denote a parameter.
      * @param parameters : The query parameter list. Parameters must be ordered correctly.
     */
-    public QueryWrapper(QueryType query_type, String sql, List<Object> parameters) {
+    public QueryWrapper(QueryType query_type, String sql, List<List<Object>> parameters) {
 
-        status = null;
-        error_cause = null;
+        status = new AtomicInteger(0);
+        exception = null;
         this.query_type = query_type;
         this.sql = sql;
         this.parameters = parameters;
         result = null;
     }
 
-    /**
-     * <p><b>This method is thread safe.</b></p>
-     * Instantiate a new {@link QueryWrapper} with the given parameters.
-     * @param query_type : The query type, from the {@link QueryType} enum.
-     * @param sql : The actual SQL string. Use the '?' to denote a parameter.
-     * @param parameter : The query parameter.
-    */
-    public QueryWrapper(QueryType query_type, String sql, Object parameter) {
-
-        status = null;
-        error_cause = null;
-        this.query_type = query_type;
-        this.sql = sql;
-        parameters = new ArrayList<>();
-        result = null;
-
-        parameters.add(parameter);
-    }
-
     //____________________________________________________________________________________________________________________________________
 
-    public Boolean getStatus() {
+    public int getStatus() {
 
-        return(status);
+        return(status.get());
     }
 
-    public String getErrorCause() {
+    public Exception getException() {
 
-        return(error_cause);
+        return(exception);
     }
     
     public QueryType getQueryType() {
@@ -82,7 +63,7 @@ public class QueryWrapper {
         return(sql);
     }
 
-    public List<Object> getParameters() {
+    public List<List<Object>> getParameters() {
 
         return(parameters);
     }
@@ -94,14 +75,14 @@ public class QueryWrapper {
 
     //____________________________________________________________________________________________________________________________________
 
-    public void setStatus(Boolean status) {
+    public void setStatus(int status) {
 
-        this.status = status;
+        this.status.set(status);
     }
 
-    public void setErrorCause(String error_cause) {
+    public void setException(Exception exception) {
 
-        this.error_cause = error_cause;
+        this.exception = exception;
     }
     
     public void setResult(ResultSet result) {

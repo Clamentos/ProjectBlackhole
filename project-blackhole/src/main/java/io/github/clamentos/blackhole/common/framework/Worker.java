@@ -45,6 +45,10 @@ public abstract class Worker<R> extends Thread implements WorkerSpec {
 
         while(running == true) {
 
+            // it turns out that .poll() is MUCH lower latency...
+            // ... but it continuously polls (busy waiting -> high CPU usage)
+            // ==>> make this hybrid that can dynamically switch from .take and .poll
+
             try {
 
                 elem = resource_queue.take();

@@ -1,3 +1,4 @@
+// TODO: redo
 package io.github.clamentos.blackhole.common.utility;
 
 //________________________________________________________________________________________________________________________________________
@@ -192,8 +193,6 @@ public class Converter {
 
         throw new IllegalArgumentException("Unexpected type. Expected: INT or NULL, got: " + entry.data_type().toString());
     }
-
-
 
     /**
      * <p><b>This method is thread safe.</b></p>

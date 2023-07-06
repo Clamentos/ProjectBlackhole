@@ -2,7 +2,6 @@ package io.github.clamentos.blackhole.web.servlets;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 import io.github.clamentos.blackhole.common.framework.Servlet;
 import io.github.clamentos.blackhole.common.framework.Reducible;
 import io.github.clamentos.blackhole.common.utility.Converter;
@@ -16,14 +15,10 @@ import io.github.clamentos.blackhole.web.dtos.ErrorDetails;
 import io.github.clamentos.blackhole.web.dtos.Request;
 import io.github.clamentos.blackhole.web.dtos.Response;
 import io.github.clamentos.blackhole.web.dtos.actions.TagRead;
-import io.github.clamentos.blackhole.web.dtos.components.Method;
 import io.github.clamentos.blackhole.web.dtos.components.DataEntry;
 import io.github.clamentos.blackhole.web.dtos.components.Entities;
 import io.github.clamentos.blackhole.web.dtos.components.ResponseStatus;
 import io.github.clamentos.blackhole.web.session.SessionService;
-import io.github.clamentos.blackhole.web.session.UserSession;
-
-import java.sql.SQLException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +26,10 @@ import java.util.concurrent.locks.ReentrantLock;
 
 //________________________________________________________________________________________________________________________________________
 
+/**
+ * <p><b>This class is a singleton.</b></p>
+ * This class is the {@link Servlet} to manage the request for the tags.
+*/
 public class TagServlet implements Servlet {
     
     private static volatile TagServlet INSTANCE;
@@ -47,6 +46,7 @@ public class TagServlet implements Servlet {
 
         LOGGER = Logger.getInstance();
         this.repository = repository;
+        this.session_service = session_service;
         LOGGER.log("Tag servlet instantiated", LogLevel.SUCCESS);
     }
 
@@ -109,8 +109,8 @@ public class TagServlet implements Servlet {
             default:
 
                 error_details = new ArrayList<>();
-                error_details.add(new ErrorDetails(""));
-            
+                error_details.add(new ErrorDetails("Method received: " + request.method()));
+
             return(new Response(ResponseStatus.METHOD_NOT_ALLOWED, error_details));
         }
     }
@@ -120,23 +120,32 @@ public class TagServlet implements Servlet {
     private Response createOrUpdate(Request request, boolean update) {
 
         List<Tag> tags;
-        ArrayList<Object> parameters;
-        List<Reducible> error_details;
+        List<List<Object>> parameters;
         QueryWrapper insert;
         int now;
 
         parameters = new ArrayList<>();
-        checkSession(request.session_id(), request.method());
         now = (int)(System.currentTimeMillis() / 60_000);
+
+        try {
+
+            session_service.checkSessionTag(request.session_id(), request.method());
+            tags = Tag.deserialize(request.data());
+        }
+
+        catch(SecurityException | IllegalArgumentException exc) {
+
+            LOGGER.log("TagServlet.createOrUpdate > Request failed, " + exc.getClass().getSimpleName() + ": " + exc.getMessage(), LogLevel.WARNING);
+            return(Response.create(exc.getMessage(), exc.getCause()));
+        }
 
         if(update == false) {
 
-            tags = Tag.deserialize(request.data(), 0b010);
+            for(int i = 0; i < tags.size(); i++) {
 
-            for(Tag tag : tags) {
-
-                parameters.add(tag.name());
-                parameters.add(now);
+                parameters.add(new ArrayList<>());
+                parameters.get(i).add(tags.get(i).name());
+                parameters.get(i).add(now);
             }
 
             insert = new QueryWrapper(
@@ -149,12 +158,11 @@ public class TagServlet implements Servlet {
 
         else {
 
-            tags = Tag.deserialize(request.data(), 0b011);
-            
-            for(Tag tag : tags) {
+            for(int i = 0; i < tags.size(); i++) {
 
-                parameters.add(tag.name());
-                parameters.add(tag.id());
+                parameters.add(new ArrayList<>());
+                parameters.get(i).add(tags.get(i).name());
+                parameters.get(i).add(tags.get(i).id());
             }
 
             insert = new QueryWrapper(
@@ -167,168 +175,157 @@ public class TagServlet implements Servlet {
 
         repository.execute(insert, true);
 
-        if(insert.getStatus() == true) {
+        if(insert.getStatus() == 1) {
 
             return(new Response(ResponseStatus.OK, null));
         }
 
-        LOGGER.log("TagServlet::createOrUpdate request failed", LogLevel.WARNING);
-        error_details = new ArrayList<>();
-        error_details.add(new ErrorDetails(insert.getErrorCause()));
+        LOGGER.log("TagServlet.createOrUpdate > Request failed, " + insert.getException().getClass().getSimpleName() + ": " + insert.getException().getMessage(), LogLevel.WARNING);
 
-        return(new Response(ResponseStatus.ERROR, error_details));
+        return(Response.create(
+            
+            insert.getException().getMessage(),
+            insert.getException().getCause()
+        ));
     }
 
     private Response read(Request request) {
 
-        TagRead read = TagRead.deserialize(request.data());
-        ArrayList<Object> params = new ArrayList<>();
+        TagRead read;
+        List<List<Object>> params = new ArrayList<>();
         ArrayList<String> columns = new ArrayList<>();
         List<Reducible> result;
         QueryWrapper select;
         String query;
 
-        if((read.fields() & 0b0001) > 0) columns.add("id");
-        if((read.fields() & 0b0010) > 0) columns.add("name");
-        if((read.fields() & 0b0100) > 0) columns.add("creation_date");
+        try {
 
-        query = columns.toString();
-        query = query.substring(1, query.length() - 2);
-        query = "SELECT " + query + " FROM Tags WHERE ";
+            session_service.checkSessionTag(request.session_id(), request.method());
+            read = TagRead.deserialize(request.data());
 
-        if(read.query_mode() == 0) {
+            if((read.fields() & 0b0001) > 0) columns.add("id");
+            if((read.fields() & 0b0010) > 0) columns.add("name");
+            if((read.fields() & 0b0100) > 0) columns.add("creation_date");
 
-            query += "id IN (";
+            query = columns.toString();
+            query = query.substring(1, query.length() - 2);
+            query = "SELECT " + query + " FROM Tags WHERE ";
 
-            for(int i = 0; i < read.ids().length; i++) {
+            if(read.query_mode() == 0) {
 
-                query += "?,";
-                params.add(read.ids()[i]);
+                query += "id IN (";
+                params.add(new ArrayList<>());
+
+                for(int i = 0; i < read.ids().length; i++) {
+
+                    query += "?,";
+                    params.get(0).add(read.ids()[i]);
+                }
+
+                query = query.substring(0, query.length() - 2);
+                query += ")";
             }
 
-            query = query.substring(0, query.length() - 2);
-            query += ")";
-        }
+            else {
 
-        else {
+                boolean concat = false;
+                params.add(new ArrayList<>());
 
-            boolean concat = false;
+                if(read.name_like() != null && read.name_like() != "") {
 
-            if(read.name_like() != null && read.name_like() != "") {
+                    query += "name LIKE %?%";
+                    params.get(0).add(read.name_like());
+                    concat = true;
+                }
 
-                query += "name LIKE %?%";
-                params.add(read.name_like());
-                concat = true;
+                if(read.start_date() != null) {
+
+                    if(concat == true) query += " AND ";
+                    query += "creation_date >= ?";
+                    params.get(0).add(read.start_date());
+                    concat = true;
+                }
+
+                if(read.end_date() != null) {
+
+                    if(concat == true) query += " AND ";
+                    query += "creation_date <= ?";
+                    params.get(0).add(read.end_date());
+                }
             }
 
-            if(read.start_date() != null) {
+            select = new QueryWrapper(
 
-                if(concat == true) query += " AND ";
-                query += "creation_date >= ?";
-                params.add(read.start_date());
-                concat = true;
-            }
+                QueryType.SELECT,
+                query,
+                params
+            );
 
-            if(read.end_date() != null) {
+            repository.execute(select, true);
 
-                if(concat == true) query += " AND ";
-                query += "creation_date <= ?";
-                params.add(read.end_date());
-            }
-        }
-
-        select = new QueryWrapper(
-
-            QueryType.SELECT,
-            query,
-            params
-        );
-
-        repository.execute(select, true);
-
-        if(select.getStatus() == true) {
-
-            try {
+            if(select.getStatus() == 1) {
 
                 result = Tag.mapMany(select.getResult(), read.fields());
+                return(new Response(ResponseStatus.OK, result));
+            }
 
-                return(new Response(
+            LOGGER.log("TagServlet.read > Request failed, " + select.getException().getClass().getSimpleName() + ": " + select.getException().getMessage(), LogLevel.WARNING);
+
+            return(Response.create(
                 
-                    ResponseStatus.OK,
-                    result
-                ));
-            }
-
-            catch(SQLException exc) {
-
-                return(new Response(ResponseStatus.ERROR, null));
-            }
+                select.getException().getMessage(),
+                select.getException().getCause()
+            ));
         }
 
-        return(new Response(ResponseStatus.ERROR, null));
+        catch(Exception exc) {
+
+            LOGGER.log("TagServlet.createOrUpdate > Request failed, " + exc.getClass().getSimpleName() + ": " + exc.getMessage(), LogLevel.WARNING);
+            return(Response.create(exc.getMessage(), exc.getCause()));
+        }
     }
     
     private Response delete(Request request) {
 
-        List<Integer> ids = new ArrayList<>();
+        List<List<Object>> ids;
         QueryWrapper delete;
 
-        for(DataEntry entry : request.data()) {
+        try {
 
-            ids.add(Converter.entryToInt(entry));
-        }
+            ids = new ArrayList<>();
 
-        delete = new QueryWrapper(
+            for(DataEntry entry : request.data()) {
 
-            QueryType.DELETE,
-            "DELETE FROM Tags WHERE id = ?",
-            ids
-        );
-
-        repository.execute(delete, true);
-
-        if(delete.getStatus() == true) {
-
-            return(new Response(ResponseStatus.OK, null));
-        }
-
-        return(new Response(ResponseStatus.ERROR, null));
-    }
-
-    private void checkSession(byte[] session_id, Method method) throws SecurityException {
-
-        UserSession session;
-        boolean check;
-        
-        switch(method) {
-
-            case CREATE: check = ConfigurationProvider.NEED_SESSION_FOR_TAG_CREATE; break;
-            case READ: check = ConfigurationProvider.NEED_SESSION_FOR_TAG_READ; break;
-            case UPDATE: check = ConfigurationProvider.NEED_SESSION_FOR_TAG_UPDATE; break;
-            case DELETE: check = ConfigurationProvider.NEED_SESSION_FOR_TAG_DELETE; break;
-
-            default: check = false; break;
-        }
-
-        if(check == true) {
-
-            session = session_service.findSession(session_id);
-
-            if(session == null) {
-
-                throw new SecurityException("No session found");
+                ids.get(0).add(Converter.entryToInt(entry));
             }
 
-            if(session.valid_to() < System.currentTimeMillis()) {
+            delete = new QueryWrapper(
 
-                session_service.removeSession(session_id);
-                throw new SecurityException("Expired session");
+                QueryType.DELETE,
+                "DELETE FROM Tags WHERE id = ?",
+                ids
+            );
+
+            repository.execute(delete, true);
+
+            if(delete.getStatus() == 1) {
+
+                return(new Response(ResponseStatus.OK, null));
             }
 
-            if((session.post_permissions() & 0b0100) == 0) {
+            LOGGER.log("TagServlet.delete > Request failed, " + delete.getException().getClass().getSimpleName() + ": " + delete.getException().getMessage(), LogLevel.WARNING);
 
-                throw new SecurityException("Not enough privileges");
-            }
+            return(Response.create(
+                
+                delete.getException().getMessage(),
+                delete.getException().getCause()
+            ));
+        }
+
+        catch(Exception exc) {
+
+            LOGGER.log("TagServlet.delete > Request failed, " + exc.getClass().getSimpleName() + ": " + exc.getMessage(), LogLevel.WARNING);
+            return(Response.create(exc.getMessage(), exc.getCause()));
         }
     }
 

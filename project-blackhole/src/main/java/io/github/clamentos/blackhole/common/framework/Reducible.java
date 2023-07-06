@@ -9,7 +9,8 @@ import java.util.List;
 
 /**
  * <p>Reducible interface.</p>
- * <p>Used to indicate that the implementing classes can be transformed into a list of {@link DataEntry}.</p>
+ * <p>Used to indicate that the implementing classes
+ * can be transformed into a list of {@link DataEntry}.</p>
 */
 @FunctionalInterface
 public interface Reducible {

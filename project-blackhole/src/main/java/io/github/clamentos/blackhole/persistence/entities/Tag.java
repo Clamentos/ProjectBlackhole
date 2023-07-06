@@ -59,47 +59,22 @@ public record Tag(
      * @throw IllegalArgumentException If the input list is null, empty
      *        or if a {@link DataEntry} is not of correct type.
     */
-    public static List<Tag> deserialize(List<DataEntry> entries, int expected_fields) throws IllegalArgumentException {
+    public static List<Tag> deserialize(List<DataEntry> entries) throws IllegalArgumentException {
 
         ArrayList<Tag> tags = new ArrayList<>();
-        int i;
-        int fields;
-
-        Integer id;
-        String name;
-        Integer creation_date;
 
         if(entries == null || entries.size() == 0) {
 
             throw new IllegalArgumentException("Tag list cannot be null nor empty");
         }
 
-        i = 0;
-
-        while(i < entries.size()) {
-
-            fields = Converter.entryToInt(entries.get(i));
-
-            if(fields != expected_fields) {
-
-                throw new IllegalArgumentException("Unexpected field list. Expected: " + expected_fields + ", got: " + fields);
-            }
-
-            i++;
-            
-            id = null;
-            name = null;
-            creation_date = null;
-
-            if((fields & 0b000001) > 0) {id = Converter.entryToInt(entries.get(i)); i++;}
-            if((fields & 0b000010) > 0) {name = Converter.entryToString(entries.get(i)); i++;}
-            if((fields & 0b010000) > 0) {creation_date = Converter.entryToInt(entries.get(i)); i++;}
+        for(int i = 0; i < entries.size(); i = i + 3) {
 
             tags.add(new Tag(
 
-                id,
-                name,
-                creation_date
+                Converter.entryToIntNullable(entries.get(i)),
+                Converter.entryToString(entries.get(i + 1)),
+                Converter.entryToIntNullable(entries.get(i + 2))
             ));
         }
 

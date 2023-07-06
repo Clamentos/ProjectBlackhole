@@ -58,7 +58,10 @@ public class QueryWorker extends Worker<QueryWrapper> {
 
             for(int i = 0; i < query.getParameters().size(); i++) {
 
-                statement.setObject(i, query.getParameters().get(i));
+                for(int j = 0; j < query.getParameters().get(i).size(); j++) {
+
+                    statement.setObject(j + 1, query.getParameters().get(i).get(j));
+                }
 
                 if(query.getQueryType() == QueryType.INSERT || query.getQueryType() == QueryType.UPDATE) {
 
@@ -77,13 +80,14 @@ public class QueryWorker extends Worker<QueryWrapper> {
                 query.setResult(statement.executeQuery());
             }
 
-            query.setStatus(true);
+            query.setStatus(1);
         }
 
         catch(SQLException exc) {
 
-            query.setStatus(false);
-            query.setErrorCause(exc.getLocalizedMessage());
+            // TODO: decode the exc
+            query.setException(exc);
+            query.setStatus(-1);
             LOGGER.log("QueryWorker.doWork > Could not execute query, SQLException: " + exc.getMessage(), LogLevel.ERROR);
         }
     }
@@ -115,13 +119,13 @@ public class QueryWorker extends Worker<QueryWrapper> {
 
     private void refresh() throws SQLException {
 
-        if(db_connection == null || db_connection.isValid(ConfigurationProvider.MAX_DB_CONNECTION_TIMEOUT) == false) {
+        if(db_connection == null || db_connection.isValid(ConfigurationProvider.DB_CONNECTION_TIMEOUT) == false) {
 
             db_connection = DriverManager.getConnection(
 
                 ConfigurationProvider.DB_URL,
                 ConfigurationProvider.DB_USERNAME,
-                ConfigurationProvider.DB_PASWORD
+                ConfigurationProvider.DB_PASSWORD
             );
         }
     }

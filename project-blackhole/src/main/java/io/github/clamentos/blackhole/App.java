@@ -9,13 +9,8 @@ import io.github.clamentos.blackhole.common.exceptions.GlobalExceptionHandler;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.LogPrinter;
 
-import java.io.IOException;
-
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
-
-import java.security.NoSuchAlgorithmException;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -40,36 +35,69 @@ public class App {
             Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
 
             // initialize db schema
-            if(ConfigurationProvider.INIT_SCHEMA) {
+            if(ConfigurationProvider.INIT_SCHEMA == true) {
 
                 try {
 
-                    Connection db_connection = DriverManager.getConnection(
-
-                        ConfigurationProvider.DB_URL,
-                        ConfigurationProvider.DB_USERNAME,
-                        ConfigurationProvider.DB_PASWORD
-                    );
-
-                    Statement sql = db_connection.createStatement();
-                    sql.execute(Files.readString(Paths.get(ConfigurationProvider.SCHEMA_PATH)));
-                    db_connection.close();
+                    String query = Files.readString(Paths.get(ConfigurationProvider.SCHEMA_PATH));
+                    directQuery(query);
                 }
 
-                catch(SQLException | InvalidPathException | IOException exc) {
+                catch(Exception exc) {
 
-                    LogPrinter.printToConsole("Could not initialize schema, " + exc.getClass().getSimpleName() + ": " + exc.getMessage() + " skipping...", LogLevel.WARNING);
+                    LogPrinter.printToConsole(
+                        
+                        "Could not initialize schema, " +
+                        exc.getClass().getSimpleName() + ": " +
+                        exc.getMessage() + ", skipping...",
+                        LogLevel.WARNING
+                    );
                 }
             }
 
-            Container.web_server.start();
+            // load data into db
+            if(ConfigurationProvider.LOAD_DATA_TO_DB == true) {
+
+                try {
+
+                    String query = Files.readString(Paths.get(ConfigurationProvider.DB_DATA_PATH));
+                    directQuery(query);
+                }
+
+                catch(Exception exc) {
+
+                    LogPrinter.printToConsole(
+                        
+                        "Could not populate the db with data, " + exc.getClass().getSimpleName() + ": " + exc.getMessage() + ", skipping...", LogLevel.WARNING
+                    );
+                }
+            }
+
+            //Container.web_server.start();
+            Container.web_server.testNIO();
         }
 
-        catch(NoSuchAlgorithmException exc) {
+        catch(Exception exc) {
 
-            LogPrinter.printToConsole("Could not fully start the app, NoSuchAlgorithmException: " + exc.getMessage(), LogLevel.ERROR);
+            LogPrinter.printToConsole("App.main > Could not fully start the app, " + exc.getClass().getName() + ": " + exc.getMessage(), LogLevel.ERROR);
             System.exit(1);
         }
+    }
+
+    //____________________________________________________________________________________________________________________________________
+
+    private static void directQuery(String query) throws SQLException {
+
+        Connection db_connection = DriverManager.getConnection(
+
+            ConfigurationProvider.DB_URL,
+            ConfigurationProvider.DB_USERNAME,
+            ConfigurationProvider.DB_PASSWORD
+         );
+
+        Statement sql = db_connection.createStatement();
+        sql.execute(query);
+        db_connection.close();
     }
 
     //____________________________________________________________________________________________________________________________________

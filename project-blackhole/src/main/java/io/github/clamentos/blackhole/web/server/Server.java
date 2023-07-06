@@ -6,10 +6,17 @@ import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
 
 import java.io.IOException;
-
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantLock;
@@ -17,7 +24,7 @@ import java.util.concurrent.locks.ReentrantLock;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * Server class that listens and accepts socket requests.
+ * <p>Server class that listens and accepts socket requests.</p>
  * Once accepted, the sockets will be placed into a queue to be processed.
 */
 public class Server extends WorkerManager<Socket, RequestWorker> {
@@ -84,10 +91,10 @@ public class Server extends WorkerManager<Socket, RequestWorker> {
 
     /**
      * <p><b>This method is thread safe.</b></p>
-     * Starts the server and listens for requests.
-     * If the server is already running, this method will return immediately without doing anything.
-     * If this method successfully starts the server, it will occupy the thread indefinetly.
-     * If this method fails in starting the server, it will simply return.
+     * <p>Starts the server and listens for requests.</p>
+     * <p>If the server is already running, this method will return without doing anything.</p>
+     * <p>If this method successfully starts the server, it will occupy the thread indefinetly.</p>
+     * <p>If this method fails in starting the server, it will simply return.</p>
     */
     public void start() {
 
@@ -99,12 +106,19 @@ public class Server extends WorkerManager<Socket, RequestWorker> {
 
                 try {
 
-                    super.getResourceQueue().put(server_socket.accept());
+                    Socket s = server_socket.accept();
+                    super.getResourceQueue().put(s);
                 }
 
                 catch(IOException exc) {
 
-                    LOGGER.log("Could not accept socket, IOException: " + exc.getMessage(), LogLevel.NOTE);
+                    LOGGER.log(
+
+                        "Server.start > Could not accept socket, " +
+                        exc.getClass().getSimpleName() +
+                        exc.getMessage(),
+                        LogLevel.NOTE
+                    );
                 }
 
                 catch(InterruptedException exc) {
@@ -115,7 +129,12 @@ public class Server extends WorkerManager<Socket, RequestWorker> {
                         break;
                     }
                     
-                    LOGGER.log("Interrupted while waiting on queue, InterruptedException: " + exc.getMessage(), LogLevel.NOTE);
+                    LOGGER.log(
+                        
+                        "Server.start > Interrupted while waiting on queue, InterruptedException: " +
+                        exc.getMessage(),
+                        LogLevel.NOTE
+                    );
                 }
             }
         }
@@ -135,6 +154,7 @@ public class Server extends WorkerManager<Socket, RequestWorker> {
 
     //____________________________________________________________________________________________________________________________________
 
+    // attemp to create the server socket with N retries
     private synchronized boolean attempt(int retries) {
 
         if(server_running == false) {
@@ -144,15 +164,21 @@ public class Server extends WorkerManager<Socket, RequestWorker> {
                 try {
 
                     server_socket = new ServerSocket(ConfigurationProvider.SERVER_PORT);
-                    server_socket.setSoTimeout(ConfigurationProvider.MAX_CONNECTION_TIMEOUT);
+                    server_socket.setSoTimeout(ConfigurationProvider.CONNECTION_TIMEOUT);
                     server_running = true;
 
                     return(true);
                 }
 
-                catch(IOException exc) {
+                catch(Exception exc) {
     
-                    LOGGER.log("Could not create server socket, IOException: " + exc.getMessage(), LogLevel.ERROR);
+                    LOGGER.log(
+
+                        "Server.attempt > Could not create server socket, " +
+                        exc.getClass().getSimpleName() + ": " +
+                        exc.getMessage(),
+                        LogLevel.ERROR
+                    );
                 }
 
                 try {
@@ -162,15 +188,73 @@ public class Server extends WorkerManager<Socket, RequestWorker> {
 
                 catch(InterruptedException exc) {
 
-                    LOGGER.log("Interrupted while waiting on retries, InterruptedException: " + exc.getMessage(), LogLevel.INFO);
+                    LOGGER.log(
+                        
+                        "Server.attempt > Interrupted while waiting on retries, InterruptedException: " +
+                        exc.getMessage(),
+                        LogLevel.INFO
+                    );
                 }
             }
 
-            LOGGER.log("Retries exhausted while attempting to start the server", LogLevel.ERROR);
+            LOGGER.log(
+
+                "Server.attempt > Retries exhausted while attempting to start the server",
+                LogLevel.ERROR
+            );
         }
 
         return(false);
     }
 
     //____________________________________________________________________________________________________________________________________
+
+    // potential replacement for the current blocking
+    public void testNIO() throws IOException {
+
+        Selector mux;
+        ServerSocketChannel server_socket;
+        Set<SelectionKey> selected_keys;
+        Iterator<SelectionKey> selected_keys_iterator;
+        ByteBuffer data_buffer = ByteBuffer.allocate(1024);
+
+        mux = Selector.open();
+
+        server_socket = ServerSocketChannel.open();
+        server_socket.bind(new InetSocketAddress("127.0.0.1", 8080));
+        server_socket.configureBlocking(false);
+        server_socket.register(mux, SelectionKey.OP_ACCEPT);
+
+        while(true) {
+
+            mux.select();
+            selected_keys = mux.selectedKeys();
+            selected_keys_iterator = selected_keys.iterator();
+
+            while(selected_keys_iterator.hasNext()) {
+
+                SelectionKey temp = selected_keys_iterator.next();
+
+                if(temp.isAcceptable() == true) {
+
+                    SocketChannel client = server_socket.accept();
+                    client.configureBlocking(false);
+                    client.register(mux, SelectionKey.OP_READ);
+                    client.socket().setSoTimeout(10_000);
+                }
+
+                if(temp.isReadable() == true) {
+
+                    // put into worker queue
+                    SocketChannel client = (SocketChannel)temp.channel();
+                    client.read(data_buffer);
+                    data_buffer.flip();
+                    client.write(data_buffer);
+                    data_buffer.clear();
+                }
+            }
+
+            selected_keys_iterator.remove();
+        }
+    }
 }

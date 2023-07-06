@@ -91,7 +91,7 @@ public class Dispatcher {
 
         catch(IllegalArgumentException | ArrayIndexOutOfBoundsException exc) {
 
-            LOGGER.log("Request was bad, " + exc.getClass().getSimpleName() + ": " + exc.getMessage(), LogLevel.NOTE);
+            LOGGER.log("Dispatcher.dispatch > Request was bad, " + exc.getClass().getSimpleName() + ": " + exc.getMessage(), LogLevel.NOTE);
             return(new Response(ResponseStatus.ERROR, null).stream());
         }
     }

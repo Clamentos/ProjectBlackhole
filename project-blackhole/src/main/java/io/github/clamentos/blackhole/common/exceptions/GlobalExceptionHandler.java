@@ -1,3 +1,4 @@
+// OK
 package io.github.clamentos.blackhole.common.exceptions;
 
 //________________________________________________________________________________________________________________________________________
@@ -5,6 +6,8 @@ package io.github.clamentos.blackhole.common.exceptions;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.LogPrinter;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.Thread.UncaughtExceptionHandler;
 
 import java.util.concurrent.locks.ReentrantLock;
@@ -62,7 +65,13 @@ public class GlobalExceptionHandler implements UncaughtExceptionHandler {
     @Override
     public void uncaughtException(Thread thread, Throwable exc) {
 
-        LogPrinter.printToConsole("Uncaught " + exc.getClass().getSimpleName() + " in thread " + thread.getName() + ": " + exc.getMessage() + " Stack trace: " + exc.getStackTrace().toString(), LogLevel.ERROR);
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        
+        exc.printStackTrace(pw);
+        String trace = sw.toString();
+
+        LogPrinter.printToConsole("Uncaught " + exc.getClass().getSimpleName() + " in thread " + thread.getName() + ": " + exc.getMessage() + " Stack trace: " + trace, LogLevel.ERROR);
     }
 
     //____________________________________________________________________________________________________________________________________
