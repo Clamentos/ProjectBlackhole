@@ -2,7 +2,9 @@ package io.github.clamentos.blackhole.common.framework;
 
 //________________________________________________________________________________________________________________________________________
 
+import io.github.clamentos.blackhole.common.config.ConfigurationProvider;
 import io.github.clamentos.blackhole.common.exceptions.GlobalExceptionHandler;
+
 import java.util.concurrent.BlockingQueue;
 
 //________________________________________________________________________________________________________________________________________
@@ -40,19 +42,35 @@ public abstract class Worker<R> extends Thread implements WorkerSpec {
 
         Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
 
+        boolean do_block;
         R elem;
         running = true;
 
         while(running == true) {
 
-            // it turns out that .poll() is MUCH lower latency...
-            // ... but it continuously polls (busy waiting -> high CPU usage)
-            // ==>> make this hybrid that can dynamically switch from .take and .poll
+            do_block = true;
 
             try {
 
-                elem = resource_queue.take();
-                doWork(elem);
+                // attemp to fetch from the queue aggressively
+                for(int i = 0; i < ConfigurationProvider.QUEUE_POLL_LIMIT; i++) {
+
+                    elem = resource_queue.poll();
+
+                    if(elem != null) {
+
+                        do_block = false;
+                        doWork(elem);
+
+                        break;
+                    }
+                }
+
+                // failed to fetch aggressively, fallback on blocking mode
+                if(do_block == true) {
+
+                    doWork(resource_queue.take());
+                }
             }
 
             catch(InterruptedException exc) {

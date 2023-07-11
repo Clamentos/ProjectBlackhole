@@ -26,7 +26,9 @@ import java.util.Properties;
 */
 public class ConfigurationProvider {
 
-    public static int NUM_LOG_WORKERS;
+    public static int QUEUE_POLL_LIMIT = 100;
+
+    public static int NUM_LOG_WORKERS = 1;
     public static int MAX_LOG_QUEUE_SIZE = 10_000;
     public static int MAX_LOG_FILE_SIZE = 10_000_000;
 
@@ -87,6 +89,8 @@ public class ConfigurationProvider {
 
             prop.load(Files.newInputStream(Paths.get("resources/Application.properties")));
             LogPrinter.printToConsole("Loaded resources/Application.properties", LogLevel.SUCCESS);
+
+            QUEUE_POLL_LIMIT = Integer.parseInt((String)prop.getOrDefault("QUEUE_POLL_LIMIT", "100"));
 
             NUM_LOG_WORKERS = Integer.parseInt((String)prop.getOrDefault("NUM_LOG_WORKERS", "1"));
             MAX_LOG_QUEUE_SIZE = Integer.parseInt((String)prop.getOrDefault("MAX_LOG_QUEUE_SIZE", "10000"));
