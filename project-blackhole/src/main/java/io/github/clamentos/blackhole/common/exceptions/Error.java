@@ -1,10 +1,16 @@
 package io.github.clamentos.blackhole.common.exceptions;
 
-public enum Error {
+public class Error extends Throwable {
     
-    SESSION_NOT_FOUND,
-    SESSION_EXPIRED,
-    NOT_ENOUGH_PRIVILEGES,
-    BAD_FORMATTING
-    //...
+    private Errors error;
+
+    public Error(Errors error) {
+
+        this.error = error;
+    }
+
+    public Errors getError() {
+
+        return(error);
+    }
 }
