@@ -1,11 +1,16 @@
 package io.github.clamentos.blackhole.logging;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
+//________________________________________________________________________________________________________________________________________
 
 import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
 import io.github.clamentos.blackhole.common.configuration.Constants;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+
+//________________________________________________________________________________________________________________________________________
 
 public class Logger {
     
@@ -15,6 +20,8 @@ public class Logger {
 
     private List<LinkedBlockingQueue<Log>> queues;
     private List<LogTask> log_tasks;
+
+    //____________________________________________________________________________________________________________________________________
 
     private Logger() {
 
@@ -30,19 +37,56 @@ public class Logger {
         log_tasks.add(new LogTask(queues.get(1)));
     }
 
+    //____________________________________________________________________________________________________________________________________
+
     public static Logger getInstance() {
 
         return(INSTANCE);
     }
 
+    //____________________________________________________________________________________________________________________________________
+
     public void log(String message, LogLevel severity) {
 
         Log log;
+        int i;
 
         if(MIN_LOG_LEVEL.compareTo(severity) <= 0) {
 
             log = new Log(message, severity);
-            // put in one of the queues
+            i = 0;
+            
+            while(i < 10) {
+
+                try {
+
+                    if(queues.get((int)(log.id() % queues.size())).offer(log, 10_000, TimeUnit.MILLISECONDS) == true) {
+
+                        return;
+                    }
+
+                    else {
+
+                        LogPrinter.printToConsole(new Log(
+
+                            "Logger.log > Could not insert into the log queue, timed out.",
+                            LogLevel.ERROR
+                        ));
+                    }
+                }
+
+                catch(InterruptedException exc) {
+
+                    LogPrinter.printToConsole(new Log(
+
+                        "Logger.log > Could not insert into the log queue, InterruptedException: " +
+                        exc.getMessage() + " Retrying...",
+                        LogLevel.WARNING
+                    ));
+                }
+            }
         }
     }
+
+    //____________________________________________________________________________________________________________________________________
 }

@@ -5,7 +5,6 @@ package io.github.clamentos.blackhole.common.configuration;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
 
-
 import java.io.IOException;
 
 import java.nio.file.Files;
@@ -26,7 +25,9 @@ import java.util.Properties;
 public class ConfigurationProvider {
     
     private static final ConfigurationProvider INSTANCE = new ConfigurationProvider();
+
     private final Logger LOGGER = Logger.getInstance();
+    
     private Map<Constants, Object> constants;
 
     //____________________________________________________________________________________________________________________________________
