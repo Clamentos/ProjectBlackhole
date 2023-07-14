@@ -3,6 +3,11 @@ package io.github.clamentos.blackhole;
 
 //________________________________________________________________________________________________________________________________________
 
+import io.github.clamentos.blackhole.common.exceptions.GlobalExceptionHandler;
+import io.github.clamentos.blackhole.web.server.Server;
+
+//________________________________________________________________________________________________________________________________________
+
 /**
  * Main App class, initialize and start
 */
@@ -11,6 +16,20 @@ public class App {
     //____________________________________________________________________________________________________________________________________
 
     public static void main(String[] args) {
+
+        Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
+        Server server = Server.getInstance();
+        Thread t = server.start();
+
+        try {
+
+            t.join();
+        }
+
+        catch(InterruptedException exc) {
+
+            System.out.println("interrupted in main");
+        }
 
         /*try {
 

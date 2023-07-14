@@ -1,35 +1,46 @@
 package io.github.clamentos.blackhole.logging;
 
-import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
-import io.github.clamentos.blackhole.common.configuration.Constants;
+//________________________________________________________________________________________________________________________________________
 
+/**
+ * <p>Enumeration of all the possible log levels.</p>
+ * Each entry is composed of the log level name + color.
+ * <p>The log levels in increasing relevance are:</p>
+ * <ol>
+ *     <li>DEBUG</li>
+ *     <li>INFO</li>
+ *     <li>SUCCESS</li>
+ *     <li>NOTE</li>
+ *     <li>WARNING</li>
+ *     <li>ERROR</li>
+ * </ol>
+*/
 public enum LogLevel {
     
-    DEBUG("DEBUG  ", "\u001B[30m", ConfigurationProvider.getInstance().getConstant(Constants.DEBUG_LEVEL_TO_FILE, Boolean.class)),
-    INFO("INFO   ", "\u001B[34m", ConfigurationProvider.getInstance().getConstant(Constants.INFO_LEVEL_TO_FILE, Boolean.class)),
-    SUCCESS("SUCCESS", "\u001B[32m", ConfigurationProvider.getInstance().getConstant(Constants.SUCCESS_LEVEL_TO_FILE, Boolean.class)),
-    NOTE("NOTE   ", "\u001B[35m", ConfigurationProvider.getInstance().getConstant(Constants.NOTE_LEVEL_TO_FILE, Boolean.class)),
-    WARNING("WARNING", "\u001B[33m", ConfigurationProvider.getInstance().getConstant(Constants.WARNING_LEVEL_TO_FILE, Boolean.class)),
-    ERROR("ERROR  ", "\u001B[31m", ConfigurationProvider.getInstance().getConstant(Constants.ERROR_LEVEL_TO_FILE, Boolean.class));
+    DEBUG("DEBUG  ", "\u001B[30m"),
+    INFO("INFO   ", "\u001B[34m"),
+    SUCCESS("SUCCESS", "\u001B[32m"),
+    NOTE("NOTE   ", "\u001B[35m"),
+    WARNING("WARNING", "\u001B[33m"),
+    ERROR("ERROR  ", "\u001B[31m");
 
     //____________________________________________________________________________________________________________________________________
 
     private String value;
     private String color;
-    private boolean to_file;
 
     //____________________________________________________________________________________________________________________________________
 
-    private LogLevel(String value, String color, boolean to_file) {
+    private LogLevel(String value, String color) {
 
         this.value = value;
         this.color = color;
-        this.to_file = to_file;
     }
 
     //____________________________________________________________________________________________________________________________________
 
     /**
+     * <p><b>This method is thread safe.</p></b>
      * Get the associated log level string.
      * @return the log level string (always well-defined).
     */
@@ -39,21 +50,13 @@ public enum LogLevel {
     }
 
     /**
+     * <p><b>This method is thread safe.</p></b>
      * Get the associated log level color.
      * @return the log level color (always well-defined).
     */
     public String getColor() {
 
         return(color);
-    }
-
-    /**
-     * Get the destination of the associated log level.
-     * @return the log level destination, either to console or to file.
-    */
-    public boolean getToFile() {
-
-        return(to_file);
     }
 
     //____________________________________________________________________________________________________________________________________

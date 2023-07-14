@@ -4,13 +4,11 @@ package io.github.clamentos.blackhole.common.utility;
 
 /**
  * <p><b>NOTE: preview features MUST be enabled.</p></b>
+ * <p>Task launcher.</p>
  * Simple utility class to launch tasks with virtual threads.
 */
 
 @SuppressWarnings("preview")
-
-//________________________________________________________________________________________________________________________________________
-
 public class TaskLauncher {
 
     //____________________________________________________________________________________________________________________________________
@@ -20,9 +18,11 @@ public class TaskLauncher {
      * Spawn a new virtual thread and assign it the specified task.
      * @param task : The task to run.
      * @return The {@link Thread} that is executing the task.
+     * @throws IllegalArgumentException If {@code task} is {@code null}.
     */
-    public static Thread launch(Runnable task) {
+    public static Thread launch(Runnable task) throws IllegalArgumentException {
 
+        if(task == null) throw new IllegalArgumentException();
         return(Thread.ofVirtual().start(task));
     }
 

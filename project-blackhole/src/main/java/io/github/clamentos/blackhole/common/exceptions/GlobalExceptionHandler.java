@@ -28,8 +28,7 @@ public class GlobalExceptionHandler implements UncaughtExceptionHandler {
 
     /**
      * <p><b>This method is thread safe.</b></p>
-     * <p>Get the {@link GlobalExceptionHandler} instance.
-     * If the instance doesn't exist, create it.</p>
+     * Get the {@link GlobalExceptionHandler} instance created during class loading.
      * @return The {@link GlobalExceptionHandler} instance.
     */
     public static GlobalExceptionHandler getInstance() {

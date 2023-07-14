@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat;
 //________________________________________________________________________________________________________________________________________
 
 /**
+ * <p>Log printer.</p>
  * <p>Static class that holds the actual log printing methods.</p>
  * <p>The logs will have the following format:</p>
  * {@code [ERROR]-[20/10/2023]-[14:10:34.123]-[14:10:36.345]-[1234567890]-[...]}
@@ -30,17 +31,13 @@ public class LogPrinter {
      * Prints the log to the standard output (console) with formatting.
      * @param log : The {@link Log} to print. If {@code log} is {@code null}, this method
      *              will not do anyting.
+     * @throws NullPointerException If {@code log} or any of its fields are {@code null}.
     */
-    public static void printToConsole(Log log) {
+    public static void printToConsole(Log log) throws NullPointerException {
 
         String level;
         String partial;
         String message;
-
-        if(log == null) {
-
-            return;
-        }
 
         level = "[" + log.log_level().getColor() + log.log_level().getValue() + "\u001B[0m]-";
         message = "[" + log.log_level().getColor() + log.message() + "\u001B[0m]";
@@ -55,8 +52,9 @@ public class LogPrinter {
      * Prints the message to the log file.
      * @param log : The {@link Log} to print. If {@code log} is {@code null}, this method
      *              will not do anyting.
+     * @throws NullPointerException If {@code log} or any of its fields are {@code null}.
     */
-    public static void printToFile(Log log) {
+    public static void printToFile(Log log) throws NullPointerException {
 
         LogFileManager file = LogFileManager.getInstance();
 
@@ -109,7 +107,7 @@ public class LogPrinter {
         date = "[" + date_formatter.format(log.creation_date()) + "]-";
         time_start = "[" + time_formatter.format(log.creation_date()) + "]-";
         time_end = "[" + time_formatter.format(System.currentTimeMillis()) + "]-";
-        id = "[" + log.id() + "]-";
+        id = "[" + String.format("%016X", log.id()) + "]-";
 
         return(date + time_start + time_end + id);
     }

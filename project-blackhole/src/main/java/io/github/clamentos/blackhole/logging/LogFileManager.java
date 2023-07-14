@@ -15,15 +15,16 @@ import java.io.IOException;
 /**
  * <p><b>Eager-loaded singleton.</b></p>
  * <p>Log file manager.</p>
- * This class manages the log files when writing,
+ * This class manages the log files in {@code /logs} when writing,
  * including finding the latest eligible log file to write and
  * creating a new one when the size limit is reached.
 */
 public class LogFileManager {
 
     private static final LogFileManager INSTANCE = new LogFileManager();
+    private final ConfigurationProvider CONFIGS = ConfigurationProvider.getInstance();
     
-    private final int MAX_LOG_FILE_SIZE = ConfigurationProvider.getInstance().getConstant(Constants.MAX_LOG_FILE_SIZE, Integer.class);
+    private final int MAX_LOG_FILE_SIZE;
 
     private BufferedWriter file_writer;
     private long file_size;
@@ -32,6 +33,7 @@ public class LogFileManager {
 
     private LogFileManager() {
 
+        MAX_LOG_FILE_SIZE = CONFIGS.getConstant(Constants.MAX_LOG_FILE_SIZE, Integer.class);
         findEligible();
     }
 
@@ -39,7 +41,7 @@ public class LogFileManager {
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Get the {@link LogFileManager} instance. If none is available, create it.
+     * Get the {@link LogFileManager} instance created during class loading.
      * @return The {@link ConfigurationProvider} instance.
     */
     public static LogFileManager getInstance() {
@@ -53,9 +55,10 @@ public class LogFileManager {
      * Writes to the currently active log file.
      * @param data : The actual data.
      * @throws IOException If the method cannot write the file.
+     * @throws NullPointerException If {@code data} is {@code null}.
     */
     // maybe sync all?
-    public void write(String data) throws IOException {
+    public void write(String data) throws IOException, NullPointerException {
 
         if(file_size >= MAX_LOG_FILE_SIZE) {
 

@@ -6,6 +6,11 @@ import java.util.concurrent.atomic.AtomicLong;
 
 //________________________________________________________________________________________________________________________________________
 
+/**
+ * <p><b>Eager-loaded singleton.</b></p>
+ * <p>Log id generator.</p>
+ * This class generates unique sequential ids for each log event.
+*/
 public class LogIdGenerator {
 
     //____________________________________________________________________________________________________________________________________
@@ -17,14 +22,25 @@ public class LogIdGenerator {
 
     private LogIdGenerator() {
 
-        id.set(0);
+        id = new AtomicLong(0);
     }
 
+    /**
+     * <p><b>This method is thread safe.</p></b>
+     * Get the {@link LogIdGenerator} instance created during class loading.
+     * @return The {@link LogIdGenerator} instance.
+    */
     public static LogIdGenerator getInstance() {
 
         return(INSTANCE);
     }
 
+    /**
+     * <p><b>This method is thread safe.</p></b>
+     * This method generates the next id.
+     * @return The next log id in the sequence. Overflows don't cause any exception
+     *         and simply wrap around.
+    */
     public long getNext() {
 
         return(id.getAndIncrement());
@@ -32,12 +48,3 @@ public class LogIdGenerator {
 
     //____________________________________________________________________________________________________________________________________
 }
-
-/*
- * @LOOP:
- *  LL: x;
- *  ADI: x, 1;
- *  SC: x, r1;
- * BEQ: r1, 1, LOOP;
- * ...
-*/

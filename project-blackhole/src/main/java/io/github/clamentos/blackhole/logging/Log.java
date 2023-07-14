@@ -7,7 +7,8 @@ import java.util.Date;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * Simple log object used as a template for generating the actual print.
+ * <p>Log object.</p>
+ * This class is used as a template for generating the actual print.
 */
 public record Log(
     
