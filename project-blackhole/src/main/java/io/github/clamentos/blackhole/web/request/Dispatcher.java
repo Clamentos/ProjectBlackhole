@@ -1,6 +1,8 @@
 package io.github.clamentos.blackhole.web.request;
 
 import java.io.BufferedOutputStream;
+
+import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
 
 public class Dispatcher {
@@ -20,9 +22,16 @@ public class Dispatcher {
         return(INSTANCE);
     }
 
+    // echo for now...
     public byte[] dispatch(byte[] raw_request, BufferedOutputStream out) {
 
-        //...
-        return(null);
+        LOGGER.log("DISPATCHED", LogLevel.SUCCESS);
+        
+        for(Byte elem : raw_request) {
+
+            System.out.println("DISPATCHER: " + elem);
+        }
+
+        return(raw_request);
     }
 }

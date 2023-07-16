@@ -2,9 +2,8 @@ package io.github.clamentos.blackhole.common.framework;
 
 //________________________________________________________________________________________________________________________________________
 
-
-import java.util.List;
 import io.github.clamentos.blackhole.web.request.components.DataEntry;
+import java.util.List;
 
 //________________________________________________________________________________________________________________________________________
 

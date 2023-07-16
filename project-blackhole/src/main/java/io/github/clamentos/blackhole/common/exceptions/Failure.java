@@ -2,9 +2,7 @@ package io.github.clamentos.blackhole.common.exceptions;
 
 //________________________________________________________________________________________________________________________________________
 
-/**
- * Simple wrapper for the {@link Failures} enum.
-*/
+/** Simple wrapper around the {@link Failures} enum, in order to make them {@link Throwable}. */
 public class Failure extends Throwable {
     
     private Failures error;

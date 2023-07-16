@@ -1,48 +1,56 @@
 package io.github.clamentos.blackhole.web.server;
 
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.util.HashMap;
+//________________________________________________________________________________________________________________________________________
 
 import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
-import io.github.clamentos.blackhole.common.configuration.Constants;
 import io.github.clamentos.blackhole.common.exceptions.GlobalExceptionHandler;
-import io.github.clamentos.blackhole.common.utility.TaskLauncher;
+import io.github.clamentos.blackhole.common.framework.ContinuousTask;
+import io.github.clamentos.blackhole.common.utility.TaskManager;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
 import io.github.clamentos.blackhole.web.connection.ConnectionTask;
 
-public class ServerTask implements Runnable {
+import java.io.IOException;
+
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketAddress;
+
+import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+//________________________________________________________________________________________________________________________________________
+
+/**
+ * <p>Web server task.</p>
+ * This class is responsible for accepting the incoming client sockets,
+ * as well as to manage each {@link ConnectionTask}.
+*/
+public class ServerTask extends ContinuousTask {
 
     private final Logger LOGGER;
-    private final ConfigurationProvider CONFIGS;
+    private final ConfigurationProvider CFG;
 
-    private final int SERVER_PORT;
-    private final int SOCKET_TIMEOUT;
-    private final int MAX_SERVER_START_RETRIES;
-    private final int MAX_SOCKETS_PER_IP;
-
-    private boolean running;
     private ServerSocket server_socket;
     private HashMap<SocketAddress, Integer> sockets_per_ip;
+    private AtomicBoolean stop_completed;
+
+    //____________________________________________________________________________________________________________________________________
 
     protected ServerTask() {
 
+        super();
+
         LOGGER = Logger.getInstance();
-        CONFIGS = ConfigurationProvider.getInstance();
+        CFG = ConfigurationProvider.getInstance();
 
-        SERVER_PORT = CONFIGS.getConstant(Constants.SERVER_PORT, Integer.class);
-        SOCKET_TIMEOUT = CONFIGS.getConstant(Constants.SOCKET_TIMEOUT, Integer.class);
-        MAX_SERVER_START_RETRIES = CONFIGS.getConstant(Constants.MAX_SERVER_START_RETRIES, Integer.class);
-        MAX_SOCKETS_PER_IP = CONFIGS.getConstant(Constants.MAX_SOCKETS_PER_IP, Integer.class);
-
-        running = false;
         sockets_per_ip = new HashMap<>();
+        stop_completed = new AtomicBoolean(false);
 
-        LOGGER.log("Server task instantiated successfully", LogLevel.SUCCESS);
+        LOGGER.log("ServerTask.new > Server task instantiated successfully", LogLevel.SUCCESS);
     }
+
+    //____________________________________________________________________________________________________________________________________
 
     @Override
     public void run() {
@@ -53,26 +61,24 @@ public class ServerTask implements Runnable {
 
         Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
 
-        if(attempt(MAX_SERVER_START_RETRIES) == true) {
+        if(attempt(CFG.MAX_SERVER_START_ATTEMPTS) == true) {
 
-            running = true;
-            LOGGER.log("Server task started successfully", LogLevel.SUCCESS);
+            LOGGER.log("ServerTask.run 1 > Server task started successfully", LogLevel.SUCCESS);
 
-            while(running == true) {
+            while(super.isStopped() == false) {
 
                 try {
 
-                    client_socket = server_socket.accept();
+                    client_socket = server_socket.accept();    // If thread is interrupted, it throws socket exception.
                     client_address = client_socket.getRemoteSocketAddress();
-                    
                     num = sockets_per_ip.get(client_address);
 
                     if(num != null) {
 
-                        if(num < MAX_SOCKETS_PER_IP) {
+                        if(num < CFG.MAX_SOCKETS_PER_IP) {
 
                             sockets_per_ip.put(client_address, num + 1);
-                            TaskLauncher.launch(new ConnectionTask(client_socket));
+                            TaskManager.getInstance().launchNewConnectionTask(client_socket);
                         }
 
                         else {
@@ -85,37 +91,58 @@ public class ServerTask implements Runnable {
                     else {
 
                         sockets_per_ip.put(client_address, 1);
-                        TaskLauncher.launch(new ConnectionTask(client_socket));
+                        TaskManager.getInstance().launchNewConnectionTask(client_socket);
                     }
                 }
 
                 catch(IOException exc) {
 
-                    LOGGER.log("Server task could not accept socket", LogLevel.NOTE);
+                    LOGGER.log(
+                        
+                        "ServerTask.run 2 > Could not accept the incoming socket, " +
+                        exc.getClass().getSimpleName() + ": " + exc.getMessage(),
+                        LogLevel.NOTE
+                    );
                 }
             }
 
-            LOGGER.log("Server task stopped successfully", LogLevel.SUCCESS);
+            try {
+
+                server_socket.close();
+                LOGGER.log("ServerTask.run 3 > Server task stopped successfully", LogLevel.SUCCESS);
+            }
+            
+            catch (IOException exc) {
+
+                LOGGER.log(
+                        
+                    "ServerTask.run 4 > Could not close the server socket, IOException: " + exc.getMessage(),
+                    LogLevel.ERROR
+                );
+            }
         }
+
+        stop_completed.set(true);
     }
 
-    public void stop() {
+    public boolean isStoppingCompleted() {
 
-        running = false;
+        return(stop_completed.get());
     }
+
+    //____________________________________________________________________________________________________________________________________
 
     // attemp to create the server socket with N retries
     private synchronized boolean attempt(int retries) {
 
-        if(running == false) {
+        if(Thread.currentThread().isInterrupted() == false) {
 
             for(int i = 0; i < retries; i++) {
 
                 try {
 
-                    server_socket = new ServerSocket(SERVER_PORT);
-                    server_socket.setSoTimeout(SOCKET_TIMEOUT);
-                    running = true;
+                    server_socket = new ServerSocket(CFG.SERVER_PORT);
+                    server_socket.setSoTimeout(CFG.SOCKET_TIMEOUT);
 
                     return(true);
                 }
@@ -124,7 +151,7 @@ public class ServerTask implements Runnable {
     
                     LOGGER.log(
 
-                        "Server.attempt > Could not create server socket, " +
+                        "Server.attempt 1 > Could not create server socket, " +
                         exc.getClass().getSimpleName() + ": " +
                         exc.getMessage(),
                         LogLevel.ERROR
@@ -133,14 +160,14 @@ public class ServerTask implements Runnable {
 
                 try {
 
-                    Thread.sleep(1000);
+                    Thread.sleep(1000 * (i + 1));
                 }
 
                 catch(InterruptedException exc) {
 
                     LOGGER.log(
                         
-                        "Server.attempt > Interrupted while waiting on retries, InterruptedException: " +
+                        "Server.attempt 2 > Interrupted while waiting on retries, InterruptedException: " +
                         exc.getMessage(),
                         LogLevel.INFO
                     );
@@ -149,11 +176,13 @@ public class ServerTask implements Runnable {
 
             LOGGER.log(
 
-                "Server.attempt > Retries exhausted while attempting to start the server",
+                "Server.attempt 3 > Retries exhausted while attempting to start the server",
                 LogLevel.ERROR
             );
         }
 
         return(false);
     }
+
+    //____________________________________________________________________________________________________________________________________
 }

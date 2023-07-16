@@ -1,15 +1,15 @@
 package io.github.clamentos.blackhole.logging;
 
-import java.util.HashMap;
-
 //________________________________________________________________________________________________________________________________________
 
+import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
+import io.github.clamentos.blackhole.common.exceptions.GlobalExceptionHandler;
+import io.github.clamentos.blackhole.common.framework.ContinuousTask;
+import io.github.clamentos.blackhole.common.utility.TaskManager;
+
+import java.util.HashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
-import io.github.clamentos.blackhole.common.configuration.Constants;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -18,15 +18,13 @@ import io.github.clamentos.blackhole.common.configuration.Constants;
  * <p>Log task.</p>
  * This class is responsible for fetching the logs from the log queue and printing them.
 */
-public class LogTask implements Runnable {
+public class LogTask extends ContinuousTask {
 
-    private final ConfigurationProvider CONFIGS =  ConfigurationProvider.getInstance();
+    private ConfigurationProvider configuration_provider;
 
-    private final int MAX_QUEUE_POLLS;
     private final HashMap<LogLevel, Boolean> TO_FILE_MAP;
-
     private LinkedBlockingQueue<Log> queue;
-    private AtomicBoolean running;
+    private long id;
 
     //____________________________________________________________________________________________________________________________________
 
@@ -36,34 +34,26 @@ public class LogTask implements Runnable {
      * @param queue : The log queue from where to fetch the logs.
      * @throws NullPointerException If {@code queue} is {@code null}.
     */
-    public LogTask(LinkedBlockingQueue<Log> queue) throws NullPointerException {
+    public LogTask(LinkedBlockingQueue<Log> queue, long id) throws NullPointerException {
+
+        super();
 
         if(queue == null) throw new NullPointerException();
 
-        MAX_QUEUE_POLLS = CONFIGS.getConstant(Constants.MAX_QUEUE_POLLS, Integer.class);
+        configuration_provider = ConfigurationProvider.getInstance();
         this.queue = queue;
+        this.id = id;
 
         TO_FILE_MAP = new HashMap<>();
 
-        TO_FILE_MAP.put(LogLevel.DEBUG, CONFIGS.getConstant(Constants.DEBUG_LEVEL_TO_FILE, Boolean.class));
-        TO_FILE_MAP.put(LogLevel.INFO, CONFIGS.getConstant(Constants.INFO_LEVEL_TO_FILE, Boolean.class));
-        TO_FILE_MAP.put(LogLevel.SUCCESS, CONFIGS.getConstant(Constants.SUCCESS_LEVEL_TO_FILE, Boolean.class));
-        TO_FILE_MAP.put(LogLevel.NOTE, CONFIGS.getConstant(Constants.NOTE_LEVEL_TO_FILE, Boolean.class));
-        TO_FILE_MAP.put(LogLevel.WARNING, CONFIGS.getConstant(Constants.WARNING_LEVEL_TO_FILE, Boolean.class));
-        TO_FILE_MAP.put(LogLevel.ERROR, CONFIGS.getConstant(Constants.ERROR_LEVEL_TO_FILE, Boolean.class));
+        TO_FILE_MAP.put(LogLevel.DEBUG, configuration_provider.DEBUG_LEVEL_TO_FILE);
+        TO_FILE_MAP.put(LogLevel.INFO, configuration_provider.INFO_LEVEL_TO_FILE);
+        TO_FILE_MAP.put(LogLevel.SUCCESS, configuration_provider.SUCCESS_LEVEL_TO_FILE);
+        TO_FILE_MAP.put(LogLevel.NOTE, configuration_provider.NOTE_LEVEL_TO_FILE);
+        TO_FILE_MAP.put(LogLevel.WARNING, configuration_provider.WARNING_LEVEL_TO_FILE);
+        TO_FILE_MAP.put(LogLevel.ERROR, configuration_provider.ERROR_LEVEL_TO_FILE);
 
-        running = new AtomicBoolean(false);
-    }
-
-    //____________________________________________________________________________________________________________________________________
-
-    /**
-     * <p><b>This method is thread safe.</p></b>
-     * Stop the task.
-    */
-    public void stop() {
-
-        running.set(false);
+        LogPrinter.printToConsole(new Log("LogTask.new > Log task instantiated successfully", LogLevel.SUCCESS));
     }
 
     //____________________________________________________________________________________________________________________________________
@@ -75,14 +65,17 @@ public class LogTask implements Runnable {
         int count;
         Log log;
 
-        running.set(true);
+        Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
 
-        while(running.get() == true) {
+        // Spin as long as the stop flag is false.
+        // If the stop flag becomes true, keep logging untill the queue is empty
+        while(super.isStopped() == false || queue.isEmpty() == false) {
 
             relax = true;
             count = 0;
 
-            while(count < MAX_QUEUE_POLLS) {
+            // poll aggressively with N retries
+            while(count < configuration_provider.MAX_LOG_QUEUE_POLLS) {
 
                 log = queue.poll();
 
@@ -97,33 +90,34 @@ public class LogTask implements Runnable {
                 count++;
             }
 
+            // Block on queue when the retries are exhausted
             if(relax == true) {
 
-                while(true) {
+                try {
 
-                    try {
+                    // Poll doesn't generate InterrupredException when it times out, it simply returns null.
+                    log = queue.poll(configuration_provider.LOG_QUEUE_TIMEOUT, TimeUnit.MILLISECONDS);
 
-                        log = queue.poll(2, TimeUnit.SECONDS);
+                    if(log != null) {
+
                         doWork(log);
                     }
+                }
 
-                    catch(InterruptedException exc) {
+                catch(InterruptedException exc) {
 
-                        if(running.get() == true) {
-
-                            LogPrinter.printToConsole(new Log(
-
-                                "LogTask.run > shutting down." +
-                                exc.getMessage(),
-                                LogLevel.INFO
-                            ));
-                            
-                            return;
-                        }
-                    }
+                    super.stop();
                 }
             }
         }
+
+        LogPrinter.printToConsole(new Log(
+
+            "LogTask.run > Shutting down",
+            LogLevel.INFO
+        ));
+
+        TaskManager.getInstance().removeLogTask(id);
     }
 
     //____________________________________________________________________________________________________________________________________

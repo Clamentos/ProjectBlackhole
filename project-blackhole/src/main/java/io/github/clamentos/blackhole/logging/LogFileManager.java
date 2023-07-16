@@ -3,7 +3,6 @@ package io.github.clamentos.blackhole.logging;
 //________________________________________________________________________________________________________________________________________
 
 import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
-import io.github.clamentos.blackhole.common.configuration.Constants;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -22,9 +21,8 @@ import java.io.IOException;
 public class LogFileManager {
 
     private static final LogFileManager INSTANCE = new LogFileManager();
-    private final ConfigurationProvider CONFIGS = ConfigurationProvider.getInstance();
-    
-    private final int MAX_LOG_FILE_SIZE;
+
+    private ConfigurationProvider configuration_provider;
 
     private BufferedWriter file_writer;
     private long file_size;
@@ -33,7 +31,7 @@ public class LogFileManager {
 
     private LogFileManager() {
 
-        MAX_LOG_FILE_SIZE = CONFIGS.getConstant(Constants.MAX_LOG_FILE_SIZE, Integer.class);
+        configuration_provider = ConfigurationProvider.getInstance();
         findEligible();
     }
 
@@ -60,7 +58,7 @@ public class LogFileManager {
     // maybe sync all?
     public void write(String data) throws IOException, NullPointerException {
 
-        if(file_size >= MAX_LOG_FILE_SIZE) {
+        if(file_size >= configuration_provider.MAX_LOG_FILE_SIZE) {
 
             findEligible();
         }
@@ -72,7 +70,7 @@ public class LogFileManager {
 
     //____________________________________________________________________________________________________________________________________
 
-    // finds the most "recent" log file. If there are none, create one
+    // Finds the most "recent" log file. If there are none, create one.
     private synchronized void findEligible() {
 
         File[] files;
@@ -92,7 +90,7 @@ public class LogFileManager {
                 }
             }
 
-            if((found > 0) && (files[found - 1].length() < MAX_LOG_FILE_SIZE)) {
+            if((found > 0) && (files[found - 1].length() < configuration_provider.MAX_LOG_FILE_SIZE)) {
 
                 file_size = files[found - 1].length();
                 file_writer = new BufferedWriter(new FileWriter(files[found - 1], true));

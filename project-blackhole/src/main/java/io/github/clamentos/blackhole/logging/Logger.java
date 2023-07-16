@@ -3,7 +3,7 @@ package io.github.clamentos.blackhole.logging;
 //________________________________________________________________________________________________________________________________________
 
 import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
-import io.github.clamentos.blackhole.common.configuration.Constants;
+import io.github.clamentos.blackhole.common.utility.TaskManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,32 +20,24 @@ import java.util.concurrent.TimeUnit;
 public class Logger {
     
     private static final Logger INSTANCE = new Logger();
-    private final ConfigurationProvider CONFIGS;
 
-    private final LogLevel MIN_LOG_LEVEL;
-    private final int MAX_QUEUE_POLLS;
-    private final int QUEUE_TIMEOUT;
+    private ConfigurationProvider configuration_provider;
 
     private List<LinkedBlockingQueue<Log>> queues;
-    private List<LogTask> log_tasks;
 
     //____________________________________________________________________________________________________________________________________
 
     private Logger() {
 
-        CONFIGS = ConfigurationProvider.getInstance();
-        MIN_LOG_LEVEL = CONFIGS.getConstant(Constants.MIN_LOG_LEVEL, LogLevel.class);
-        MAX_QUEUE_POLLS = CONFIGS.getConstant(Constants.MAX_QUEUE_POLLS, Integer.class);
-        QUEUE_TIMEOUT = CONFIGS.getConstant(Constants.QUEUE_TIMEOUT, Integer.class);
+        configuration_provider = ConfigurationProvider.getInstance();
 
         queues = new ArrayList<>();
-        log_tasks = new ArrayList<>();
 
-        queues.add(new LinkedBlockingQueue<>());
-        queues.add(new LinkedBlockingQueue<>());
+        for(int i = 0; i < configuration_provider.NUM_LOG_TASKS; i++) {
 
-        log_tasks.add(new LogTask(queues.get(0)));
-        log_tasks.add(new LogTask(queues.get(1)));
+            queues.add(new LinkedBlockingQueue<>());
+            TaskManager.getInstance().launchNewLogTask(queues.get(i));
+        }
     }
 
     //____________________________________________________________________________________________________________________________________
@@ -77,18 +69,18 @@ public class Logger {
         int i;
         int queue_index;
 
-        if(MIN_LOG_LEVEL.compareTo(severity) <= 0) {
+        if(configuration_provider.MIN_LOG_LEVEL.compareTo(severity) <= 0) {
 
             log = new Log(message, severity);
             i = 0;
 
-            while(i < MAX_QUEUE_POLLS) {
+            while(i < configuration_provider.MAX_LOG_QUEUE_POLLS) {
 
                 try {
 
                     queue_index = (int)(log.id() % queues.size());
 
-                    if(queues.get(queue_index).offer(log, QUEUE_TIMEOUT, TimeUnit.MILLISECONDS) == true) {
+                    if(queues.get(queue_index).offer(log, configuration_provider.LOG_QUEUE_TIMEOUT, TimeUnit.MILLISECONDS) == true) {
 
                         return;
                     }
@@ -97,7 +89,7 @@ public class Logger {
 
                         LogPrinter.printToConsole(new Log(
 
-                            "Logger.log 1 > Could not insert into the log queue, timed out.",
+                            "Logger.log 1 > Could not insert into the log queue, timed out",
                             LogLevel.ERROR
                         ));
                     }
@@ -118,7 +110,7 @@ public class Logger {
 
             LogPrinter.printToConsole(new Log(
 
-                "Logger.log 3 > Could not insert into the log queue, polls exhausted.",
+                "Logger.log 3 > Could not insert into the log queue, polls exhausted",
                 LogLevel.ERROR
             ));
         }

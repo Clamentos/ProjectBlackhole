@@ -41,7 +41,7 @@ public class GlobalExceptionHandler implements UncaughtExceptionHandler {
     /**
      * <p><b>This method is thread safe.</b></p>
      * <p>Catch the uncaught exception!
-     * As of now, this method will only print the exception to the console.</p>
+     * As of now, this method will only print the exception and the stack trace to the console.</p>
      * @param thread : The thread that threw the exception.
      * @param exc : The actual exception.
     */
@@ -52,7 +52,7 @@ public class GlobalExceptionHandler implements UncaughtExceptionHandler {
         PrintWriter pw = new PrintWriter(sw);
         
         exc.printStackTrace(pw);
-        String trace = sw.toString().replaceAll("[\\t\\n\\r]+","; ");
+        String trace = sw.toString();
 
         LogPrinter.printToConsole(new Log(
 

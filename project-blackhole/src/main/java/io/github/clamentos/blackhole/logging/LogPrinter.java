@@ -69,7 +69,7 @@ public class LogPrinter {
 
         level = "[" + log.log_level().getValue() + "]-";
         partial = partialString(log);
-        message = "[" + log.message() + "]";
+        message = "[" + log.message() + "]\n";
 
         try {
 
