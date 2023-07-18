@@ -1,13 +1,14 @@
+// OK
 package io.github.clamentos.blackhole.web.request;
 
 //________________________________________________________________________________________________________________________________________
 
-import java.util.ArrayList;
-import java.util.List;
-
 import io.github.clamentos.blackhole.web.request.components.DataEntry;
 import io.github.clamentos.blackhole.web.request.components.Methods;
 import io.github.clamentos.blackhole.web.request.components.Resources;
+
+import java.util.ArrayList;
+import java.util.List;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -29,7 +30,7 @@ public record Request(
 
     /**
      * <p><b>This method is thread safe.</b></p>
-     * Instantiates a new {@link Request} object.
+     * Instantiate a new {@link Request} object.
      * @param data : The input data array, usually taken from a stream.
      * @throws IllegalArgumentException If the data holds any illegal value.
      * @throws ArrayIndexOutOfBoundsException If the data is incomplete or badly formatted.

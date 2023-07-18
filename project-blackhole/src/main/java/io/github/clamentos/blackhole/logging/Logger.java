@@ -1,3 +1,4 @@
+// OK
 package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
@@ -56,7 +57,7 @@ public class Logger {
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * <p>Inserts the log into the log queue.</p>
+     * <p>Insert the log into the log queue.</p>
      * This method will block the calling thread up to {@link Constants#QUEUE_TIMEOUT} milliseconds.
      * If the insert times out, this method will retry up to {@link Constants#MAX_QUEUE_POLLS} times.
      * If that fails too, this method will simply return.
@@ -100,7 +101,7 @@ public class Logger {
                     LogPrinter.printToConsole(new Log(
 
                         "Logger.log 2 > Could not insert into the log queue, InterruptedException: " +
-                        exc.getMessage() + " Retrying...",
+                        exc.getMessage() + " Retrying",
                         LogLevel.WARNING
                     ));
                 }

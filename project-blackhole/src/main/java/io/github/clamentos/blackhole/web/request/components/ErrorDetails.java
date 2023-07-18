@@ -1,17 +1,16 @@
+// OK
 package io.github.clamentos.blackhole.web.request.components;
 
 //________________________________________________________________________________________________________________________________________
 
+import io.github.clamentos.blackhole.common.framework.Reducible;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import io.github.clamentos.blackhole.common.framework.Reducible;
-
 //________________________________________________________________________________________________________________________________________
 
-/**
- * <p>Simple class that holds the message and the timestamp of the error.</p>
-*/
+/** Simple class that holds the message and the timestamp of the error. */
 public record ErrorDetails(
 
     long timestamp,
@@ -21,6 +20,11 @@ public record ErrorDetails(
 
     //____________________________________________________________________________________________________________________________________
 
+    /**
+     *<p><b>This method is thread safe.</p></b>
+     * Instantiate a new {@link ErrorDetails} with the given message. 
+     * @param message : The error message.
+    */
     public ErrorDetails(String message) {
 
         this(System.currentTimeMillis(), message);
@@ -28,9 +32,7 @@ public record ErrorDetails(
 
     //____________________________________________________________________________________________________________________________________
 
-    /**
-     * {@inheritDoc}
-    */
+    /** {@inheritDoc} */
     @Override
     public List<DataEntry> reduce() {
 

@@ -1,12 +1,19 @@
 package io.github.clamentos.blackhole.persistence;
 
+//________________________________________________________________________________________________________________________________________
+
 import java.sql.Connection;
 import java.util.concurrent.LinkedBlockingQueue;
 
+//________________________________________________________________________________________________________________________________________
+
+// TODO: finish
 public class ConnectionPool {
     
     private static final ConnectionPool INSTANCE = new ConnectionPool();
     private LinkedBlockingQueue<Connection> pool;
+
+    //____________________________________________________________________________________________________________________________________
 
     private ConnectionPool() {
 
@@ -18,10 +25,14 @@ public class ConnectionPool {
         }*/
     }
 
+    //____________________________________________________________________________________________________________________________________
+
     public static ConnectionPool getInstance() {
 
         return(INSTANCE);
     }
+
+    //____________________________________________________________________________________________________________________________________
 
     public Connection aquireConnection() {
 
@@ -41,8 +52,12 @@ public class ConnectionPool {
         }
     }
 
+    //____________________________________________________________________________________________________________________________________
+
     public void releaseConnection(Connection connection) throws IllegalStateException {
 
         pool.add(connection);
     }
+
+    //____________________________________________________________________________________________________________________________________
 }

@@ -1,3 +1,4 @@
+// OK
 package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
@@ -7,12 +8,14 @@ package io.github.clamentos.blackhole.logging;
  * Each entry is composed of the log level name + color.
  * <p>The log levels in increasing relevance are:</p>
  * <ol>
- *     <li>DEBUG</li>
- *     <li>INFO</li>
- *     <li>SUCCESS</li>
- *     <li>NOTE</li>
- *     <li>WARNING</li>
- *     <li>ERROR</li>
+ *     <li>{@code DEBUG}: used for debugging.</li>
+ *     <li>{@code INFO}: used to give harmless but useful information.</li>
+ *     <li>{@code SUCCESS}: used to indicate the positive outcome of a critical process.</li>
+ *     <li>{@code NOTE}: used to indicate failures on non critical processes.</li>
+ *     <li>{@code WARNING}: used to indicate that a critical process encountered an unusual
+ *         situation but was able to recover without service interruptions.</li>
+ *     <li>{@code ERROR}: used to indicate that a critical process encountered an unusual or unexpected
+ *         situation that was not able to recover without service interruptions.</li>
  * </ol>
 */
 public enum LogLevel {

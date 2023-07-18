@@ -1,3 +1,4 @@
+// OK
 package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
@@ -22,7 +23,7 @@ public record Log(
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Instantiates a new {@link Log} object.
+     * Instantiate a new {@link Log} object.
      * @param message : The log message.
      * @param log_level : The log severity.
     */

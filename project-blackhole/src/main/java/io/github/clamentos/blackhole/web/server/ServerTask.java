@@ -8,16 +8,14 @@ import io.github.clamentos.blackhole.common.framework.ContinuousTask;
 import io.github.clamentos.blackhole.common.utility.TaskManager;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
-import io.github.clamentos.blackhole.web.connection.ConnectionTask;
 
 import java.io.IOException;
 
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
-
+import java.net.SocketException;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -33,19 +31,24 @@ public class ServerTask extends ContinuousTask {
 
     private ServerSocket server_socket;
     private HashMap<SocketAddress, Integer> sockets_per_ip;
-    private AtomicBoolean stop_completed;
+    private boolean attempt_succeeded;
 
     //____________________________________________________________________________________________________________________________________
 
-    protected ServerTask() {
+    /**
+     * <p><b>This method is thread safe.</p></b>
+     * Instantiate a new {@link ServerTask} with the given id.
+     * @param id : The task id.
+    */
+    public ServerTask(long id) {
 
-        super();
+        super(id);
 
         LOGGER = Logger.getInstance();
         CFG = ConfigurationProvider.getInstance();
 
         sockets_per_ip = new HashMap<>();
-        stop_completed = new AtomicBoolean(false);
+        attempt_succeeded = false;
 
         LOGGER.log("ServerTask.new > Server task instantiated successfully", LogLevel.SUCCESS);
     }
@@ -53,135 +56,139 @@ public class ServerTask extends ContinuousTask {
     //____________________________________________________________________________________________________________________________________
 
     @Override
-    public void run() {
+    public void setup() {
+
+        Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
+
+        for(int i = 0; i < CFG.MAX_SERVER_START_ATTEMPTS; i++) {
+
+            try {
+
+                server_socket = new ServerSocket(CFG.SERVER_PORT);
+                server_socket.setSoTimeout(CFG.SOCKET_TIMEOUT);
+
+                attempt_succeeded = true;
+                return;
+            }
+
+            catch(Exception exc) {
+    
+                LOGGER.log(
+
+                    "Server.attempt 1 > Could not create server socket, " +
+                    exc.getClass().getSimpleName() + ": " +
+                    exc.getMessage() + " Retrying",
+                    LogLevel.WARNING
+                );
+            }
+
+            try {
+
+                Thread.sleep(1000 * (i + 1));
+            }
+
+            catch(InterruptedException exc) {
+
+                LOGGER.log(
+                        
+                    "Server.attempt 2 > Interrupted while waiting on retries, InterruptedException: " +
+                    exc.getMessage() + " Ignoring",
+                    LogLevel.INFO
+                );
+            }
+        }
+
+        LOGGER.log(
+
+            "Server.attempt 3 > Retries exhausted while attempting to start the server. Aborting this task",
+            LogLevel.ERROR
+        );
+
+        attempt_succeeded = false;
+    }
+
+    @Override
+    public void work() {
 
         Socket client_socket;
         SocketAddress client_address;
         Integer num;
 
-        Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
+        if(attempt_succeeded == false) {
 
-        if(attempt(CFG.MAX_SERVER_START_ATTEMPTS) == true) {
+            return;
+        }
 
-            LOGGER.log("ServerTask.run 1 > Server task started successfully", LogLevel.SUCCESS);
+        LOGGER.log("ServerTask.work 1 > Server task started successfully", LogLevel.SUCCESS);
 
-            while(super.isStopped() == false) {
+        try {
 
-                try {
+            client_socket = server_socket.accept();    // If thread is interrupted -> SocketException.
+            client_address = client_socket.getRemoteSocketAddress();
+            num = sockets_per_ip.get(client_address);
 
-                    client_socket = server_socket.accept();    // If thread is interrupted, it throws socket exception.
-                    client_address = client_socket.getRemoteSocketAddress();
-                    num = sockets_per_ip.get(client_address);
+            if(num != null) {
 
-                    if(num != null) {
+                if(num < CFG.MAX_SOCKETS_PER_IP) {
 
-                        if(num < CFG.MAX_SOCKETS_PER_IP) {
-
-                            sockets_per_ip.put(client_address, num + 1);
-                            TaskManager.getInstance().launchNewConnectionTask(client_socket);
-                        }
-
-                        else {
-
-                            // too many, close
-                            client_socket.close();
-                        }
-                    }
-
-                    else {
-
-                        sockets_per_ip.put(client_address, 1);
-                        TaskManager.getInstance().launchNewConnectionTask(client_socket);
-                    }
+                    sockets_per_ip.put(client_address, num + 1);
+                    TaskManager.getInstance().launchNewConnectionTask(client_socket);
                 }
 
-                catch(IOException exc) {
+                else {
 
-                    LOGGER.log(
-                        
-                        "ServerTask.run 2 > Could not accept the incoming socket, " +
-                        exc.getClass().getSimpleName() + ": " + exc.getMessage(),
-                        LogLevel.NOTE
-                    );
+                    // Too many, refuse.
+                    client_socket.close();
                 }
             }
 
-            try {
+            else {
 
-                server_socket.close();
-                LOGGER.log("ServerTask.run 3 > Server task stopped successfully", LogLevel.SUCCESS);
+                sockets_per_ip.put(client_address, 1);
+                TaskManager.getInstance().launchNewConnectionTask(client_socket);
             }
-            
-            catch (IOException exc) {
+        }
+
+        catch(IOException exc) {
+
+            if(exc instanceof SocketException) {
 
                 LOGGER.log(
                         
-                    "ServerTask.run 4 > Could not close the server socket, IOException: " + exc.getMessage(),
+                    "ServerTask.work 2 > Server socket timed out",
+                    LogLevel.INFO
+                );
+            }
+
+            else {
+
+                LOGGER.log(
+                        
+                    "ServerTask.run 3 > Could not accept the incoming socket, " +
+                    exc.getClass().getSimpleName() + ": " + exc.getMessage() + " Skipping",
                     LogLevel.ERROR
                 );
             }
         }
-
-        stop_completed.set(true);
     }
 
-    public boolean isStoppingCompleted() {
+    @Override
+    public void terminate() {
 
-        return(stop_completed.get());
-    }
+        try {
 
-    //____________________________________________________________________________________________________________________________________
-
-    // attemp to create the server socket with N retries
-    private synchronized boolean attempt(int retries) {
-
-        if(Thread.currentThread().isInterrupted() == false) {
-
-            for(int i = 0; i < retries; i++) {
-
-                try {
-
-                    server_socket = new ServerSocket(CFG.SERVER_PORT);
-                    server_socket.setSoTimeout(CFG.SOCKET_TIMEOUT);
-
-                    return(true);
-                }
-
-                catch(Exception exc) {
-    
-                    LOGGER.log(
-
-                        "Server.attempt 1 > Could not create server socket, " +
-                        exc.getClass().getSimpleName() + ": " +
-                        exc.getMessage(),
-                        LogLevel.ERROR
-                    );
-                }
-
-                try {
-
-                    Thread.sleep(1000 * (i + 1));
-                }
-
-                catch(InterruptedException exc) {
-
-                    LOGGER.log(
-                        
-                        "Server.attempt 2 > Interrupted while waiting on retries, InterruptedException: " +
-                        exc.getMessage(),
-                        LogLevel.INFO
-                    );
-                }
-            }
+            server_socket.close();
+            LOGGER.log("ServerTask.terminate 1 > Server task stopped successfully", LogLevel.SUCCESS);
+        }
+            
+        catch (IOException exc) {
 
             LOGGER.log(
-
-                "Server.attempt 3 > Retries exhausted while attempting to start the server",
+                        
+                "ServerTask.terminate 2 > Could not close the server socket, IOException: " + exc.getMessage(),
                 LogLevel.ERROR
             );
         }
-
-        return(false);
     }
 
     //____________________________________________________________________________________________________________________________________

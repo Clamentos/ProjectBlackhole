@@ -1,3 +1,4 @@
+// OK
 package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
@@ -5,7 +6,6 @@ package io.github.clamentos.blackhole.logging;
 import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
 import io.github.clamentos.blackhole.common.exceptions.GlobalExceptionHandler;
 import io.github.clamentos.blackhole.common.framework.ContinuousTask;
-import io.github.clamentos.blackhole.common.utility.TaskManager;
 
 import java.util.HashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -24,25 +24,23 @@ public class LogTask extends ContinuousTask {
 
     private final HashMap<LogLevel, Boolean> TO_FILE_MAP;
     private LinkedBlockingQueue<Log> queue;
-    private long id;
 
     //____________________________________________________________________________________________________________________________________
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Instantiates a new {@link LogTask} with the given queue.
+     * Instantiate a new {@link LogTask} with the given queue.
      * @param queue : The log queue from where to fetch the logs.
      * @throws NullPointerException If {@code queue} is {@code null}.
     */
     public LogTask(LinkedBlockingQueue<Log> queue, long id) throws NullPointerException {
 
-        super();
+        super(id);
 
         if(queue == null) throw new NullPointerException();
 
         configuration_provider = ConfigurationProvider.getInstance();
         this.queue = queue;
-        this.id = id;
 
         TO_FILE_MAP = new HashMap<>();
 
@@ -57,72 +55,92 @@ public class LogTask extends ContinuousTask {
     }
 
     //____________________________________________________________________________________________________________________________________
-    
+
+    /**
+     * <p><b>This method is thread safe.</p></b>
+     * {@inheritDoc}
+    */
     @Override
-    public void run() {
+    public void setup() {
+
+        Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
+    }
+
+    /**
+     * <p><b>This method is thread safe.</p></b>
+     * {@inheritDoc}
+    */
+    @Override
+    public void work() {
+
+        iteration();
+    }
+
+    /**
+     * <p><b>This method is thread safe.</p></b>
+     * {@inheritDoc}
+    */
+    @Override
+    public void terminate() {
+
+        // Loop as long as there are logs in the queue, then exit.
+        while(queue.isEmpty() == false) {
+
+            iteration();
+        }
+
+        LogPrinter.printToConsole(new Log("LogTask.terminate > Shut down successfull", LogLevel.SUCCESS));
+    }
+
+    //____________________________________________________________________________________________________________________________________
+
+    private void iteration() {
 
         boolean relax;
         int count;
         Log log;
 
-        Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
+        relax = true;
+        count = 0;
 
-        // Spin as long as the stop flag is false.
-        // If the stop flag becomes true, keep logging untill the queue is empty
-        while(super.isStopped() == false || queue.isEmpty() == false) {
+        // Poll aggressively with N retries.
+        while(count < configuration_provider.MAX_LOG_QUEUE_POLLS) {
 
-            relax = true;
-            count = 0;
+            log = queue.poll();
 
-            // poll aggressively with N retries
-            while(count < configuration_provider.MAX_LOG_QUEUE_POLLS) {
+            if(log != null) {
 
-                log = queue.poll();
+                relax = false;
+                logTheLog(log);
+
+                break;
+            }
+
+            count++;
+        }
+
+        // Block on queue when the retries are exhausted.
+        if(relax == true) {
+
+            try {
+
+                // Poll doesn't generate InterrupredException when it times out, it simply returns null.
+                log = queue.poll(configuration_provider.LOG_QUEUE_TIMEOUT, TimeUnit.MILLISECONDS);
 
                 if(log != null) {
 
-                    relax = false;
-                    doWork(log);
-
-                    break;
+                    logTheLog(log);
                 }
-
-                count++;
             }
 
-            // Block on queue when the retries are exhausted
-            if(relax == true) {
+            catch(InterruptedException exc) {
 
-                try {
-
-                    // Poll doesn't generate InterrupredException when it times out, it simply returns null.
-                    log = queue.poll(configuration_provider.LOG_QUEUE_TIMEOUT, TimeUnit.MILLISECONDS);
-
-                    if(log != null) {
-
-                        doWork(log);
-                    }
-                }
-
-                catch(InterruptedException exc) {
-
-                    super.stop();
-                }
+                super.stop();
             }
         }
-
-        LogPrinter.printToConsole(new Log(
-
-            "LogTask.run > Shutting down",
-            LogLevel.INFO
-        ));
-
-        TaskManager.getInstance().removeLogTask(id);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
-    private void doWork(Log log) {
+    private void logTheLog(Log log) {
 
         if(TO_FILE_MAP.get(log.log_level()) == true) {
 

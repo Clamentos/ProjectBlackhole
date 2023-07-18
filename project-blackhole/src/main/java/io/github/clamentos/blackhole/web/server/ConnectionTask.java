@@ -1,4 +1,5 @@
-package io.github.clamentos.blackhole.web.connection;
+// OK
+package io.github.clamentos.blackhole.web.server;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -26,8 +27,8 @@ import java.net.SocketTimeoutException;
 /**
  * <p>Connection task.</p>
  * <p>This class is responsible for handling the client {@link Socket}.</p>
- * <p>This task will listen for incoming requests and spawn a {@link RequestTask} for each one
- * of them.</p>
+ * <p>This task will listen for incoming requests and spawn a {@link RequestTask}
+ * for each oneof them.</p>
  * <b>NOTE:</b>
  * <ol>
  *     <li>The TCP connection must exist and must be alive.</li>
@@ -44,21 +45,22 @@ public class ConnectionTask extends ContinuousTask {
 
     private ConfigurationProvider configuration_provider;
 
+    private BufferedInputStream in;
+    private BufferedOutputStream out;
     private Socket client_socket;
     private int request_counter;
-    private long id;
 
     //____________________________________________________________________________________________________________________________________
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Instantiates a new {@link ConnectionTask} with the given client {@link Socket}.
+     * Instantiate a new {@link ConnectionTask} with the given client {@link Socket}.
      * @param client_socket : The client {@link Socket}.
      * @throws NullPointerException If {@code client_socket} is {@code null}.
     */
     public ConnectionTask(Socket client_socket, long id) throws NullPointerException {
 
-        super();
+        super(id);
 
         if(client_socket == null) throw new NullPointerException();
 
@@ -66,36 +68,67 @@ public class ConnectionTask extends ContinuousTask {
         configuration_provider = ConfigurationProvider.getInstance();
 
         this.client_socket = client_socket;
-        this.id = id;
 
         request_counter = 0;
     }
 
     //____________________________________________________________________________________________________________________________________
 
+    /**
+     * <p><b>This method is thread safe.</p></b>
+     * {@inheritDoc}
+    */
     @Override
-    public void run() {
+    public void setup() {
 
-        BufferedInputStream in;
-        BufferedOutputStream out;
+        Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
+        checkSocket(client_socket);
+
+        try {
+
+            in = new BufferedInputStream(
+                
+                client_socket.getInputStream(),
+                configuration_provider.STREAM_BUFFER_SIZE
+            );
+            
+            out = new BufferedOutputStream(
+                
+                client_socket.getOutputStream(),
+                configuration_provider.STREAM_BUFFER_SIZE
+            );
+        }
+
+        catch(IOException exc) {
+
+            LOGGER.log(
+                    
+                "ConnectionTask.setup > Could not aquire the socket streams IOException: " +
+                exc.getMessage() + " Aborting this task",
+                LogLevel.ERROR
+            );
+
+            super.stop();
+        }
+    }
+
+    /**
+     * <p><b>This method is thread safe.</p></b>
+     * {@inheritDoc}
+    */
+    @Override
+    public void work() {
 
         byte[] data;
         int data_length;
         int temp;
 
-        Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
-
-        try {
+        if(request_counter < configuration_provider.MAX_REQUESTS_PER_SOCKET) {
 
             checkSocket(client_socket);
+            
+            try {
 
-            in = new BufferedInputStream(client_socket.getInputStream(), configuration_provider.STREAM_BUFFER_SIZE);
-            out = new BufferedOutputStream(client_socket.getOutputStream(), configuration_provider.STREAM_BUFFER_SIZE);
-
-            // client sockets can only transmit a fixed number of request before expiring
-            while(request_counter < configuration_provider.MAX_REQUESTS_PER_SOCKET && super.isStopped() == false) {
-
-                checkSocket(client_socket);
                 client_socket.setSoTimeout(configuration_provider.SOCKET_TIMEOUT);
                 data_length = 0;
 
@@ -106,14 +139,14 @@ public class ConnectionTask extends ContinuousTask {
 
                     if(temp == -1) {
 
-                        // end of stream reached, somebody closed it
-                        // send a "shutting down" response and quit
+                        // End-of-stream reached, somebody closed it.
+                        // Send a "shutting down" response and quit.
 
                         out.write(Response.create(
 
                             "End of stream detected, closing the connection",
                             new Failure(Failures.END_OF_STREAM)
-                        
+                            
                         ).stream());
                         closeSocket(client_socket);
 
@@ -142,7 +175,7 @@ public class ConnectionTask extends ContinuousTask {
                         "Request of length: " + data.length +
                         " doesn't match with the specified message length: " + data_length,
                         new Failure(Failures.BAD_FORMATTING)
-                        
+                            
                     ).stream());
                 }
 
@@ -150,60 +183,65 @@ public class ConnectionTask extends ContinuousTask {
 
                     TaskManager.getInstance().launchNewRequestTask(data, out);
                 }
-
-                request_counter++;
             }
 
-            //closeSocket(client_socket);
-        }
+            catch(Exception exc) {
 
-        catch(Exception exc) {
+                switch(exc) {
 
-            switch(exc) {
+                    case IllegalStateException exc1 -> {
 
-                case IllegalStateException exc1 -> {
+                        LOGGER.log(
 
-                    LOGGER.log(
-                
-                        "ConnectionTask.run 1 > Client socket was in an illegal state, closing the connection.",
-                        LogLevel.NOTE
-                    );
+                            "ConnectionTask.run 1 > Client socket was in an illegal state, closing the connection and aborting this task",
+                            LogLevel.ERROR
+                        );
+                    }
+
+                    case SocketException exc1 -> {
+
+                        LOGGER.log(
+                    
+                            "ConnectionTask.run 2 > Could not set the timeout to the client socket, closing the connection and aborting this task",
+                            LogLevel.ERROR
+                        );
+                    }
+
+                    case SocketTimeoutException exc1 -> {
+
+                        LOGGER.log(
+                    
+                            "ConnectionTask.run 3 > Timed out while reading from the client socket, closing the connection and terminating this task",
+                            LogLevel.WARNING
+                        );
+                    }
+
+                    default -> {
+
+                        LOGGER.log(
+                    
+                            "ConnectionTask.run 4 > Unexpected " + exc.getClass().getSimpleName() + ": " + exc.getMessage() + ", closing the connection and aborting this task",
+                            LogLevel.ERROR
+                        );
+                    }
                 }
 
-                case SocketException exc1 -> {
-
-                    LOGGER.log(
-                
-                        "ConnectionTask.run 2 > Could not set the timeout to the client socket, closing the connection.",
-                        LogLevel.NOTE
-                    );
-                }
-
-                case SocketTimeoutException exc1 -> {
-
-                    LOGGER.log(
-                
-                        "ConnectionTask.run 3 > Timed out while reading from the client socket, closing the connection.",
-                        LogLevel.NOTE
-                    );
-                }
-
-                default -> {
-
-                    LOGGER.log(
-                
-                        "ConnectionTask.run 4 > " + exc.getClass().getSimpleName() + ": " + exc.getMessage() + ", closing the connection.",
-                        LogLevel.WARNING
-                    );
-                }
+                super.stop();
             }
 
-            //closeSocket(client_socket);
+            request_counter++;
         }
+    }
 
-        LOGGER.log("ConnectionTask.run 5 > Shutting down", LogLevel.NOTE);
+    /**
+     * <p><b>This method is thread safe.</p></b>
+     * {@inheritDoc}
+    */
+    @Override
+    public void terminate() {
+
         closeSocket(client_socket);
-        TaskManager.getInstance().removeConnectionTask(id);
+        LOGGER.log("ConnectionTask.terminate > Shut down successfull", LogLevel.SUCCESS);
     }
 
     //____________________________________________________________________________________________________________________________________

@@ -1,3 +1,4 @@
+// OK
 package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
@@ -28,7 +29,7 @@ public class LogPrinter {
     /**
      * <p><b>This method is partially thread safe.</b></p>
      * <p>(Thread safe on a line-per-line basys. Interleaved lines are possible).</p>
-     * Prints the log to the standard output (console) with formatting.
+     * Print the log to the standard output (console) with formatting.
      * @param log : The {@link Log} to print. If {@code log} is {@code null}, this method
      *              will not do anyting.
      * @throws NullPointerException If {@code log} or any of its fields are {@code null}.
@@ -49,7 +50,7 @@ public class LogPrinter {
     /**
      * <p><b>This method is partially thread safe.</b></p>
      * <p>(Thread safe on a line-per-line basys. Interleaved lines are possible).</p>
-     * Prints the message to the log file.
+     * Print the message to the log file.
      * @param log : The {@link Log} to print. If {@code log} is {@code null}, this method
      *              will not do anyting.
      * @throws NullPointerException If {@code log} or any of its fields are {@code null}.
@@ -80,7 +81,7 @@ public class LogPrinter {
 
             printToConsole(new Log(
                 
-                "LogPrinter.printToFile > Could not write to log file, IOException: " + exc.getMessage() + ". Writing to console instead",
+                "LogPrinter.printToFile > Could not write to log file, IOException: " + exc.getMessage() + " Writing to console instead",
                 LogLevel.WARNING
             ));
 

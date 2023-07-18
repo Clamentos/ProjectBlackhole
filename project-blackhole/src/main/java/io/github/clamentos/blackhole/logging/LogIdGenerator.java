@@ -1,3 +1,4 @@
+// OK
 package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
@@ -25,6 +26,8 @@ public class LogIdGenerator {
         id = new AtomicLong(0);
     }
 
+    //____________________________________________________________________________________________________________________________________
+
     /**
      * <p><b>This method is thread safe.</p></b>
      * Get the {@link LogIdGenerator} instance created during class loading.
@@ -35,9 +38,11 @@ public class LogIdGenerator {
         return(INSTANCE);
     }
 
+    //____________________________________________________________________________________________________________________________________
+
     /**
      * <p><b>This method is thread safe.</p></b>
-     * This method generates the next id.
+     * Get the next unique log id.
      * @return The next log id in the sequence. Overflows don't cause any exception
      *         and simply wrap around.
     */

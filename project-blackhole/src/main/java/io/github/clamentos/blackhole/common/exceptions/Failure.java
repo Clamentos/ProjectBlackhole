@@ -1,3 +1,4 @@
+// OK
 package io.github.clamentos.blackhole.common.exceptions;
 
 //________________________________________________________________________________________________________________________________________
@@ -11,7 +12,7 @@ public class Failure extends Throwable {
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Instantiates a new {@link Failure}.
+     * Instantiate a new {@link Failure}.
      * @param error : The specific error constant from the {@link Failures} enum.
      * @throws IllegalArgumentException If {@code error} is {@code null}.
     */

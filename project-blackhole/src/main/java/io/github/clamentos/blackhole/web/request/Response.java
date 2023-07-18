@@ -1,9 +1,7 @@
+// OK
 package io.github.clamentos.blackhole.web.request;
 
 //________________________________________________________________________________________________________________________________________
-
-import java.util.ArrayList;
-import java.util.List;
 
 import io.github.clamentos.blackhole.common.exceptions.Failure;
 import io.github.clamentos.blackhole.common.framework.Reducible;
@@ -11,6 +9,9 @@ import io.github.clamentos.blackhole.common.framework.Streamable;
 import io.github.clamentos.blackhole.web.request.components.DataEntry;
 import io.github.clamentos.blackhole.web.request.components.ErrorDetails;
 import io.github.clamentos.blackhole.web.request.components.ResponseStatuses;
+
+import java.util.ArrayList;
+import java.util.List;
 
 //________________________________________________________________________________________________________________________________________
 

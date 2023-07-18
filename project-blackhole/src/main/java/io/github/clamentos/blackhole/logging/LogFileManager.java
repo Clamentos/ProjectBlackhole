@@ -1,3 +1,4 @@
+// OK
 package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
@@ -50,7 +51,7 @@ public class LogFileManager {
     /**
      * <p><b>This method is partially thread safe.</b></p>
      * <p>(Thread safe on a line-per-line basys. Interleaved lines are possible).</p>
-     * Writes to the currently active log file.
+     * Write to the currently active log file.
      * @param data : The actual data.
      * @throws IOException If the method cannot write the file.
      * @throws NullPointerException If {@code data} is {@code null}.

@@ -1,3 +1,4 @@
+// OK
 package io.github.clamentos.blackhole.common.configuration;
 
 //________________________________________________________________________________________________________________________________________
@@ -36,11 +37,12 @@ import java.util.concurrent.LinkedBlockingQueue;
  *         before blocking. Used by {@link LogTask} and {@link Logger}.</li>
  *     <li>{@code LOG_QUEUE_TIMEOUT}: specifies the maximum queue wait time (in milliseconds)
  *         before timing out on {@link LinkedBlockingQueue}. Used by {@link Logger}.</li>
- *     <li>{@code NUM_LOG_TASKS}: specifies the number of concurrent {@link LogTask} present in the system.</li>
- *     <li>{@code MIN_LOG_LEVEL}: minimum log level below which logs are discarded.
- *         This parameter has no effect if the {@link LogPrinter} object is used directly.</li>
+ *     <li>{@code NUM_LOG_TASKS}: specifies the number of concurrent {@link LogTask}
+ *         present in the system.</li>
  *     <li>{@code MAX_LOG_FILE_SIZE}: maximum log file size in bytes. Above this,
  *         a new log file will be created.</li>
+ *     <li>{@code MIN_LOG_LEVEL}: minimum log level below which logs are discarded.
+ *         This parameter has no effect if the {@link LogPrinter} object is used directly.</li>
  *     <li>{@code DEBUG_LEVEL_TO_FILE}: specifies if logs with level of {@link LogLevel#DEBUG}
  *         should be printed to file or console.</li>
  *     <li>{@code INFO_LEVEL_TO_FILE}: specifies if logs with level of {@link LogLevel#INFO}
@@ -64,8 +66,10 @@ import java.util.concurrent.LinkedBlockingQueue;
  *         address can have. Beyond this, sockets must be refused for that address.</li>
  *     <li>{@code MIN_CLIENT_SPEED}: specifies the maximum wait time (in milliseconds) that the
  *         server is allowed to wait on each read, above which the socket will be closed.</li>
- *     <li>{@code GEN_BD_SCHEMA}: specifies if it's necessary to export the schema to the database or not.</li>
- *     <li>{@code INIT_DB_DATA}: specifies if it's necessary to export the data to the database or not.</li>
+ *     <li>{@code GEN_BD_SCHEMA}: specifies if it's necessary to export the schema
+ *         to the database or not.</li>
+ *     <li>{@code INIT_DB_DATA}: specifies if it's necessary to export the data
+ *         to the database or not.</li>
  *     <li>{@code DB_ADDRESS}: the address of the database.</li>
  *     <li>{@code DB_USERNAME}: the database username.</li>
  *     <li>{@code DB_PASSWORD}: the database password.</li>
@@ -75,17 +79,23 @@ public class ConfigurationProvider {
 
     private static final ConfigurationProvider INSTANCE = new ConfigurationProvider();
 
+    //____________________________________________________________________________________________________________________________________
+
     public final int MAX_LOG_QUEUE_POLLS;
     public final int LOG_QUEUE_TIMEOUT;
     public final int NUM_LOG_TASKS;
-    public final LogLevel MIN_LOG_LEVEL;
     public final int MAX_LOG_FILE_SIZE;
+
+    public final LogLevel MIN_LOG_LEVEL;
+
     public final boolean DEBUG_LEVEL_TO_FILE;
     public final boolean INFO_LEVEL_TO_FILE;
     public final boolean SUCCESS_LEVEL_TO_FILE;
     public final boolean NOTE_LEVEL_TO_FILE;
     public final boolean WARNING_LEVEL_TO_FILE;
     public final boolean ERROR_LEVEL_TO_FILE;
+
+    //____________________________________________________________________________________________________________________________________
 
     public final int SERVER_PORT;
     public final int MAX_SERVER_START_ATTEMPTS;
@@ -95,8 +105,11 @@ public class ConfigurationProvider {
     public final int MAX_SOCKETS_PER_IP;
     public final int MIN_CLIENT_SPEED;
 
+    //____________________________________________________________________________________________________________________________________
+
     public final boolean GEN_BD_SCHEMA;
     public final boolean INIT_DB_DATA;
+
     public final String DB_ADDRESS;
     public final String DB_USERNAME;
     public final String DB_PASSWORD;
@@ -122,8 +135,8 @@ public class ConfigurationProvider {
                     
                 "ConfigurationProvider.new 1 > Could not initialize, " +
                 exc.getClass().getSimpleName() + ": " + exc.getMessage() +
-                " Defaults will be used.",
-                LogLevel.NOTE
+                " Defaults will be used",
+                LogLevel.WARNING
             ));
         }
 
@@ -153,22 +166,6 @@ public class ConfigurationProvider {
         DB_USERNAME = checkString(props, "DB_USERNAME", "admin");
         DB_PASSWORD = checkString(props, "DB_PASSWORD", "admin");
 
-        try {
-
-            // Print the very cool banner.
-            System.out.print(Files.readString(Paths.get("resources/Banner.txt")));
-        }
-
-        // If it fails, ignore it. It's not a big deal.
-        catch(IOException exc) {
-
-            LogPrinter.printToConsole(new Log(
-                    
-                "ConfigurationProvider.new 2 > Could not print the banner",
-                LogLevel.NOTE
-            ));
-        }
-
         try { // Print the values of the properties for feedback.
 
             Field[] fields = ConfigurationProvider.class.getFields();
@@ -192,7 +189,7 @@ public class ConfigurationProvider {
 
             LogPrinter.printToConsole(new Log(
                     
-                "ConfigurationProvider.new 3 > Could not access field, IllegalAccessException: " + exc.getMessage() + " Aborting",
+                "ConfigurationProvider.new 2 > Could not access field, IllegalAccessException: " + exc.getMessage() + " Aborting",
                 LogLevel.ERROR
             ));
 

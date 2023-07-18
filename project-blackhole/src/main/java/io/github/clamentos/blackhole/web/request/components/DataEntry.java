@@ -1,3 +1,4 @@
+// OK
 package io.github.clamentos.blackhole.web.request.components;
 
 //________________________________________________________________________________________________________________________________________
@@ -6,9 +7,7 @@ import io.github.clamentos.blackhole.common.framework.Streamable;
 
 //________________________________________________________________________________________________________________________________________
 
-/**
- * Simple class to represent semi-structured data.
-*/
+/** Simple class to represent semi-structured data that can be streamed over a stream. */
 public record DataEntry(
 
     Types data_type,
@@ -20,7 +19,7 @@ public record DataEntry(
     
     /**
      * <p><b>This method is thread safe.</b></p>
-     * Instantiates a new {@link DataEntry} with the given raw data buffer.
+     * Instantiate a new {@link DataEntry} with the given raw data buffer.
      * @param data : The raw data buffer.
      * @param offset : Starting position of the buffer.
      * @return The new {@link DataEntry}.
@@ -117,9 +116,7 @@ public record DataEntry(
 
     //____________________________________________________________________________________________________________________________________
 
-    /**
-     * {@inheritDoc}
-    */
+    /** {@inheritDoc} */
     @Override
     public byte[] stream() {
 
