@@ -1,5 +1,7 @@
 package io.github.clamentos.blackhole.common.utility;
 
+import io.github.clamentos.blackhole.common.framework.ContinuousTask;
+
 //________________________________________________________________________________________________________________________________________
 
 import io.github.clamentos.blackhole.logging.Log;
@@ -142,42 +144,33 @@ public class TaskManager {
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Shuts down all tasks.
+     * Shuts down all tasks in proper order.
     */
     public synchronized void shutdown() {
 
-        Collection<ServerTask> t0 = server_tasks_buffer.getBufferedValues();
-
-        for(ServerTask t : t0) {
-
-            t.stop();
-        }
-
-        Collection<ConnectionTask> t1 = connection_tasks_buffer.getBufferedValues();
-
-        for(ConnectionTask t : t1) {
-
-            t.stop();
-        }
-
-        waitForEmptyness(connection_tasks_buffer.isEmpty());
-        waitForEmptyness(request_tasks_buffer.isEmpty());
-
-        Collection<LogTask> t3 = log_tasks_buffer.getBufferedValues();
-
-        for(LogTask t : t3) {
-
-            t.stop();
-        }
-
-        waitForEmptyness(log_tasks_buffer.isEmpty());
+        stopTaskGroup(server_tasks_buffer);
+        stopTaskGroup(connection_tasks_buffer);
+        waitForEmptyness(request_tasks_buffer);    // These are not continuous tasks, no need to stop them.
+        stopTaskGroup(log_tasks_buffer);
     }
 
     //____________________________________________________________________________________________________________________________________
 
-    private void waitForEmptyness(boolean empty) {
+    private void stopTaskGroup(TaskBuffer<? extends ContinuousTask> task_buffer) {
 
-        while(empty == false) {
+        Collection<? extends ContinuousTask> tasks = task_buffer.getBufferedValues();
+
+        for(ContinuousTask task : tasks) {
+
+            task.stop();
+        }
+
+        waitForEmptyness(task_buffer);
+    }
+    
+    private void waitForEmptyness(TaskBuffer<?> task_buffer) {
+
+        while(task_buffer.isEmpty() == false) {
 
             try {
 

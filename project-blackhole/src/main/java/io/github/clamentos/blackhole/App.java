@@ -1,4 +1,6 @@
-// mvn compile exec:java -Dexec.mainClass="io.github.clamentos.blackhole.App"
+// mvn compile
+// mvn exec:exec
+// mvn test
 package io.github.clamentos.blackhole;
 
 //________________________________________________________________________________________________________________________________________
@@ -22,8 +24,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import java.util.Scanner;
-
-//import sun.misc.Signal;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -106,12 +106,12 @@ public class App {
 
         TaskManager.getInstance().launchServerTask();
 
-        Scanner scanner = new Scanner(System.in);
         String s;
+        Scanner scanner = new Scanner(System.in);
 
         while(true) {
 
-            LogPrinter.printToConsole(new Log("Type \"quit\" to terminate", LogLevel.INFO));
+            LogPrinter.printToConsole(new Log("Type \"quit\" to gracefully terminate the application", LogLevel.INFO));
             s = scanner.nextLine();
 
             if(s.equalsIgnoreCase("quit") == true) {

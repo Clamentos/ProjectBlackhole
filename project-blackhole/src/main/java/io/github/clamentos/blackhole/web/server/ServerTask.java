@@ -14,7 +14,8 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.SocketException;
+import java.net.SocketTimeoutException;
+
 import java.util.HashMap;
 
 //________________________________________________________________________________________________________________________________________
@@ -68,6 +69,8 @@ public class ServerTask extends ContinuousTask {
                 server_socket.setSoTimeout(CFG.SOCKET_TIMEOUT);
 
                 attempt_succeeded = true;
+                LOGGER.log("ServerTask.work 1 > Server task started successfully", LogLevel.SUCCESS);
+
                 return;
             }
 
@@ -119,8 +122,6 @@ public class ServerTask extends ContinuousTask {
             return;
         }
 
-        LOGGER.log("ServerTask.work 1 > Server task started successfully", LogLevel.SUCCESS);
-
         try {
 
             client_socket = server_socket.accept();    // If thread is interrupted -> SocketException.
@@ -151,7 +152,7 @@ public class ServerTask extends ContinuousTask {
 
         catch(IOException exc) {
 
-            if(exc instanceof SocketException) {
+            if(exc instanceof SocketTimeoutException) {
 
                 LOGGER.log(
                         

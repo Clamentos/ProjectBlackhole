@@ -41,10 +41,10 @@ public abstract class Task implements Runnable {
      * However, the called abstract methods might not.</p></b>
      * <p>Main execution method.</p>
      * <p>This method will perform the following:</p>
-     * <pre>
-     *     work();
-     *     TaskManager.getInstance().removeTask(id, this);
-     * </pre>
+     * <blockquote><pre>
+     *work();
+     *TaskManager.getInstance().removeTask(id, this);
+     * </pre></blockquote>
     */
     @Override
     public void run() {
