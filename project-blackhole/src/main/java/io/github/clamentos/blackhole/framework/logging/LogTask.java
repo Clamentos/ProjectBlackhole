@@ -55,6 +55,7 @@ public final class LogTask extends ContinuousTask {
     public void setup() {
 
         Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
+        log_printer.log("LogTask.setup > Log task started successfully", LogLevel.SUCCESS);
     }
 
     /**

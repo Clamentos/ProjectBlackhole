@@ -62,14 +62,17 @@ public abstract class ContinuousTask implements Stoppable {
      * However, the called abstract methods might not.</p></b>
      * <p>Main execution method.</p>
      * <p>This method will perform the following:</p>
-     * <pre>
-     *     setup();
-     *     while(stop.get() == false) {
-     *         work();
-     *     }
-     *     terminate();
-     *     TaskManager.getInstance().removeTask(id, this);
-     * </pre>
+     * <blockquote><pre>
+     *setup();
+     * 
+     *while(stop.get() == false) {
+     *     
+     *    work();
+     *}
+     * 
+     *terminate();
+     *TaskManager.getInstance().removeTask(id, this);
+     * </pre></blockquote>
     */
     @Override
     public void run() {

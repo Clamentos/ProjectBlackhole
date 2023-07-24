@@ -145,7 +145,7 @@ public class TaskManager {
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Shuts down all tasks.
+     * Shuts down all tasks in proper order.
     */
     public synchronized void shutdown() {
 
