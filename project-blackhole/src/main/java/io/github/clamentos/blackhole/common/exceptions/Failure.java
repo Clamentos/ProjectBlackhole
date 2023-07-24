@@ -18,7 +18,11 @@ public class Failure extends Throwable {
     */
     public Failure(Failures error) throws IllegalArgumentException {
 
-        if(error == null) throw new IllegalArgumentException();
+        if(error == null) {
+
+            throw new IllegalArgumentException();
+        }
+
         this.error = error;
     }
 

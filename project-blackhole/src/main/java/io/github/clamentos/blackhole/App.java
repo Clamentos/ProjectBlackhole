@@ -5,14 +5,13 @@ package io.github.clamentos.blackhole;
 
 import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
 import io.github.clamentos.blackhole.common.exceptions.GlobalExceptionHandler;
-import io.github.clamentos.blackhole.common.utility.TaskManager;
-import io.github.clamentos.blackhole.logging.Log;
-import io.github.clamentos.blackhole.logging.LogLevel;
-import io.github.clamentos.blackhole.logging.LogPrinter;
-import io.github.clamentos.blackhole.logging.Logger;
+import io.github.clamentos.blackhole.framework.logging.LogLevel;
+import io.github.clamentos.blackhole.framework.logging.LogPrinter;
+
+import io.github.clamentos.blackhole.framework.tasks.TaskManager;
 
 import java.io.IOException;
-
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -22,8 +21,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import java.util.Scanner;
-
-//import sun.misc.Signal;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -36,45 +33,52 @@ public class App {
 
     public static void main(String[] args) {
 
-        try {
+        try { // Print the very cool banner.
 
-            // Print the very cool banner.
             System.out.print(Files.readString(Paths.get("resources/Banner.txt")));
         }
 
-        // If it fails, ignore it. It's not a big deal.
-        catch(IOException exc) {
+        catch(IOException exc) { // If it fails, simply log it. It's not a big deal.
 
-            LogPrinter.printToConsole(new Log(
+            LogPrinter log_printer = LogPrinter.getInstance();
 
-                "App.main 1 > Could not print the banner, IOException: " + exc.getMessage(),
+            log_printer.log(
+                
+                "App.main > Failed to print the banner",
                 LogLevel.NOTE
-            ));
+            );
         }
 
-        //Signal.handle(new Signal("..."), signal -> {});
-        Logger logger = Logger.getInstance();
+        LogPrinter log_printer = LogPrinter.getInstance();
 
         Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
-        logger.log("App.main 2 > Application PID: " + Long.toString(ProcessHandle.current().pid()), LogLevel.INFO);
+        log_printer.log(
+            
+            "App.main > Application PID: " + Long.toString(ProcessHandle.current().pid()),
+            LogLevel.INFO
+        );
 
         try { // Initialize db schema (if required).
 
             if(ConfigurationProvider.getInstance().GEN_BD_SCHEMA == true) {
 
-                logger.log("App.main 3 > Applying database schema...", LogLevel.INFO);
+                log_printer.log("App.main > Applying database schema...", LogLevel.INFO);
                 directQuery("resources/Schema.sql");
-                logger.log("App.main 4 > Database schema Applied", LogLevel.SUCCESS);
+                log_printer.log("App.main > Database schema Applied", LogLevel.SUCCESS);
             }
 
-            logger.log("App.main 5 > Skipping database schema application. Property is set to false", LogLevel.INFO);
+            log_printer.log(
+                
+                "App.main > Skipping database schema application. Property is set to false",
+                LogLevel.INFO
+            );
         }
 
         catch(IOException | SQLException exc) {
 
-            logger.log(
+            log_printer.log(
                         
-                "App.main 6 > Could not generate schema, " +
+                "App.main > Could not generate schema, " +
                 exc.getClass().getSimpleName() + ": " +
                 exc.getMessage() + " Skipping...",
                 LogLevel.WARNING
@@ -85,19 +89,19 @@ public class App {
 
             if(ConfigurationProvider.getInstance().INIT_DB_DATA == true) {
 
-                logger.log("App.main 7 > Importing data to database...", LogLevel.INFO);
+                log_printer.log("App.main > Importing data to database...", LogLevel.INFO);
                 directQuery("resources/Data.sql");
-                logger.log("App.main 8 > Data imported", LogLevel.SUCCESS);
+                log_printer.log("App.main > Data imported", LogLevel.SUCCESS);
             }
 
-            logger.log("App.main 9 > Skipping data import. Property is set to false", LogLevel.INFO);
+            log_printer.log("App.main > Skipping data import. Property is set to false", LogLevel.INFO);
         }
 
         catch(IOException | SQLException exc) {
 
-            logger.log(
+            log_printer.log(
                         
-                "App.main 10 > Could not populate the database, " +
+                "App.main > Could not populate the database, " +
                 exc.getClass().getSimpleName() + ": " +
                 exc.getMessage() + " Skipping...",
                 LogLevel.WARNING
@@ -105,18 +109,24 @@ public class App {
         }
 
         TaskManager.getInstance().launchServerTask();
+        printFields(log_printer);
 
         Scanner scanner = new Scanner(System.in);
         String s;
 
         while(true) {
 
-            LogPrinter.printToConsole(new Log("Type \"quit\" to terminate", LogLevel.INFO));
+            log_printer.log(
+                
+                "Type \"quit\" to gracefully terminate (CTRL+C may leave resources open)",
+                LogLevel.INFO
+            );
+
             s = scanner.nextLine();
 
             if(s.equalsIgnoreCase("quit") == true) {
 
-                LogPrinter.printToConsole(new Log("App.main 11 > Shuting down...", LogLevel.INFO));
+                log_printer.log("App.main > Shuting down...", LogLevel.INFO);
                 TaskManager.getInstance().shutdown();
 
                 break;
@@ -124,16 +134,17 @@ public class App {
 
             else {
 
-                LogPrinter.printToConsole(new Log("Unknown comand", LogLevel.INFO));
+                log_printer.log("Unknown comand: \"" + s + "\"", LogLevel.INFO);
             }
         }
 
         scanner.close();
-        LogPrinter.printToConsole(new Log("App.main 12 > Shut down completed", LogLevel.SUCCESS));
+        log_printer.log("App.main > Shut down successfull", LogLevel.SUCCESS);
     }
 
     //____________________________________________________________________________________________________________________________________
 
+    // Thread safe.
     private static void directQuery(String file_path) throws IOException, SQLException {
 
         Connection db_connection = DriverManager.getConnection(
@@ -144,9 +155,47 @@ public class App {
         );
 
         Statement sql = db_connection.createStatement();
+
         sql.execute(Files.readString(Paths.get(file_path)));
         db_connection.close();
     }
 
+    // Print the values of the properties for feedback (thread safe obviously...).
+    private static void printFields(LogPrinter log_printer) {
+
+        try {
+
+            Field[] fields = ConfigurationProvider.class.getFields();
+
+            for(Field field : fields) {
+
+                // Just for aligning the prints... 25 is the longest property name.
+                int amt = 25 - field.getName().length();
+                String padding = " ".repeat(amt);
+
+                log_printer.log(
+                    
+                    "Property: " + field.getName() + padding +
+                    "    Value: " + field.get(ConfigurationProvider.getInstance()).toString(),
+                    LogLevel.INFO
+                );
+            }
+        }
+
+        catch(IllegalAccessException exc) { // This should never happen...
+
+            log_printer.log(
+                    
+                "ConfigurationProvider.printFields > Could not access field, IllegalAccessException: " +
+                exc.getMessage() + " Aborting",
+                LogLevel.ERROR
+            );
+
+            System.exit(1);
+        }
+    }
+
     //____________________________________________________________________________________________________________________________________
 }
+
+// TODO: update the javadocs on the code

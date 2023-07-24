@@ -3,9 +3,8 @@ package io.github.clamentos.blackhole.common.exceptions;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.logging.Log;
-import io.github.clamentos.blackhole.logging.LogLevel;
-import io.github.clamentos.blackhole.logging.LogPrinter;
+import io.github.clamentos.blackhole.framework.logging.LogLevel;
+import io.github.clamentos.blackhole.framework.logging.LogPrinter;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -24,6 +23,16 @@ import java.lang.Thread.UncaughtExceptionHandler;
 public class GlobalExceptionHandler implements UncaughtExceptionHandler {
 
     private static final GlobalExceptionHandler INSTANCE = new GlobalExceptionHandler();
+    private LogPrinter log_printer;
+
+    //____________________________________________________________________________________________________________________________________
+
+    // Thread safe
+    private GlobalExceptionHandler() {
+
+        log_printer = LogPrinter.getInstance();
+        log_printer.log("GlobalExceptionHandler.new > Instantiated successfully", LogLevel.SUCCESS);
+    }
 
     //____________________________________________________________________________________________________________________________________
 
@@ -55,13 +64,12 @@ public class GlobalExceptionHandler implements UncaughtExceptionHandler {
         exc.printStackTrace(pw);
         String trace = sw.toString();
 
-        LogPrinter.printToConsole(new Log(
+        log_printer.log(
 
-            "Uncaught " + exc.getClass().getSimpleName() +
-            " in thread " + thread.getName() +
+            "Uncaught " + exc.getClass().getSimpleName() + " in thread " + thread.getName() +
             ": " + exc.getMessage() + " Stack trace: " + trace,
             LogLevel.ERROR
-        ));
+        );
     }
 
     //____________________________________________________________________________________________________________________________________
