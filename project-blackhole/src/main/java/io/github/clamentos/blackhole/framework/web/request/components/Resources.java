@@ -6,7 +6,7 @@ public enum Resources {
     USER,
     TAG,
     RESOURCE,
-    ECHO;
+    TYPE;
 
     public static Resources newInstance(byte resource_id) throws IllegalArgumentException {
 
@@ -16,7 +16,7 @@ public enum Resources {
             case 1: return(Resources.USER);
             case 2: return(Resources.TAG);
             case 3: return(Resources.RESOURCE);
-            case 4: return(Resources.ECHO);
+            case 4: return(Resources.TYPE);
 
             default: throw new IllegalArgumentException("Unknown resource type");
         }

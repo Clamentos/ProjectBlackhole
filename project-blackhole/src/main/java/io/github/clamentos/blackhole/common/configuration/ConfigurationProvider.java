@@ -1,4 +1,3 @@
-// OK
 package io.github.clamentos.blackhole.common.configuration;
 
 //________________________________________________________________________________________________________________________________________
@@ -13,6 +12,8 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -86,6 +87,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class ConfigurationProvider {
 
     private static final ConfigurationProvider INSTANCE = new ConfigurationProvider();
+    private Map<String, String> problems;
 
     //____________________________________________________________________________________________________________________________________
 
@@ -137,17 +139,18 @@ public class ConfigurationProvider {
 
     //____________________________________________________________________________________________________________________________________
 
-    // Thread safe assuming that nobody else is touching the Application.properties
+    // Thread safe assuming that nobody else is touching the Application.properties file.
     private ConfigurationProvider() {
 
         Properties props = new Properties();
+        problems = new HashMap<>();
 
         try {
 
             props.load(Files.newInputStream(Paths.get("resources/Application.properties")));
         }
 
-        // Ignore it (could have been try finally but eh)
+        // Ignore the exception because defaults will be used.
         catch(InvalidPathException | IOException exc) {}
 
         MAX_LOG_QUEUE_POLLS = checkInt(props, "MAX_LOG_QUEUE_POLLS", "100", 1, Integer.MAX_VALUE);
@@ -188,12 +191,25 @@ public class ConfigurationProvider {
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Get the {@link ConfigurationProvider} instance created during class loading.
-     * @return The {@link ConfigurationProvider} instance.
+     * @return The {@link ConfigurationProvider} instance created during class loading.
     */
     public static ConfigurationProvider getInstance() {
 
         return(INSTANCE);
+    }
+
+    //____________________________________________________________________________________________________________________________________
+
+    /**
+     * <p><b>This method is thread safe.</p></b>
+     * Get the problems map, which associates configuration names with the error
+     * generated during property initialization. If a configuration constant didn't generate
+     * an error, there will be no entry in the map for that name.
+     * @return The never {@code null} problems map.
+    */
+    public Map<String, String> getProblems() {
+
+        return(problems);
     }
 
     //____________________________________________________________________________________________________________________________________
@@ -209,6 +225,12 @@ public class ConfigurationProvider {
 
             if(result < low || result > high) {
 
+                problems.put(
+                
+                    name,
+                    "Property " + name + "must be between " + low + " and " + high + ". The default value of: " + def + "will be used"
+                );
+
                 return(Integer.parseInt(def));
             }
 
@@ -216,6 +238,12 @@ public class ConfigurationProvider {
         }
 
         catch(NumberFormatException exc) {
+
+            problems.put(
+                
+                name,
+                "Erroneous number format on property " + name + ": " + exc.getMessage() + ". The default value of: " + def + "will be used"
+            );
 
             return(Integer.parseInt(def));
         }
@@ -235,6 +263,7 @@ public class ConfigurationProvider {
             return(false);
         }
 
+        problems.put(name, "Property " + name + " must be either true or false. The default value of: " + def + "will be used");
         return(Boolean.parseBoolean(def));
     }
 
@@ -244,6 +273,7 @@ public class ConfigurationProvider {
 
         if(s == null || s == "") {
 
+            problems.put(name, "Property " + name + " must not be null nor empty. The default value of: " + def + "will be used");
             return(def);
         }
 
@@ -260,6 +290,12 @@ public class ConfigurationProvider {
         if(s.equalsIgnoreCase("NOTE")) return(3);
         if(s.equalsIgnoreCase("WARNING")) return(4);
         if(s.equalsIgnoreCase("ERROR")) return(5);
+
+        problems.put(
+            
+            name,
+            "Property " + name + " must be DEBUG, INFO, SUCCESS, NOTE, WARNING or ERROR. The default value of: " + def + "will be used"
+        );
 
         return(Integer.parseInt(def));
     }

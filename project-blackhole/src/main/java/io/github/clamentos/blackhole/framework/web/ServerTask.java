@@ -31,7 +31,7 @@ public final class ServerTask extends ContinuousTask {
     private ConfigurationProvider configuration_provider;
 
     private ServerSocket server_socket;
-    private HashMap<SocketAddress, Integer> sockets_per_ip;
+    private HashMap<SocketAddress, Integer> sockets_per_ip;     // Maybe it's better to use session ids as keys...
     private int accept_retries;
 
     //____________________________________________________________________________________________________________________________________

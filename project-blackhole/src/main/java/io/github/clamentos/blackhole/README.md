@@ -1,1 +1,0 @@
-TODO: explain the architecture and organization

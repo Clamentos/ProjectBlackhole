@@ -1,4 +1,3 @@
-// OK
 package io.github.clamentos.blackhole.common.exceptions;
 
 //________________________________________________________________________________________________________________________________________
@@ -30,7 +29,6 @@ public class Failure extends Throwable {
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Simple getter for the actual error constant.
      * @return The never {@code null} {@link Failures} constant.
     */
     public Failures getError() {

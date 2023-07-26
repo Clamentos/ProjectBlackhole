@@ -9,11 +9,12 @@ import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
 import io.github.clamentos.blackhole.common.exceptions.GlobalExceptionHandler;
 import io.github.clamentos.blackhole.framework.logging.LogLevel;
 import io.github.clamentos.blackhole.framework.logging.LogPrinter;
-
 import io.github.clamentos.blackhole.framework.tasks.TaskManager;
 
 import java.io.IOException;
+
 import java.lang.reflect.Field;
+
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -22,6 +23,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import java.util.Map;
 import java.util.Scanner;
 
 //________________________________________________________________________________________________________________________________________
@@ -52,6 +54,7 @@ public class App {
         }
 
         LogPrinter log_printer = LogPrinter.getInstance();
+        ConfigurationProvider configuration_provider = ConfigurationProvider.getInstance();
 
         Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
         log_printer.log(
@@ -60,9 +63,12 @@ public class App {
             LogLevel.INFO
         );
 
+        // Print the parsed configuration constants for feedback.
+        printFields(configuration_provider.getProblems(), log_printer);
+
         try { // Initialize db schema (if required).
 
-            if(ConfigurationProvider.getInstance().GEN_BD_SCHEMA == true) {
+            if(configuration_provider.GEN_BD_SCHEMA == true) {
 
                 log_printer.log("App.main > Applying database schema...", LogLevel.INFO);
                 directQuery("resources/Schema.sql");
@@ -89,7 +95,7 @@ public class App {
 
         try { // Initialize db data (if required).
 
-            if(ConfigurationProvider.getInstance().INIT_DB_DATA == true) {
+            if(configuration_provider.INIT_DB_DATA == true) {
 
                 log_printer.log("App.main > Importing data to database...", LogLevel.INFO);
                 directQuery("resources/Data.sql");
@@ -111,7 +117,6 @@ public class App {
         }
 
         TaskManager.getInstance().launchServerTask();
-        printFields(log_printer);
 
         String s;
         Scanner scanner = new Scanner(System.in);
@@ -158,24 +163,35 @@ public class App {
     }
 
     // Print the values of the properties for feedback (thread safe obviously...).
-    private static void printFields(LogPrinter log_printer) {
+    private static void printFields(Map<String, String> problems, LogPrinter log_printer) {
 
         try {
 
             Field[] fields = ConfigurationProvider.class.getFields();
+            String name;
 
             for(Field field : fields) {
 
-                // Just for aligning the prints... 25 is the longest property name.
-                int amt = 25 - field.getName().length();
-                String padding = " ".repeat(amt);
+                name = problems.get(field.getName());
 
-                log_printer.log(
-                    
-                    "Property: " + field.getName() + padding +
-                    "    Value: " + field.get(ConfigurationProvider.getInstance()).toString(),
-                    LogLevel.INFO
-                );
+                if(name == null) {
+
+                    // Just for aligning the prints... 25 is the longest property name.
+                    int amt = 25 - field.getName().length();
+                    String padding = " ".repeat(amt);
+
+                    log_printer.log(
+                        
+                        "Property: " + field.getName() + padding +
+                        "    Value: " + field.get(ConfigurationProvider.getInstance()).toString(),
+                        LogLevel.INFO
+                    );
+                }
+
+                else {
+
+                    log_printer.log(name, LogLevel.WARNING);
+                }
             }
         }
 
