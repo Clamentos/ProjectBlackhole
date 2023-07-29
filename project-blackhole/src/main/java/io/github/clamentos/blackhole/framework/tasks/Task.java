@@ -1,13 +1,12 @@
-// OK
 package io.github.clamentos.blackhole.framework.tasks;
 
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p>Abstract non continuous task.</p>
- * This class implements the {@link Runnable} interface and condenses
- * common code and operations for any {@link Runnable} that executes for
- * a relatively brief amount of time.
+ * <p><b>STEREOTYPE: Abstract behavioural class.</b></p>
+ * <p>Non continuous task.</p>
+ * This class implements the {@link Runnable} interface and enforces common behaviour
+ * for any {@link Runnable} that executes for a relatively brief amount of time.
 */
 public abstract class Task implements Runnable {
 
@@ -18,7 +17,7 @@ public abstract class Task implements Runnable {
     /**
      * <p><b>This method is thread safe.</p></b>
      * @param id : The task id.
-     * Instantiate a new {@link Task}.
+     * Instantiates a new {@link Task} object.
     */
     public Task(long id) {
 
@@ -33,10 +32,9 @@ public abstract class Task implements Runnable {
     //____________________________________________________________________________________________________________________________________
 
     /**
-     * <p><b>This method is thread safe.
-     * However, the called abstract methods might not.</p></b>
+     * <p><b>This method is thread safe. However, the called abstract methods might not.</p></b>
      * <p>Main execution method.</p>
-     * <p>This method will perform the following:</p>
+     * This method will perform the following:
      * <blockquote><pre>
      *work();
      *TaskManager.getInstance().removeTask(id, this);

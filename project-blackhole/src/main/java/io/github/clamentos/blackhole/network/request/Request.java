@@ -1,11 +1,10 @@
-// OK
-package io.github.clamentos.blackhole.framework.web.request;
+package io.github.clamentos.blackhole.network.request;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.framework.web.request.components.DataEntry;
-import io.github.clamentos.blackhole.framework.web.request.components.Methods;
-import io.github.clamentos.blackhole.framework.web.request.components.Resources;
+import io.github.clamentos.blackhole.network.request.components.DataEntry;
+import io.github.clamentos.blackhole.network.request.components.Methods;
+import io.github.clamentos.blackhole.network.request.components.Resources;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,11 +12,12 @@ import java.util.List;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p>Request class.</p>
+ * <p><b>STEREOTYPE: Immutable data.</b></p>
+ * <p>Network request object.</p>
  * <p>This class holds all the fields and data required to handle a request.</p>
  * The getter methods are all thread safe and standard.
 */
-public record Request(
+public final record Request(
 
     Resources resource,
     Methods method,
@@ -30,10 +30,11 @@ public record Request(
 
     /**
      * <p><b>This method is thread safe.</b></p>
-     * Instantiate a new {@link Request} object.
+     * Deserializes the given data byte array into a new {@link Request} object.
      * @param data : The input data array, usually taken from a stream.
-     * @throws IllegalArgumentException If the data holds any illegal value.
-     * @throws ArrayIndexOutOfBoundsException If the data is incomplete or badly formatted.
+     * @return The deserialized request object.
+     * @throws IllegalArgumentException If {@code data} holds any illegal value.
+     * @throws ArrayIndexOutOfBoundsException If {@code data} is incomplete or badly formatted.
     */
     public static Request deserialize(byte[] data) throws IllegalArgumentException, ArrayIndexOutOfBoundsException {
 
@@ -43,8 +44,9 @@ public record Request(
         List<DataEntry> stuff;
 
         // passed to the "DataEntry.deserialize()" so that the position can be updated.
-        // This is necessary because DataEntry size is only known at runtime and the method only returns a DataEntry,
-        // which has no length field. "start_pos" array ALWAYS contains 1 element (similar to a "pointer" to the value).
+        // This is necessary because DataEntry size is only known at runtime
+        // and the method only returns a DataEntry, which has no length field.
+        // "start_pos" array ALWAYS contains 1 element (similar to a "pointer" to the value).
         int[] start_pos;
 
         resource = Resources.newInstance(data[0]);

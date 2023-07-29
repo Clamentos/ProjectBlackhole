@@ -1,5 +1,4 @@
-// OK
-package io.github.clamentos.blackhole.framework.web;
+package io.github.clamentos.blackhole.network;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -7,11 +6,11 @@ import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
 import io.github.clamentos.blackhole.common.exceptions.Failure;
 import io.github.clamentos.blackhole.common.exceptions.Failures;
 import io.github.clamentos.blackhole.common.exceptions.GlobalExceptionHandler;
-import io.github.clamentos.blackhole.framework.logging.LogLevel;
-import io.github.clamentos.blackhole.framework.logging.Logger;
 import io.github.clamentos.blackhole.framework.tasks.ContinuousTask;
 import io.github.clamentos.blackhole.framework.tasks.TaskManager;
-import io.github.clamentos.blackhole.framework.web.request.Response;
+import io.github.clamentos.blackhole.logging.LogLevel;
+import io.github.clamentos.blackhole.logging.Logger;
+import io.github.clamentos.blackhole.network.request.Response;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -24,11 +23,11 @@ import java.net.SocketTimeoutException;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p>Connection task.</p>
- * <p>This class is responsible for handling the client {@link Socket}.</p>
- * <p>This task will listen for incoming requests and spawn a {@link RequestTask}
- * for each oneof them.</p>
- * <b>NOTE:</b>
+ * <p><b>STEREOTYPE: Continuous task.</b></p>
+ * <p>This class is responsible for handling the client {@link Socket}. It will listen for incoming
+ * requests and spawn a {@link RequestTask} for each one of them.</p>
+ * 
+ * NOTE:
  * <ol>
  *     <li>The TCP connection must exist and must be alive.</li>
  *     <li>The sockets have a fixed number of requests that the client can transmit.
@@ -52,22 +51,27 @@ public final class ConnectionTask extends ContinuousTask {
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Instantiate a new {@link ConnectionTask} with the given client {@link Socket}.
+     * Instantiates a new {@link ConnectionTask} object.
      * @param client_socket : The client {@link Socket}.
-     * @throws NullPointerException If {@code client_socket} is {@code null}.
+     * @param id : The unique task id.
+     * @throws IllegalArgumentException If {@code client_socket} is {@code null}.
     */
-    public ConnectionTask(Socket client_socket, long id) throws NullPointerException {
+    public ConnectionTask(Socket client_socket, long id) throws IllegalArgumentException {
 
         super(id);
-
-        if(client_socket == null) throw new NullPointerException();
 
         logger = Logger.getInstance();
         configuration_provider = ConfigurationProvider.getInstance();
 
-        this.client_socket = client_socket;
+        if(client_socket == null) {
 
+            throw new IllegalArgumentException();
+        }
+
+        this.client_socket = client_socket;
         request_counter = 0;
+
+        logger.log("ConnectionTask.new > Instantiated successfully", LogLevel.SUCCESS);
     }
 
     //____________________________________________________________________________________________________________________________________
@@ -95,6 +99,8 @@ public final class ConnectionTask extends ContinuousTask {
                 client_socket.getOutputStream(),
                 configuration_provider.STREAM_BUFFER_SIZE
             );
+
+            logger.log("ConnectionTask.setup > ConnectionTask started successfully", LogLevel.SUCCESS);
         }
 
         catch(IOException exc) {
@@ -268,7 +274,7 @@ public final class ConnectionTask extends ContinuousTask {
 
     //____________________________________________________________________________________________________________________________________
 
-    // Thread safe.
+    // Thread safe because only this specific task has this specific socket.
     private void checkSocket(Socket socket) throws IllegalStateException {
 
         if(client_socket.isClosed() || client_socket.isConnected() == false) {
@@ -277,7 +283,7 @@ public final class ConnectionTask extends ContinuousTask {
         }
     }
 
-    // Thread safe.
+    // Thread safe because only this specific task has this specific socket.
     private void closeSocket(Socket socket) {
 
         try {
@@ -296,15 +302,10 @@ public final class ConnectionTask extends ContinuousTask {
         }
     }
 
-    // Thread safe.
+    // Thread safe obviously.
     private void respond(String message, Failures failure) throws IOException {
 
-        out.write(Response.create(
-
-            message,
-            new Failure(failure)
-                            
-        ).stream());
+        out.write(new Response(new Failure(failure), message).stream());
     }
 
     //____________________________________________________________________________________________________________________________________

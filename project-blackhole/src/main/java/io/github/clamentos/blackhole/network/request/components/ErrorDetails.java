@@ -1,5 +1,4 @@
-// OK
-package io.github.clamentos.blackhole.framework.web.request.components;
+package io.github.clamentos.blackhole.network.request.components;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -10,8 +9,12 @@ import java.util.List;
 
 //________________________________________________________________________________________________________________________________________
 
-/** Simple class that holds the message and the timestamp of the error. */
-public record ErrorDetails(
+/**
+ * <p><b>STEREOTYPE: Immutable data.</b></p>
+ * <p>Semi-structured data.</p>
+ * Simple class that holds the message and the timestamp of the error.
+*/
+public final record ErrorDetails(
 
     long timestamp,
     String message
@@ -21,8 +24,8 @@ public record ErrorDetails(
     //____________________________________________________________________________________________________________________________________
 
     /**
-     *<p><b>This method is thread safe.</p></b>
-     * Instantiate a new {@link ErrorDetails} with the given message. 
+     * <p><b>This method is thread safe.</p></b>
+     * Instantiates a new {@link ErrorDetails} object. 
      * @param message : The error message.
     */
     public ErrorDetails(String message) {
@@ -32,7 +35,10 @@ public record ErrorDetails(
 
     //____________________________________________________________________________________________________________________________________
 
-    /** {@inheritDoc} */
+    /**
+     * <p><b>This method is thread safe.</p></b>
+     * {@inheritDoc}
+    */
     @Override
     public List<DataEntry> reduce() {
 

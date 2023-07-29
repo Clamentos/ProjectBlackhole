@@ -1,4 +1,3 @@
-// OK
 package io.github.clamentos.blackhole.framework.tasks;
 
 //________________________________________________________________________________________________________________________________________
@@ -8,36 +7,37 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 //________________________________________________________________________________________________________________________________________
 
-/**
- * <p>Abstract contunuous task.</p>
- * This class implements the {@link Stoppable} interface and condenses
- * common code and operations for any {@link Runnable} that executes for a very long
- * (and potentially infinite) time.
+/**<ul>
+ *     <li><b>BEHAVIOUR: Abstract behavioural class.</b></li>
+ *     <li><b>STEREOTYPE: ....</b></li>
+ * </ul>
+ * <p>Contunuous task.</p>
+ * This class implements the {@link Stoppable} interface and enforces common behaviour
+ * for any {@link Runnable} that executes for a very long (potentially infinite) time.
 */
 public abstract class ContinuousTask implements Stoppable {
     
-    private AtomicBoolean stop;
     private final long ID;
+    private AtomicBoolean stop;
 
     //____________________________________________________________________________________________________________________________________
 
     /**
      * <p><b>This method is thread safe.</p></b>
      * @param id : The task id.
-     * Instantiate a new {@link ContinuousTask}.
+     * Instantiates a new {@link ContinuousTask} object.
     */
     public ContinuousTask(long id) {
 
-        stop = new AtomicBoolean(false);
         ID = id;
+        stop = new AtomicBoolean(false);
     }
 
     //____________________________________________________________________________________________________________________________________
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Check if {@code this} {@link ContinuousTask} is stopped or not.
-     * @return The stopped flag.
+     * @return The stopped status flag.
     */
     public boolean isStopped() {
 
@@ -58,10 +58,9 @@ public abstract class ContinuousTask implements Stoppable {
     //____________________________________________________________________________________________________________________________________
 
     /**
-     * <p><b>This method is thread safe.
-     * However, the called abstract methods might not.</p></b>
+     * <p><b>This method is thread safe. However, the called abstract methods might not.</p></b>
      * <p>Main execution method.</p>
-     * <p>This method will perform the following:</p>
+     * This method will perform the following:
      * <blockquote><pre>
      *setup();
      * 

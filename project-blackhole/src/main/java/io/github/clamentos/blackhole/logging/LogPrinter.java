@@ -1,5 +1,4 @@
-// OK
-package io.github.clamentos.blackhole.framework.logging;
+package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -17,26 +16,25 @@ import java.util.concurrent.atomic.AtomicLong;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p>Log printer.</p>
+ * <p><b>STEREOTYPE: Eager-loaded singleton.</b></p>
+ * <p>Log printer service.</p>
  * <p>Printing class that holds the actual log printing methods.</p>
  * <p>The logs will have the following format:</p>
- * {@code [ERROR]-[20/10/2023]-[14:10:34.123]-[14:10:36.345]-[1234567890]-[...]}
+ * {@code [ERROR]-[20/10/2023 14:10:34.123]-[1234567890]-[...]}
  * <ol>
- *     <li>{@code [ERROR]}: the log level.</li>
- *     <li>{@code [20/10/2023]}: the log creation date.</li>
- *     <li>{@code [14:10:34.123]}: the log creation time.</li>
- *     <li>{@code [14:10:36.345]}: the log printing time.</li>
- *     <li>{@code [1234567890]}: the unique log id.</li>
- *     <li>{@code [...]}: the actual log message.</li>
+ *     <li>{@code [ERROR]}: The log level.</li>
+ *     <li>{@code [20/10/2023]}: The log event creation date and time.</li>
+ *     <li>{@code [1234567890]}: The unique log id.</li>
+ *     <li>{@code [...]}: The actual log message.</li>
  * </ol>
 */
-public class LogPrinter {
+public final class LogPrinter {
 
     private static final LogPrinter INSTANCE = new LogPrinter();
 
     private ConfigurationProvider configuration_provider;
 
-    private AtomicLong id;
+    private AtomicLong current_id;
     private BufferedWriter file_writer;
     private long file_size;
 
@@ -45,7 +43,7 @@ public class LogPrinter {
     private LogPrinter() {
 
         configuration_provider = ConfigurationProvider.getInstance();
-        id = new AtomicLong(0);
+        current_id = new AtomicLong(0);
 
         findEligible();
         printLog(new Log("LogPrinter.new > Instantiated successfully", LogLevel.SUCCESS, getNextId()));
@@ -55,8 +53,7 @@ public class LogPrinter {
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Get the {@link LogFileManager} instance created during class loading.
-     * @return The {@link ConfigurationProvider} instance.
+     * @return The {@link ConfigurationProvider} instance created during class loading.
     */
     public static LogPrinter getInstance() {
 
@@ -91,20 +88,17 @@ public class LogPrinter {
 
     /**
      * <p><b>This method is thread safe.</b></p>
-     * @return The next unique log id. Overflows will simply wrap around
-     *         without throwing any exception.
+     * @return The next unique log id. Overflows will simply wrap around without throwing any exception.
     */
     protected long getNextId() {
 
-        return(id.getAndIncrement());
+        return(current_id.getAndIncrement());
     }
-
-    //____________________________________________________________________________________________________________________________________
 
     /**
      * <p><b>This method is partially thread safe.</b></p>
      * <p>(Thread safe on a line-per-line basys. Interleaved lines are possible).</p>
-     * Synchronously log the given message with the specified severity to the console or file
+     * Synchronously logs the given message with the specified severity to the console or file
      * depending on the configuration (see {@link ConfigurationProvider}).
      * @param log : The log to log.
     */
@@ -121,7 +115,9 @@ public class LogPrinter {
         }
     }
 
-    // Format and print to the console.
+    //____________________________________________________________________________________________________________________________________
+
+    // Formats and prints to the console.
     private void printToConsole(Log log) {
 
         String level;
@@ -135,7 +131,7 @@ public class LogPrinter {
         System.out.println(level + partial + message);
     }
 
-    // Format and print to the current log file.
+    // Formats and prints to the current log file.
     private void printToFile(Log log) {
 
         String level;
@@ -155,7 +151,8 @@ public class LogPrinter {
 
             printToConsole(new Log(
                 
-                "LogPrinter.printToFile > Could not write to log file, IOException: " + exc.getMessage() + " Writing to console instead",
+                "LogPrinter.printToFile > Could not write to log file, IOException: " +
+                exc.getMessage() + " Writing to console instead",
                 LogLevel.WARNING
             ));
 
@@ -163,29 +160,23 @@ public class LogPrinter {
         }
     }
 
-    // Prepare the partial log message.
+    // Prepares the partial log message.
     private String partialString(Log log) {
 
-        SimpleDateFormat date_formatter;
-        SimpleDateFormat time_formatter;
+        SimpleDateFormat formatter;
 
-        String date;
-        String time_start;
-        String time_end;
+        String timestamp;
         String id;
 
-        date_formatter = new SimpleDateFormat("dd/MM/yyyy");
-        time_formatter = new SimpleDateFormat("HH:mm:ss.SSS");
+        formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss.SSS");
 
-        date = "[" + date_formatter.format(log.creation_date()) + "]-";
-        time_start = "[" + time_formatter.format(log.creation_date()) + "]-";
-        time_end = "[" + time_formatter.format(System.currentTimeMillis()) + "]-";
+        timestamp = "[" + formatter.format(log.timestamp()) + "]-";
         id = "[" + String.format("%016X", log.id()) + "]-";
 
-        return(date + time_start + time_end + id);
+        return(timestamp + id);
     }
 
-    // maybe sync all?
+    // TODO: maybe sync all?
     // Writes the data to the currently selected log file.
     private void write(String data) throws IOException {
 
@@ -199,8 +190,8 @@ public class LogPrinter {
         file_size += data.length();
     }
 
-    // Finds the most "recent" log file. If there are none, create one.
     // TODO: check if sync all is needed
+    // Finds the most "recent" log file. If there are none, create one.
     private synchronized void findEligible() {
 
         File[] files;
@@ -241,7 +232,7 @@ public class LogPrinter {
         }
     }
 
-    // Create a new log file with "log_<timestamp>.log" name.
+    // Creates a new log file with "log_<timestamp>.log" name.
     private void createNewLogFile() {
 
         String name;

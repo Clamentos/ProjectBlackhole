@@ -1,4 +1,4 @@
-package io.github.clamentos.blackhole.framework.persistence;
+package io.github.clamentos.blackhole.persistence;
 
 //________________________________________________________________________________________________________________________________________
 

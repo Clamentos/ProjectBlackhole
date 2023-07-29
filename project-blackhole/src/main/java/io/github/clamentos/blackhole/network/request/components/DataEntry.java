@@ -1,5 +1,4 @@
-// OK
-package io.github.clamentos.blackhole.framework.web.request.components;
+package io.github.clamentos.blackhole.network.request.components;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -7,8 +6,12 @@ import io.github.clamentos.blackhole.framework.Streamable;
 
 //________________________________________________________________________________________________________________________________________
 
-/** Simple class to represent semi-structured data that can be streamed over a stream. */
-public record DataEntry(
+/**
+ * <p><b>STEREOTYPE: Immutable data.</b></p>
+ * <p>Semi-structured data.</p>
+ * Simple class to represent semi-structured data that can be sent over a stream.
+*/
+public final record DataEntry(
 
     Types data_type,
     Object data
@@ -19,11 +22,11 @@ public record DataEntry(
     
     /**
      * <p><b>This method is thread safe.</b></p>
-     * Instantiate a new {@link DataEntry} with the given raw data buffer.
+     * Instantiates a new {@link DataEntry} object.
      * @param data : The raw data buffer.
-     * @param offset : Starting position of the buffer.
+     * @param offset : The starting position whithin the buffer.
      * @return The new {@link DataEntry}.
-     * @throws IllegalArgumentException If an unknown {@link Type} is found.
+     * @throws IllegalArgumentException If an unknown {@link Types} is found.
     */
     public static DataEntry deserialize(byte[] data, int[] offset) throws IllegalArgumentException {
 
@@ -108,6 +111,22 @@ public record DataEntry(
             
             break;
 
+            case 9:
+            
+                type = Types.BEGIN;
+                stuff = null;
+                offset[0] += 1;
+            
+            break;
+
+            case 10:
+            
+                type = Types.END;
+                stuff = null;
+                offset[0] += 1;
+            
+            break;
+
             default: throw new IllegalArgumentException("Unknown type: " + data[pos]);
         }
 
@@ -116,7 +135,10 @@ public record DataEntry(
 
     //____________________________________________________________________________________________________________________________________
 
-    /** {@inheritDoc} */
+    /**
+     * <p><b>This method is thread safe.</b></p>
+     * {@inheritDoc}
+    */
     @Override
     public byte[] stream() {
 
@@ -129,7 +151,6 @@ public record DataEntry(
 
                 bytes = numToBytes(data, 1);
                 result = new byte[bytes.length + 1];
-                result[0] = 0;
             
             break;
 
@@ -137,7 +158,6 @@ public record DataEntry(
 
                 bytes = numToBytes(data, 2);
                 result = new byte[bytes.length + 1];
-                result[0] = 1;
             
             break;
 
@@ -145,7 +165,6 @@ public record DataEntry(
 
                 bytes = numToBytes(data, 4);
                 result = new byte[bytes.length + 1];
-                result[0] = 2;
             
             break;
 
@@ -153,7 +172,6 @@ public record DataEntry(
 
                 bytes = numToBytes(data, 8);
                 result = new byte[bytes.length + 1];
-                result[0] = 3;
             
             break;
 
@@ -161,7 +179,6 @@ public record DataEntry(
 
                 bytes = numToBytes(data, 4);
                 result = new byte[bytes.length + 1];
-                result[0] = 4;
             
             break;
 
@@ -169,7 +186,6 @@ public record DataEntry(
 
                 bytes = numToBytes(data, 8);
                 result = new byte[bytes.length + 1];
-                result[0] = 5;
             
             break;
 
@@ -177,7 +193,6 @@ public record DataEntry(
 
                 bytes = ((String)data).getBytes();
                 result = new byte[bytes.length + 1];
-                result[0] = 6;
             
             break;
 
@@ -185,25 +200,47 @@ public record DataEntry(
 
                 bytes = (byte[])data;
                 result = new byte[bytes.length + 1];
-                result[0] = 7;
             
             break;
 
-            default:
+            case NULL:
 
                 bytes = new byte[]{};
                 result = new byte[bytes.length + 1];
-                result[0] = 8;
+
+            break;
+
+            case BEGIN:
+
+                bytes = new byte[]{};
+                result = new byte[bytes.length + 1];
+
+            break;
+
+            case END:
+
+                bytes = new byte[]{};
+                result = new byte[bytes.length + 1];
+
+            break;
+
+            default: // Should never be executed... it's here so that the IDE doesn't complain...
+
+                bytes = new byte[]{};
+                result = new byte[bytes.length + 1];
             
             break;
         }
 
+        result[0] = (byte)data_type.ordinal();
         System.arraycopy(bytes, 0, result, 1, bytes.length);
+
         return(bytes);
     }
 
     //____________________________________________________________________________________________________________________________________
 
+    // Converts the number (passed as Object) into an array of bytes (Thread safe obviously).
     private byte[] numToBytes(Object data, int len) {
 
         byte[] result = new byte[len];
@@ -217,6 +254,7 @@ public record DataEntry(
         return(result);
     }
 
+    // Converts raw bytes into a number (Thread safe obviously).
     private static long bytesToNum(byte[] data, int offset, int len) {
 
         long result = 0;

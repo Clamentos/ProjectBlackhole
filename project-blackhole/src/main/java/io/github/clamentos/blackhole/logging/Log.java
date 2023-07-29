@@ -1,21 +1,18 @@
-// OK
-package io.github.clamentos.blackhole.framework.logging;
-
-//________________________________________________________________________________________________________________________________________
-
-import java.util.Date;
+package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
 
 /**
+ * <p><b>STEREOTYPE: Immutable data.</b></p>
  * <p>Log object.</p>
  * This class is used as a template for generating the actual print.
+ * The getters are all standard and thread safe.
 */
-public record Log(
+public final record Log(
     
     String message,
     LogLevel log_level,
-    Date creation_date,
+    long timestamp,
     long id
 
     //____________________________________________________________________________________________________________________________________
@@ -23,7 +20,7 @@ public record Log(
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Instantiate a new {@link Log} object.
+     * Instantiates a new {@link Log} object.
      * @param message : The log message.
      * @param log_level : The log severity.
     */
@@ -33,15 +30,18 @@ public record Log(
             
             message,
             log_level,
-            new Date(System.currentTimeMillis()),
+            System.currentTimeMillis(),
             LogPrinter.getInstance().getNextId()
         );
     }
 
+    //____________________________________________________________________________________________________________________________________
+
+    // Thread safe obviously.
     // Just for the LogPrinter to log things during initialization (otherwise cyclic dependency).
     protected Log(String message, LogLevel log_level, long id) {
 
-        this(message, log_level, new Date(System.currentTimeMillis()), id);
+        this(message, log_level, System.currentTimeMillis(), id);
     }
 
     //____________________________________________________________________________________________________________________________________

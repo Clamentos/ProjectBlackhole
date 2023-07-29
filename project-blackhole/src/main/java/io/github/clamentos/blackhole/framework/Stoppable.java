@@ -1,16 +1,16 @@
-// OK
 package io.github.clamentos.blackhole.framework;
 
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p>Stoppable interface.</p>
- * Simple interface that extends {@link Runnable}, specifying
- * that the implementing class is a runnable that can be stopped.
+ * <p><b>STEREOTYPE: Interface.</b></p>
+ * <p>Stoppable runnable.</p>
+ * Simple interface that extends {@link Runnable}, specifying that the implementing class
+ * is a runnable that can be stopped.
 */
 public interface Stoppable extends Runnable {
     
-    /** Signal {@code this} {@link Runnable} to start the halting procedure. */
+    /** Signals {@code this} {@link Runnable} to start the halting procedure. */
     void stop();
 
     //____________________________________________________________________________________________________________________________________

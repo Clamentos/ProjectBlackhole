@@ -1,13 +1,13 @@
-package io.github.clamentos.blackhole.framework.web;
+package io.github.clamentos.blackhole.network;
 
 //________________________________________________________________________________________________________________________________________
 
 import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
 import io.github.clamentos.blackhole.common.exceptions.GlobalExceptionHandler;
-import io.github.clamentos.blackhole.framework.logging.LogLevel;
-import io.github.clamentos.blackhole.framework.logging.Logger;
 import io.github.clamentos.blackhole.framework.tasks.ContinuousTask;
 import io.github.clamentos.blackhole.framework.tasks.TaskManager;
+import io.github.clamentos.blackhole.logging.LogLevel;
+import io.github.clamentos.blackhole.logging.Logger;
 
 import java.io.IOException;
 
@@ -21,9 +21,8 @@ import java.util.HashMap;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p>Web server task.</p>
- * This class is responsible for accepting the incoming client sockets,
- * as well as to manage each {@link ConnectionTask}.
+ * <p><b>STEREOTYPE: Continuous task.</b></p>
+ * This class is responsible for accepting the incoming client sockets.
 */
 public final class ServerTask extends ContinuousTask {
 
@@ -31,15 +30,15 @@ public final class ServerTask extends ContinuousTask {
     private ConfigurationProvider configuration_provider;
 
     private ServerSocket server_socket;
-    private HashMap<SocketAddress, Integer> sockets_per_ip;     // Maybe it's better to use session ids as keys...
+    private HashMap<SocketAddress, Integer> sockets_per_ip;    // TODO: use session ids as keys...
     private int accept_retries;
 
     //____________________________________________________________________________________________________________________________________
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Instantiate a new {@link ServerTask} with the given id.
-     * @param id : The task id.
+     * Instantiates a new {@link ServerTask}.
+     * @param id : The unique task id.
     */
     public ServerTask(long id) {
 

@@ -1,17 +1,23 @@
 package io.github.clamentos.blackhole.common.configuration;
 
 //________________________________________________________________________________________________________________________________________
+// Some imports are only used for JavaDocs.
 
-import io.github.clamentos.blackhole.framework.logging.LogLevel;
-import io.github.clamentos.blackhole.framework.logging.LogTask;
-import io.github.clamentos.blackhole.framework.logging.Logger;
+import io.github.clamentos.blackhole.logging.LogLevel;
+import io.github.clamentos.blackhole.logging.LogTask;
+import io.github.clamentos.blackhole.logging.Logger;
 
 import java.io.IOException;
+
+import java.lang.reflect.Field;
 
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 
+import java.text.SimpleDateFormat;
+
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -20,7 +26,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>Eager-loaded singleton.</b></p>
+ * <ul>
+ *     <li><b>BEHAVIOUR: Eager-loaded singleton.</b></li>
+ *     <li><b>STEREOTYPE: Configuration.</b></li>
+ * </ul>
  * <p>Repository of all configuration constants.</p>
  * <p>This class will use the {@code Application.properties} file located in {@code /resources}.</p>
  * <p>The constructor will read the configuration file and if such file doesn't exist,
@@ -28,63 +37,63 @@ import java.util.concurrent.LinkedBlockingQueue;
  * isn't defined in the file, then the default (for that particular constant) will be used.</p>
  * 
  * The configuration properties are:
- * 
  * <ul>
- *     <li>{@code MAX_LOG_QUEUE_POLLS}: maximum number of polls on {@link LinkedBlockingQueue}
+ *     <li>{@code MAX_LOG_QUEUE_POLLS}: Maximum number of polls on {@link LinkedBlockingQueue}
  *         before blocking. Used by {@link LogTask} and {@link Logger}.</li>
- *     <li>{@code LOG_QUEUE_SAMPLE_TIME}: specifies the maximum queue wait time (in milliseconds)
+ *     <li>{@code LOG_QUEUE_SAMPLE_TIME}: Specifies the maximum queue wait time (in milliseconds)
  *         of each poll sample on {@link LinkedBlockingQueue}. Used by {@link Logger}.</li>
- *     <li>{@code LOG_QUEUE_INSERT_TIMEOUT}: specifies the timeout (in milliseconds) when attempting
+ *     <li>{@code LOG_QUEUE_INSERT_TIMEOUT}: Specifies the timeout (in milliseconds) when attempting
  *         to insert a log in the log queue.</li>
- *     <li>{@code MAX_LOG_QUEUE_SIZE}: specifies the maximum number of logs that the queue
+ *     <li>{@code MAX_LOG_QUEUE_SIZE}: Specifies the maximum number of logs that the queue
  *         can hold.</li>
- *     <li>{@code NUM_LOG_TASKS}: specifies the number of concurrent {@link LogTask}
+ *     <li>{@code NUM_LOG_TASKS}: Specifies the number of concurrent {@link LogTask}
  *         present in the system.</li>
- *     <li>{@code MAX_LOG_FILE_SIZE}: maximum log file size in bytes. Above this,
+ *     <li>{@code MAX_LOG_FILE_SIZE}: Maximum log file size in bytes. Above this,
  *         a new log file will be created.</li>
- *     <li>{@code MIN_LOG_LEVEL}: minimum log level (index) below which logs are discarded.</li>
- *     <li>{@code DEBUG_LEVEL_TO_FILE}: specifies if logs with level of {@link LogLevel#DEBUG}
+ *     <li>{@code MIN_LOG_LEVEL}: Minimum log level (index) below which logs are discarded.</li>
+ *     <li>{@code DEBUG_LEVEL_TO_FILE}: Specifies if logs with level of {@link LogLevel#DEBUG}
  *         should be printed to file or console.</li>
- *     <li>{@code INFO_LEVEL_TO_FILE}: specifies if logs with level of {@link LogLevel#INFO}
+ *     <li>{@code INFO_LEVEL_TO_FILE}: Specifies if logs with level of {@link LogLevel#INFO}
  *         should be printed to file or console.</li>
- *     <li>{@code SUCCESS_LEVEL_TO_FILE}: specifies if logs with level of {@link LogLevel#SUCCESS}
+ *     <li>{@code SUCCESS_LEVEL_TO_FILE}: Specifies if logs with level of {@link LogLevel#SUCCESS}
  *         should be printed to file or console.</li>
- *     <li>{@code NOTE_LEVEL_TO_FILE}: specifies if logs with level of {@link LogLevel#NOTE}
+ *     <li>{@code NOTE_LEVEL_TO_FILE}: Specifies if logs with level of {@link LogLevel#NOTE}
  *         should be printed to file or console.</li>
- *     <li>{@code WARNING_LEVEL_TO_FILE}: specifies if logs with level of {@link LogLevel#WARNING}
+ *     <li>{@code WARNING_LEVEL_TO_FILE}: Specifies if logs with level of {@link LogLevel#WARNING}
  *         should be printed to file or console.</li>
- *     <li>{@code ERROR_LEVEL_TO_FILE}: specifies if logs with level of {@link LogLevel#ERROR}
+ *     <li>{@code ERROR_LEVEL_TO_FILE}: Specifies if logs with level of {@link LogLevel#ERROR}
  *         should be printed to file or console.</li>
- *     <li>{@code SERVER_PORT}: specifies the TCP port of the server.</li>
- *     <li>{@code MAX_SERVER_START_ATTEMPTS}: specifies how many attempts to do before giving up
+ *     <li>{@code SERVER_PORT}: Specifies the TCP port of the server.</li>
+ *     <li>{@code MAX_SERVER_START_ATTEMPTS}: Specifies how many attempts to do before giving up
  *         when attempting to start the server.</li>
- *     <li>{@code SERVER_SOCKET_SAMPLE_TIME}: specifies the server socket timeout for one sample.</li>
- *     <li>{@code MAX_SERVER_SOCKET_SAMPLES}: specifies the maximum number of server socket timeout
+ *     <li>{@code SERVER_SOCKET_SAMPLE_TIME}: Specifies the server socket timeout for one sample.</li>
+ *     <li>{@code MAX_SERVER_SOCKET_SAMPLES}: Specifies the maximum number of server socket timeout
  *         samples before actually timing out.</li>
- *     <li>{@code STREAM_BUFFER_SIZE}: specifies the size of the stream buffers in bytes.</li>
- *     <li>{@code CLIENT_SOCKET_SAMPLE_TIME}: specifies the client socket timeout for one sample.</li>
- *     <li>{@code MAX_CLIENT_SOCKET_SAMPLES}: specifies the maximum number of client socket timeout
+ *     <li>{@code STREAM_BUFFER_SIZE}: Specifies the size of the stream buffers in bytes.</li>
+ *     <li>{@code CLIENT_SOCKET_SAMPLE_TIME}: Specifies the client socket timeout for one sample.</li>
+ *     <li>{@code MAX_CLIENT_SOCKET_SAMPLES}: Specifies the maximum number of client socket timeout
  *         samples before actually timing out.</li>
- *     <li>{@code MAX_REQUESTS_PER_CLIENT}: specifies the maximum number of requests that a socket
+ *     <li>{@code MAX_REQUESTS_PER_CLIENT}: Specifies the maximum number of requests that a socket
  *         can have throughout its lifetime. If the limit is exceeded, it must be closed.</li>
- *     <li>{@code MAX_CLIENTS_PER_IP}: specifies the maximum number of sockets that a particular ip
+ *     <li>{@code MAX_CLIENTS_PER_IP}: Specifies the maximum number of sockets that a particular ip
  *         address can have. Beyond this, sockets must be refused for that address.</li>
- *     <li>{@code MIN_CLIENT_SPEED}: specifies the maximum wait time (in milliseconds) that the
+ *     <li>{@code MIN_CLIENT_SPEED}: Specifies the maximum wait time (in milliseconds) that the
  *         server is allowed to wait on each read, above which the socket will be closed.</li>
- *     <li>{@code GEN_BD_SCHEMA}: specifies if it's necessary to export the schema
+ *     <li>{@code SESSION_DURATION}: Specifies the duration (in milliseconds) of user sessions.</li>
+ *     <li>{@code GEN_BD_SCHEMA}: Specifies if it's necessary to export the schema
  *         to the database or not.</li>
- *     <li>{@code INIT_DB_DATA}: specifies if it's necessary to export the data
+ *     <li>{@code INIT_DB_DATA}: Specifies if it's necessary to export the data
  *         to the database or not.</li>
- *     <li>{@code DB_ADDRESS}: the address of the database.</li>
- *     <li>{@code DB_USERNAME}: the database username.</li>
- *     <li>{@code DB_PASSWORD}: the database password.</li>
- *     <li>{@code NUM_DB_CONNECTIONS}: specifies the number of connections in the database
+ *     <li>{@code DB_ADDRESS}: Specifies the address of the database.</li>
+ *     <li>{@code DB_USERNAME}: Specifies the database username.</li>
+ *     <li>{@code DB_PASSWORD}: Specifies the database password.</li>
+ *     <li>{@code NUM_DB_CONNECTIONS}: Specifies the number of connections in the database
  *         connection pool.</li>
- *     <li>{@code DB_CONNECTION_TIMEOUT}: specifies the timeout (in milliseconds) of
+ *     <li>{@code DB_CONNECTION_TIMEOUT}: Specifies the timeout (in milliseconds) of
  *         a single database connection.</li>
  * </ul>
 */
-public class ConfigurationProvider {
+public final class ConfigurationProvider {
 
     private static final ConfigurationProvider INSTANCE = new ConfigurationProvider();
     private Map<String, String> problems;
@@ -127,6 +136,10 @@ public class ConfigurationProvider {
 
     //____________________________________________________________________________________________________________________________________
 
+    public final long SESSION_DURATION;
+
+    //____________________________________________________________________________________________________________________________________
+
     public final boolean GEN_BD_SCHEMA;
     public final boolean INIT_DB_DATA;
 
@@ -139,9 +152,11 @@ public class ConfigurationProvider {
 
     //____________________________________________________________________________________________________________________________________
 
-    // Thread safe assuming that nobody else is touching the Application.properties file.
+    // Thread safe assuming that nobody else is writing to the Application.properties file.
     private ConfigurationProvider() {
 
+        int int_max = Integer.MAX_VALUE;
+        long long_max = Long.MAX_VALUE;
         Properties props = new Properties();
         problems = new HashMap<>();
 
@@ -153,13 +168,13 @@ public class ConfigurationProvider {
         // Ignore the exception because defaults will be used.
         catch(InvalidPathException | IOException exc) {}
 
-        MAX_LOG_QUEUE_POLLS = checkInt(props, "MAX_LOG_QUEUE_POLLS", "100", 1, Integer.MAX_VALUE);
-        LOG_QUEUE_SAMPLE_TIME = checkInt(props, "LOG_QUEUE_SAMPLE_TIME", "500", 1, Integer.MAX_VALUE);
-        LOG_QUEUE_INSERT_TIMEOUT = checkInt(props, "LOG_QUEUE_INSERT_TIMEOUT", "5000", 1, Integer.MAX_VALUE);
-        MAX_LOG_QUEUE_SIZE = checkInt(props, "MAX_LOG_QUEUE_SIZE", "100000", 1000, Integer.MAX_VALUE);
-        NUM_LOG_TASKS = checkInt(props, "NUM_LOG_TASKS", "1", 1, Integer.MAX_VALUE);
+        MAX_LOG_QUEUE_POLLS = checkInt(props, "MAX_LOG_QUEUE_POLLS", "100", 1, int_max);
+        LOG_QUEUE_SAMPLE_TIME = checkInt(props, "LOG_QUEUE_SAMPLE_TIME", "500", 1, int_max);
+        LOG_QUEUE_INSERT_TIMEOUT = checkInt(props, "LOG_QUEUE_INSERT_TIMEOUT", "5000", 1, int_max);
+        MAX_LOG_QUEUE_SIZE = checkInt(props, "MAX_LOG_QUEUE_SIZE", "100000", 1000, int_max);
+        NUM_LOG_TASKS = checkInt(props, "NUM_LOG_TASKS", "1", 1, int_max);
         MIN_LOG_LEVEL = checkLogLevel(props, "MIN_LOG_LEVEL", "1");
-        MAX_LOG_FILE_SIZE = checkInt(props, "MAX_LOG_FILE_SIZE", "10000000", 10_000, Integer.MAX_VALUE);
+        MAX_LOG_FILE_SIZE = checkInt(props, "MAX_LOG_FILE_SIZE", "10000000", 10_000, int_max);
         DEBUG_LEVEL_TO_FILE = checkBoolean(props, "DEBUG_LEVEL_TO_FILE", "false");
         INFO_LEVEL_TO_FILE = checkBoolean(props, "INFO_LEVEL_TO_FILE", "false");
         SUCCESS_LEVEL_TO_FILE = checkBoolean(props, "SUCCESS_LEVEL_TO_FILE", "false");
@@ -168,23 +183,27 @@ public class ConfigurationProvider {
         ERROR_LEVEL_TO_FILE = checkBoolean(props, "ERROR_LEVEL_TO_FILE", "false");
 
         SERVER_PORT = checkInt(props, "SERVER_PORT", "8080", 1, 65535);
-        MAX_SERVER_START_ATTEMPTS = checkInt(props, "MAX_SERVER_START_ATTEMPTS", "5", 1, Integer.MAX_VALUE);
-        SERVER_SOCKET_SAMPLE_TIME = checkInt(props, "SERVER_SOCKET_SAMPLE_TIME", "500", 1, Integer.MAX_VALUE);
-        MAX_SERVER_SOCKET_SAMPLES = checkInt(props, "MAX_SERVER_SOCKET_SAMPLES", "60", 1, Integer.MAX_VALUE);
-        STREAM_BUFFER_SIZE = checkInt(props, "STREAM_BUFFER_SIZE", "16384", 1024, Integer.MAX_VALUE);
-        CLIENT_SOCKET_SAMPLE_TIME = checkInt(props, "CLIENT_SOCKET_SAMPLE_TIME", "500", 1, Integer.MAX_VALUE);
-        MAX_CLIENT_SOCKET_SAMPLES = checkInt(props, "MAX_CLIENT_SOCKET_SAMPLES", "60", 1, Integer.MAX_VALUE);
-        MAX_REQUESTS_PER_CLIENT = checkInt(props, "MAX_REQUESTS_PER_CLIENT", "10", 1, Integer.MAX_VALUE);
-        MAX_CLIENTS_PER_IP = checkInt(props, "MAX_CLIENTS_PER_IP", "1", 1, Integer.MAX_VALUE);
-        MIN_CLIENT_SPEED = checkInt(props, "MIN_CLIENT_SPEED", "5", 1, Integer.MAX_VALUE);
+        MAX_SERVER_START_ATTEMPTS = checkInt(props, "MAX_SERVER_START_ATTEMPTS", "5", 1, int_max);
+        SERVER_SOCKET_SAMPLE_TIME = checkInt(props, "SERVER_SOCKET_SAMPLE_TIME", "500", 1, int_max);
+        MAX_SERVER_SOCKET_SAMPLES = checkInt(props, "MAX_SERVER_SOCKET_SAMPLES", "60", 1, int_max);
+        STREAM_BUFFER_SIZE = checkInt(props, "STREAM_BUFFER_SIZE", "16384", 1024, int_max);
+        CLIENT_SOCKET_SAMPLE_TIME = checkInt(props, "CLIENT_SOCKET_SAMPLE_TIME", "500", 1, int_max);
+        MAX_CLIENT_SOCKET_SAMPLES = checkInt(props, "MAX_CLIENT_SOCKET_SAMPLES", "60", 1, int_max);
+        MAX_REQUESTS_PER_CLIENT = checkInt(props, "MAX_REQUESTS_PER_CLIENT", "10", 1, int_max);
+        MAX_CLIENTS_PER_IP = checkInt(props, "MAX_CLIENTS_PER_IP", "1", 1, int_max);
+        MIN_CLIENT_SPEED = checkInt(props, "MIN_CLIENT_SPEED", "5", 1, int_max);
+
+        SESSION_DURATION = checkLong(props, "SESSION_DURATION", "3600000", 60000, long_max);
 
         GEN_BD_SCHEMA = checkBoolean(props, "GEN_BD_SCHEMA", "false");
         INIT_DB_DATA = checkBoolean(props, "INIT_DB_DATA", "false");
         DB_ADDRESS = checkString(props, "DB_ADDRESS", "jdbc:postgresql://127.0.0.1:5432/mock");
         DB_USERNAME = checkString(props, "DB_USERNAME", "admin");
         DB_PASSWORD = checkString(props, "DB_PASSWORD", "admin");
-        NUM_DB_CONNECTIONS = checkInt(props, "NUM_DB_CONNECTIONS", "5", 1, Integer.MAX_VALUE);
-        DB_CONNECTION_TIMEOUT = checkInt(props, "DB_CONNECTION_TIMEOUT", "10000", 1, Integer.MAX_VALUE);
+        NUM_DB_CONNECTIONS = checkInt(props, "NUM_DB_CONNECTIONS", "5", 1, int_max);
+        DB_CONNECTION_TIMEOUT = checkInt(props, "DB_CONNECTION_TIMEOUT", "10000", 1, int_max);
+
+        printFields();
     }
 
     //____________________________________________________________________________________________________________________________________
@@ -202,7 +221,7 @@ public class ConfigurationProvider {
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Get the problems map, which associates configuration names with the error
+     * Gets the problems map, which associates configuration names with the error
      * generated during property initialization. If a configuration constant didn't generate
      * an error, there will be no entry in the map for that name.
      * @return The never {@code null} problems map.
@@ -213,7 +232,7 @@ public class ConfigurationProvider {
     }
 
     //____________________________________________________________________________________________________________________________________
-    // These methods simply checks if the passed property is valid (all thread safe).
+    // Utility methods.
 
     private int checkInt(Properties p, String name, String def, int low, int high) {
 
@@ -228,7 +247,8 @@ public class ConfigurationProvider {
                 problems.put(
                 
                     name,
-                    "Property " + name + "must be between " + low + " and " + high + ". The default value of: " + def + "will be used"
+                    "Property " + name + "must be between " + low + " and " + high +
+                    ". The default value of: " + def + "will be used"
                 );
 
                 return(Integer.parseInt(def));
@@ -242,7 +262,44 @@ public class ConfigurationProvider {
             problems.put(
                 
                 name,
-                "Erroneous number format on property " + name + ": " + exc.getMessage() + ". The default value of: " + def + "will be used"
+                "Erroneous number format on property " + name + ": " + exc.getMessage() +
+                ". The default value of: " + def + "will be used"
+            );
+
+            return(Integer.parseInt(def));
+        }
+    }
+
+    private long checkLong(Properties p, String name, String def, long low, long high) {
+
+        String s = (String)p.getOrDefault(name, def);
+
+        try {
+
+            long result = Long.parseLong(s);
+
+            if(result < low || result > high) {
+
+                problems.put(
+                
+                    name,
+                    "Property " + name + "must be between " + low + " and " + high +
+                    ". The default value of: " + def + "will be used"
+                );
+
+                return(Long.parseLong(def));
+            }
+
+            return(result);
+        }
+
+        catch(NumberFormatException exc) {
+
+            problems.put(
+                
+                name,
+                "Erroneous number format on property " + name + ": " + exc.getMessage() +
+                ". The default value of: " + def + "will be used"
             );
 
             return(Integer.parseInt(def));
@@ -263,7 +320,13 @@ public class ConfigurationProvider {
             return(false);
         }
 
-        problems.put(name, "Property " + name + " must be either true or false. The default value of: " + def + "will be used");
+        problems.put(
+            
+            name,
+            "Property " + name + " must be either true or false. The default value of: " +
+            def + " will be used"
+        );
+
         return(Boolean.parseBoolean(def));
     }
 
@@ -273,7 +336,13 @@ public class ConfigurationProvider {
 
         if(s == null || s == "") {
 
-            problems.put(name, "Property " + name + " must not be null nor empty. The default value of: " + def + "will be used");
+            problems.put(
+                
+                name,
+                "Property " + name + " must not be null nor empty. The default value of: " +
+                def + "will be used"
+            );
+            
             return(def);
         }
 
@@ -298,6 +367,90 @@ public class ConfigurationProvider {
         );
 
         return(Integer.parseInt(def));
+    }
+
+    // Used to log the aquired properties to the console as a feedback.
+    private void printFields() {
+
+        Field[] fields;
+        String problem;
+        String padding;
+
+        fields = ConfigurationProvider.class.getFields();
+
+        try {
+
+            for(Field field : fields) {
+
+                // 25 is the longest property name.
+                padding = " ".repeat(25 - field.getName().length());
+                problem = problems.get(field.getName());
+
+                if(problem != null) {
+
+                    printValue(problem, true);
+                }
+
+                else {
+
+                    printValue(
+                        
+                        "Property: " + field.getName() + padding +
+                        "    Value: " + field.get(this).toString(),
+                        false
+                    );
+                }
+            }
+        }
+
+        catch(IllegalAccessException exc) { // This should never happen...
+
+            System.exit(1);
+        }
+    }
+
+    private void printValue(String val, boolean is_warning) {
+
+        String color;
+        String level;
+        String partial;
+        String message;
+
+        if(is_warning == true) {
+
+            color = "\u001B[33m";
+            level = "[" + color + "WARNING\u001B[0m]-";
+        }
+
+        else {
+
+            color = "\u001B[34m";
+            level = "[" + color + "INFO   \u001B[0m]-";
+        }
+
+        message = "[" + color + val + "\u001B[0m]";
+        partial = partialString(val);
+
+        System.out.println(level + partial + message);
+    }
+
+    private String partialString(String str) {
+
+        Date now;
+        SimpleDateFormat date_formatter;
+        SimpleDateFormat time_formatter;
+
+        String date;
+        String time_start;
+
+        now = new Date(System.currentTimeMillis());
+        date_formatter = new SimpleDateFormat("dd/MM/yyyy");
+        time_formatter = new SimpleDateFormat("HH:mm:ss.SSS");
+
+        date = "[" + date_formatter.format(now) + "]-";
+        time_start = "[" + time_formatter.format(now) + "]-";
+
+        return(date + time_start);
     }
 
     //____________________________________________________________________________________________________________________________________

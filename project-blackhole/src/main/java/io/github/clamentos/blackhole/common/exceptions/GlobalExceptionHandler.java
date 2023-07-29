@@ -2,8 +2,8 @@ package io.github.clamentos.blackhole.common.exceptions;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.framework.logging.LogLevel;
-import io.github.clamentos.blackhole.framework.logging.LogPrinter;
+import io.github.clamentos.blackhole.logging.LogLevel;
+import io.github.clamentos.blackhole.logging.LogPrinter;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -13,20 +13,23 @@ import java.lang.Thread.UncaughtExceptionHandler;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>Eager-loaded singleton.</b></p>
+ * <ul>
+ *     <li><b>BEHAVIOUR: Eager-loaded singleton.</b></li>
+ *     <li><b>STEREOTYPE: Error handling.</b></li>
+ * </ul>
  * <p>Global exception handler.</p>
- * <p>Every thread should specify this class as its default exception handler,
+ * Every thread should specify this class as its default exception handler,
  * in order to handle unexpected exceptions that would otherwise cause the thread
- * to terminate.</p>
+ * to terminate.
 */
-public class GlobalExceptionHandler implements UncaughtExceptionHandler {
+public final class GlobalExceptionHandler implements UncaughtExceptionHandler {
 
     private static final GlobalExceptionHandler INSTANCE = new GlobalExceptionHandler();
     private LogPrinter log_printer;
 
     //____________________________________________________________________________________________________________________________________
 
-    // Thread safe
+    // Thread safe.
     private GlobalExceptionHandler() {
 
         log_printer = LogPrinter.getInstance();
@@ -37,8 +40,7 @@ public class GlobalExceptionHandler implements UncaughtExceptionHandler {
 
     /**
      * <p><b>This method is thread safe.</b></p>
-     * Get the {@link GlobalExceptionHandler} instance created during class loading.
-     * @return The {@link GlobalExceptionHandler} instance.
+     * @return The {@link GlobalExceptionHandler} instance created during class loading.
     */
     public static GlobalExceptionHandler getInstance() {
 
@@ -49,7 +51,7 @@ public class GlobalExceptionHandler implements UncaughtExceptionHandler {
 
     /**
      * <p><b>This method is thread safe.</b></p>
-     * <p>Catch the uncaught exception!
+     * <p>Catches the uncaught exception!
      * As of now, this method will only print the exception and the stack trace to the console.</p>
      * @param thread : The thread that threw the exception.
      * @param exc : The actual exception.

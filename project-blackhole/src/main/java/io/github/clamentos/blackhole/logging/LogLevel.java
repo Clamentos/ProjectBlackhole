@@ -1,5 +1,4 @@
-// OK
-package io.github.clamentos.blackhole.framework.logging;
+package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -13,13 +12,13 @@ import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
  * 
  * The log levels in increasing relevance are:
  * <ol>
- *     <li>{@code DEBUG}: used for debugging.</li>
- *     <li>{@code INFO}: used to give harmless but useful information.</li>
- *     <li>{@code SUCCESS}: used to indicate the positive outcome of a critical process.</li>
- *     <li>{@code NOTE}: used to indicate failures on non critical processes.</li>
- *     <li>{@code WARNING}: used to indicate that a critical process encountered an unusual
+ *     <li>{@code DEBUG}: Used for debugging.</li>
+ *     <li>{@code INFO}: Used to give harmless but useful information.</li>
+ *     <li>{@code SUCCESS}: Used to indicate the positive outcome of a critical process.</li>
+ *     <li>{@code NOTE}: Used to indicate failures on non critical processes.</li>
+ *     <li>{@code WARNING}: Used to indicate that a critical process encountered an unusual
  *         situation but was able to recover without service interruptions.</li>
- *     <li>{@code ERROR}: used to indicate that a critical process encountered an unusual or unexpected
+ *     <li>{@code ERROR}: Used to indicate that a critical process encountered an unusual or unexpected
  *         situation that was not able to recover without service interruptions.</li>
  * </ol>
 */
@@ -40,7 +39,7 @@ public enum LogLevel {
 
     //____________________________________________________________________________________________________________________________________
 
-    // Thread safe
+    // Thread safe obviously.
     private LogLevel(String value, String color, boolean to_file) {
 
         this.value = value;
@@ -52,8 +51,7 @@ public enum LogLevel {
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Get the associated log level string.
-     * @return the log level string (always well-defined).
+     * @return the associated log level string.
     */
     public String getValue() {
 
@@ -62,8 +60,7 @@ public enum LogLevel {
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Get the associated log level color.
-     * @return the log level color (always well-defined).
+     * @return the associated log level color.
     */
     public String getColor() {
 
@@ -72,7 +69,6 @@ public enum LogLevel {
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Get the associated destination for {@code this} log level.
      * @return {@code true} if the destination is the log file, {@code false} if console.
     */
     public boolean toFile() {

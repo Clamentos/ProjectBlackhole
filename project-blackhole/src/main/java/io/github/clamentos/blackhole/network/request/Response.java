@@ -1,14 +1,13 @@
-// OK
-package io.github.clamentos.blackhole.framework.web.request;
+package io.github.clamentos.blackhole.network.request;
 
 //________________________________________________________________________________________________________________________________________
 
 import io.github.clamentos.blackhole.common.exceptions.Failure;
 import io.github.clamentos.blackhole.framework.Reducible;
 import io.github.clamentos.blackhole.framework.Streamable;
-import io.github.clamentos.blackhole.framework.web.request.components.DataEntry;
-import io.github.clamentos.blackhole.framework.web.request.components.ErrorDetails;
-import io.github.clamentos.blackhole.framework.web.request.components.ResponseStatuses;
+import io.github.clamentos.blackhole.network.request.components.DataEntry;
+import io.github.clamentos.blackhole.network.request.components.ErrorDetails;
+import io.github.clamentos.blackhole.network.request.components.ResponseStatuses;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,10 +15,11 @@ import java.util.List;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p>Response class.</p>
+ * <p><b>STEREOTYPE: Immutable data.</b></p>
+ * <p>Network response object.</p>
  * This class holds all the fields and data that can be sent through a stream.
 */
-public record Response(
+public final record Response(
 
     ResponseStatuses response_status,
     List<Reducible> data
@@ -28,6 +28,24 @@ public record Response(
 
     //____________________________________________________________________________________________________________________________________
 
+    /**
+     * <p><b>This method is thread safe.</b></p>
+     * Instantiates a new error {@link Response}.
+     * @param error : The error itself, usually a {@link Throwable} or a {@link Failure}.
+     * @param error_message : The error message text.
+     * @return The created error response.
+    */
+    public Response(Throwable error, String error_message) {
+
+        this(calculateStatus(error), List.of(new ErrorDetails(error_message)));
+    }
+
+    //____________________________________________________________________________________________________________________________________
+
+    /**
+     * <p><b>This method is thread safe.</b></p>
+     * {@inheritDoc}
+    */
     @Override
     public byte[] stream() {
 
@@ -73,33 +91,26 @@ public record Response(
         return(bytes);
     }
 
-    public static Response create(String error_message, Throwable error) {
+    //____________________________________________________________________________________________________________________________________
 
-        ArrayList<Reducible> error_details;
-        Failure wrapper;
-        ResponseStatuses status;
-
-        error_details = new ArrayList<>();
-        error_details.add(new ErrorDetails(error_message));
+    private static ResponseStatuses calculateStatus(Throwable error) {
 
         if(error != null && error instanceof Failure) {
 
-            wrapper = (Failure)error;
+            switch(((Failure)error).getError()) {
 
-            switch(wrapper.getError()) {
+                case SESSION_NOT_FOUND: return(ResponseStatuses.UNAUTHENTICATED);
+                case SESSION_EXPIRED: return(ResponseStatuses.UNAUTHENTICATED);
+                case NOT_ENOUGH_PRIVILEGES: return(ResponseStatuses.DENIED);
+                case BAD_FORMATTING: return(ResponseStatuses.BAD_REQUEST);
+                
+                // TODO: others
 
-                case SESSION_NOT_FOUND: status = ResponseStatuses.UNAUTHENTICATED; break;
-                case SESSION_EXPIRED: status = ResponseStatuses.UNAUTHENTICATED; break;
-                case NOT_ENOUGH_PRIVILEGES: status = ResponseStatuses.DENIED; break;
-                case BAD_FORMATTING: status = ResponseStatuses.BAD_REQUEST; break;
-
-                default: status = ResponseStatuses.ERROR;
+                default: return(ResponseStatuses.ERROR);
             }
-
-            return(new Response(status, error_details));
         }
 
-        return(new Response(ResponseStatuses.ERROR, error_details));
+        return(ResponseStatuses.ERROR);
     }
 
     //____________________________________________________________________________________________________________________________________

@@ -1,5 +1,4 @@
-// OK
-package io.github.clamentos.blackhole.framework.logging;
+package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -7,14 +6,13 @@ import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
 import io.github.clamentos.blackhole.common.exceptions.GlobalExceptionHandler;
 import io.github.clamentos.blackhole.framework.tasks.ContinuousTask;
 
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>Stoppable Runnable.</b></p>
- * <p>Log task.</p>
+ * <p><b>STEREOTYPE: Continuous task..</b></p>
  * This class is responsible for fetching the logs from the log queue and printing them.
 */
 public final class LogTask extends ContinuousTask {
@@ -22,24 +20,29 @@ public final class LogTask extends ContinuousTask {
     private ConfigurationProvider configuration_provider;
     private LogPrinter log_printer;
 
-    private LinkedBlockingQueue<Log> queue;
+    private BlockingQueue<Log> queue;
 
     //____________________________________________________________________________________________________________________________________
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Instantiate a new {@link LogTask} with the given queue.
+     * Instantiates a new {@link LogTask} object.
      * @param queue : The log queue from where to fetch the logs.
-     * @throws NullPointerException If {@code queue} is {@code null}.
+     * @param id : The unique task id.
+     * @throws IllegalArgumentException If {@code queue} is {@code null}.
     */
-    public LogTask(LinkedBlockingQueue<Log> queue, long id) throws NullPointerException {
+    public LogTask(BlockingQueue<Log> queue, long id) throws IllegalArgumentException {
 
         super(id);
 
-        if(queue == null) throw new NullPointerException();
-
-        configuration_provider = ConfigurationProvider.getInstance();
         log_printer = LogPrinter.getInstance();
+        configuration_provider = ConfigurationProvider.getInstance();
+
+        if(queue == null) {
+
+            log_printer.log("LogTask.new > Could not instantiate, log queue was null", LogLevel.ERROR);
+            throw new IllegalArgumentException();
+        }
 
         this.queue = queue;
         log_printer.log("LogTask.new > Instantiated successfully", LogLevel.SUCCESS);
@@ -86,7 +89,7 @@ public final class LogTask extends ContinuousTask {
 
     //____________________________________________________________________________________________________________________________________
 
-    // Fetch 1 log and print it (thread safe).
+    // Fetches 1 log and prints it (thread safe).
     private void iteration() {
 
         Log log;

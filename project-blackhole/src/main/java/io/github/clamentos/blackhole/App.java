@@ -7,13 +7,11 @@ package io.github.clamentos.blackhole;
 
 import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
 import io.github.clamentos.blackhole.common.exceptions.GlobalExceptionHandler;
-import io.github.clamentos.blackhole.framework.logging.LogLevel;
-import io.github.clamentos.blackhole.framework.logging.LogPrinter;
 import io.github.clamentos.blackhole.framework.tasks.TaskManager;
+import io.github.clamentos.blackhole.logging.LogLevel;
+import io.github.clamentos.blackhole.logging.LogPrinter;
 
 import java.io.IOException;
-
-import java.lang.reflect.Field;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -23,7 +21,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import java.util.Map;
 import java.util.Scanner;
 
 //________________________________________________________________________________________________________________________________________
@@ -53,8 +50,8 @@ public class App {
             );
         }
 
-        LogPrinter log_printer = LogPrinter.getInstance();
         ConfigurationProvider configuration_provider = ConfigurationProvider.getInstance();
+        LogPrinter log_printer = LogPrinter.getInstance();
 
         Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
         log_printer.log(
@@ -62,9 +59,6 @@ public class App {
             "App.main > Application PID: " + Long.toString(ProcessHandle.current().pid()),
             LogLevel.INFO
         );
-
-        // Print the parsed configuration constants for feedback.
-        printFields(configuration_provider.getProblems(), log_printer);
 
         try { // Initialize db schema (if required).
 
@@ -116,7 +110,9 @@ public class App {
             );
         }
 
-        TaskManager.getInstance().launchServerTask();
+        TaskManager.getInstance().launchServerTask();    // Start the server.
+
+        // Wait for the user to quit.
 
         String s;
         Scanner scanner = new Scanner(System.in);
@@ -162,53 +158,8 @@ public class App {
         db_connection.close();
     }
 
-    // Print the values of the properties for feedback (thread safe obviously...).
-    private static void printFields(Map<String, String> problems, LogPrinter log_printer) {
-
-        try {
-
-            Field[] fields = ConfigurationProvider.class.getFields();
-            String name;
-
-            for(Field field : fields) {
-
-                name = problems.get(field.getName());
-
-                if(name == null) {
-
-                    // Just for aligning the prints... 25 is the longest property name.
-                    int amt = 25 - field.getName().length();
-                    String padding = " ".repeat(amt);
-
-                    log_printer.log(
-                        
-                        "Property: " + field.getName() + padding +
-                        "    Value: " + field.get(ConfigurationProvider.getInstance()).toString(),
-                        LogLevel.INFO
-                    );
-                }
-
-                else {
-
-                    log_printer.log(name, LogLevel.WARNING);
-                }
-            }
-        }
-
-        catch(IllegalAccessException exc) { // This should never happen...
-
-            log_printer.log(
-                    
-                "ConfigurationProvider.printFields > Could not access field, IllegalAccessException: " +
-                exc.getMessage() + " Aborting",
-                LogLevel.ERROR
-            );
-
-            System.exit(1);
-        }
-    }
-
     //____________________________________________________________________________________________________________________________________
 }
 
+// TODO: IMPORTANT! modify ConnectionTask & RequestTask for big data (use stream)
 // TODO: update the javadocs on the code

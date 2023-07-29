@@ -1,5 +1,4 @@
-// OK
-package io.github.clamentos.blackhole.framework.logging;
+package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -14,8 +13,8 @@ import java.util.concurrent.TimeUnit;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>Eager-loaded singleton.</b></p>
- * <p>Logger.</p>
+ * <p><b>STEREOTYPE: Eager-loaded singleton.</b></p>
+ * <p>Logger service.</p>
  * This class inserts the produced logs into the log queue.
  * Use this class when asynchronous logging is needed for performance reasons.
  * See {@link LogPrinter} for direct synchronous logging.
@@ -27,11 +26,12 @@ public class Logger {
     private ConfigurationProvider configuration_provider;
     private LogPrinter log_printer;
 
+    // Multiple queues allow to spread the lock contention (there could be millions of v-threads).
     private List<LinkedBlockingQueue<Log>> queues;
 
     //____________________________________________________________________________________________________________________________________
 
-    // Thread safe
+    // Thread safe.
     private Logger() {
 
         configuration_provider = ConfigurationProvider.getInstance();
@@ -52,8 +52,7 @@ public class Logger {
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Get the {@link LogFileManager} instance created during class loading.
-     * @return The {@link ConfigurationProvider} instance.
+     * @return The {@link ConfigurationProvider} instance created during class loading.
     */
     public static Logger getInstance() {
 
@@ -64,7 +63,7 @@ public class Logger {
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * <p>Insert the log into the log queue.</p>
+     * <p>Inserts the log into the log queue.</p>
      * This method will block the calling thread up to
      * {@link ConfigurationProvider#LOG_QUEUE_INSERT_TIMEOUT} milliseconds.
      * If the insert times out, this method will simply fallback to log synchronously.
@@ -90,6 +89,8 @@ public class Logger {
 
                 try {
 
+                    // Choose the queue. Use the MOD operation to guarantee uniformity so that
+                    // each queue gets an equal amount of work.
                     queue_index = (int)(log.id() % queues.size());
 
                     if(queues.get(queue_index).offer(log, configuration_provider.LOG_QUEUE_INSERT_TIMEOUT, TimeUnit.MILLISECONDS) == true) {

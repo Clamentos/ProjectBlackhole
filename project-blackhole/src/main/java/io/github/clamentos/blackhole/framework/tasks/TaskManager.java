@@ -2,30 +2,29 @@ package io.github.clamentos.blackhole.framework.tasks;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.framework.logging.Log;
-import io.github.clamentos.blackhole.framework.logging.LogLevel;
-import io.github.clamentos.blackhole.framework.logging.LogPrinter;
-import io.github.clamentos.blackhole.framework.logging.LogTask;
-import io.github.clamentos.blackhole.framework.web.ConnectionTask;
-import io.github.clamentos.blackhole.framework.web.RequestTask;
-import io.github.clamentos.blackhole.framework.web.ServerTask;
+import io.github.clamentos.blackhole.logging.Log;
+import io.github.clamentos.blackhole.logging.LogLevel;
+import io.github.clamentos.blackhole.logging.LogPrinter;
+import io.github.clamentos.blackhole.logging.LogTask;
+import io.github.clamentos.blackhole.network.ConnectionTask;
+import io.github.clamentos.blackhole.network.RequestTask;
+import io.github.clamentos.blackhole.network.ServerTask;
 
 import java.io.BufferedOutputStream;
 
 import java.net.Socket;
 
-import java.util.Collection;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 //________________________________________________________________________________________________________________________________________
 
 /**
  * <p><b>NOTE: preview features MUST be enabled.</p></b>
- * <p><b>Eager-loaded singleton.</b></p>
+ * <p><b>STEREOTYPE: Eager-loaded singleton.</b></p>
  * <p>Task manager.</p>
  * Utility class to launch and manage tasks with virtual threads.
 */
-public class TaskManager {
+public final class TaskManager {
 
     private static final TaskManager INSTANCE = new TaskManager();
 
@@ -55,8 +54,7 @@ public class TaskManager {
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Get the {@link TaskManager} instance created during class loading.
-     * @return The {@link TaskManager} instance.
+     * @return The {@link TaskManager} instance created during class loading.
     */
     public static TaskManager getInstance() {
 
@@ -67,8 +65,8 @@ public class TaskManager {
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Create a new {@link ServerTask} and places it into a managing buffer.
-     * Also launch a new virtual thread with the created task.
+     * Creates a new {@link ServerTask} and places it into the managing buffer.
+     * The method will also start a new virtual thread on the created task.
     */
     public void launchServerTask() {
 
@@ -80,9 +78,9 @@ public class TaskManager {
     
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Create a new {@link ConnectionTask} and places it into a managing buffer.
-     * Also launch a new virtual thread with the created task.
-     * @param socket : The {@link Socket} used by the created task.
+     * Creates a new {@link ConnectionTask} and places it into the managing buffer.
+     * This method will also start a new virtual thread on the created task.
+     * @param socket : The {@link Socket} used by the connection task.
     */
     public void launchNewConnectionTask(Socket socket) {
 
@@ -94,10 +92,10 @@ public class TaskManager {
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Create a new {@link RequestTask} and places it into a managing buffer.
-     * Also launch a new virtual thread with the created task.
-     * @param raw_request : The request needed by the task.
-     * @param out : The output buffer needed by the task.
+     * Creates a new {@link RequestTask} and places it into the managing buffer.
+     * This method will also starts a new virtual thread on the created task.
+     * @param raw_request : The request needed by the request task.
+     * @param out : The output stream needed by the request task.
     */
     public void launchNewRequestTask(byte[] raw_request, BufferedOutputStream out) {
 
@@ -109,11 +107,11 @@ public class TaskManager {
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Create a new {@link LogTask} and places it into a managing buffer.
-     * Also launch a new virtual thread with the created task.
-     * @param queue : The log queue used by the task.
+     * Creates a new {@link LogTask} and places it into the managing buffer.
+     * This method will also launch a new virtual thread on the created task.
+     * @param queue : The log queue used by the log task.
     */
-    public void launchNewLogTask(LinkedBlockingQueue<Log> queue) {
+    public void launchNewLogTask(BlockingQueue<Log> queue) {
 
         long id = log_tasks_buffer.getNextId();
         LogTask task = new LogTask(queue, id);
@@ -123,14 +121,12 @@ public class TaskManager {
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * <p>Removes the {@link ConnectionTask} from the managing buffer.</p>
-     * NOTE: this method should be called by the task itself
-     * as a last operation just before terminating.
+     * <p>Removes a task from the managing buffer.</p>
      * @param id : The id of the task to be removed.
      * @throw IllegalArgumentException If {@code task} is not {@link ServerTask},
      *        {@link ConnectionTask}, {@link RequestTask} or {@link LogTask}.
     */
-    public void removeTask(long id, Runnable task) throws IllegalArgumentException {
+    protected void removeTask(long id, Runnable task) throws IllegalArgumentException {
 
         switch(task) {
 
@@ -149,18 +145,14 @@ public class TaskManager {
     */
     public synchronized void shutdown() {
 
-        Collection<ServerTask> t0 = server_tasks_buffer.getBufferedValues();
-
-        for(ServerTask t : t0) {
+        for(ServerTask t : server_tasks_buffer.getBufferedValues()) {
 
             t.stop();
         }
 
         waitForEmptyness(server_tasks_buffer);
 
-        Collection<ConnectionTask> t1 = connection_tasks_buffer.getBufferedValues();
-
-        for(ConnectionTask t : t1) {
+        for(ConnectionTask t : connection_tasks_buffer.getBufferedValues()) {
 
             t.stop();
         }
@@ -168,9 +160,7 @@ public class TaskManager {
         waitForEmptyness(connection_tasks_buffer);
         waitForEmptyness(request_tasks_buffer);
 
-        Collection<LogTask> t3 = log_tasks_buffer.getBufferedValues();
-
-        for(LogTask t : t3) {
+        for(LogTask t : log_tasks_buffer.getBufferedValues()) {
 
             t.stop();
         }
@@ -180,6 +170,7 @@ public class TaskManager {
 
     //____________________________________________________________________________________________________________________________________
 
+    // Waits untill the specified buffer is empty. Thread safe.
     private void waitForEmptyness(TaskBuffer<?> tasks) {
 
         while(tasks.isEmpty() == false) {

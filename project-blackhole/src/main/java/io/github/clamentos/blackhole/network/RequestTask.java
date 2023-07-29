@@ -1,4 +1,4 @@
-package io.github.clamentos.blackhole.framework.web;
+package io.github.clamentos.blackhole.network;
 
 //________________________________________________________________________________________________________________________________________
 
@@ -9,20 +9,31 @@ import java.io.IOException;
 
 //________________________________________________________________________________________________________________________________________
 
-public class RequestTask extends Task {
+/**
+ * <p><b>STEREOTYPE: Short-lived task.</b></p>
+ * This class is responsible for actually processing a single request.
+*/
+public final class RequestTask extends Task {
 
-    private final Dispatcher DISPATCHER;
+    private Dispatcher dispatcher;
 
     private byte[] raw_request;
     private BufferedOutputStream out;
 
     //____________________________________________________________________________________________________________________________________
 
+    /**
+     * <p><b>This method is thread safe.</p></b>
+     * Instantiates a new {@link RequestTask} object.
+     * @param raw_request : The raw request bytes.
+     * @param out : The output stream of the socket.
+     * @param id : The unique task id.
+    */
     public RequestTask(byte[] raw_request, BufferedOutputStream out, long id) {
 
         super(id);
 
-        DISPATCHER = Dispatcher.getInstance();
+        dispatcher = Dispatcher.getInstance();
 
         this.raw_request = raw_request;
         this.out = out;
@@ -30,6 +41,10 @@ public class RequestTask extends Task {
 
     //____________________________________________________________________________________________________________________________________
     
+    /**
+     * <p><b>This method is thread safe.</p></b>
+     * {@inheritDoc}
+    */
     @Override
     public void work() { // TODO: finish
 
@@ -38,7 +53,7 @@ public class RequestTask extends Task {
 
         try {
 
-            out.write(DISPATCHER.dispatch(raw_request));
+            out.write(dispatcher.dispatch(raw_request));
         }
 
         catch(IOException exc) {

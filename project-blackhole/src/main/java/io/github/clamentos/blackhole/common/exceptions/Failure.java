@@ -2,16 +2,22 @@ package io.github.clamentos.blackhole.common.exceptions;
 
 //________________________________________________________________________________________________________________________________________
 
-/** Simple wrapper around the {@link Failures} enum, in order to make them {@link Throwable}. */
+/**
+ * <ul>
+ *     <li><b>BEHAVIOUR: Regular class.</b></li>
+ *     <li><b>STEREOTYPE: Error signaling.</b></li>
+ * </ul>
+ * Simple wrapper around the {@link Failures} enum, in order to make it {@link Throwable}.
+*/
 public class Failure extends Throwable {
-    
+
     private Failures error;
 
     //____________________________________________________________________________________________________________________________________
 
     /**
      * <p><b>This method is thread safe.</p></b>
-     * Instantiate a new {@link Failure}.
+     * Instantiates a new {@link Failure} object.
      * @param error : The specific error constant from the {@link Failures} enum.
      * @throws IllegalArgumentException If {@code error} is {@code null}.
     */
