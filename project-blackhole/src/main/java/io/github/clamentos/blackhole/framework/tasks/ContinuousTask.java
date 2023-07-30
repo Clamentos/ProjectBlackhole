@@ -7,11 +7,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 //________________________________________________________________________________________________________________________________________
 
-/**<ul>
- *     <li><b>BEHAVIOUR: Abstract behavioural class.</b></li>
- *     <li><b>STEREOTYPE: ....</b></li>
- * </ul>
- * <p>Contunuous task.</p>
+/**
+ * <p><b>Abstract behavioural class.</b></p>
  * This class implements the {@link Stoppable} interface and enforces common behaviour
  * for any {@link Runnable} that executes for a very long (potentially infinite) time.
 */

@@ -9,7 +9,7 @@ import io.github.clamentos.blackhole.network.request.components.Resources;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>STEREOTYPE: Interface.</b></p>
+ * <p><b>Interface.</b></p>
  * Simple interface that specifies basic functionality of a servlet.
 */
 public interface Servlet {

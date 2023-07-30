@@ -12,7 +12,7 @@ import java.util.List;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>STEREOTYPE: Immutable data.</b></p>
+ * <p><b>Immutable data.</b></p>
  * <p>Network request object.</p>
  * <p>This class holds all the fields and data required to handle a request.</p>
  * The getter methods are all thread safe and standard.

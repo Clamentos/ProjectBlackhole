@@ -19,8 +19,7 @@ import java.util.concurrent.BlockingQueue;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>NOTE: preview features MUST be enabled.</p></b>
- * <p><b>STEREOTYPE: Eager-loaded singleton.</b></p>
+ * <p><b>Eager-loaded singleton.</b></p>
  * <p>Task manager.</p>
  * Utility class to launch and manage tasks with virtual threads.
 */

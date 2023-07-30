@@ -3,9 +3,9 @@ package io.github.clamentos.blackhole.logging;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>STEREOTYPE: Immutable data.</b></p>
+ * <p><b>Immutable data.</b></p>
  * <p>Log object.</p>
- * This class is used as a template for generating the actual print.
+ * <p>This class is used as a template for generating the actual print.</p>
  * The getters are all standard and thread safe.
 */
 public final record Log(

@@ -8,6 +8,7 @@ import java.util.List;
 //________________________________________________________________________________________________________________________________________
 
 /**
+ * <p><b>Interface.</b></p>
  * <p>Reducible interface.</p>
  * Used to indicate that the implementing classes can be transformed into a list of {@link DataEntry}.
 */

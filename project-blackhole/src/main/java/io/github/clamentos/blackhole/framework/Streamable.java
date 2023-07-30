@@ -3,7 +3,7 @@ package io.github.clamentos.blackhole.framework;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>STEREOTYPE: Interface.</b></p>
+ * <p><b>Interface.</b></p>
  * <p>Streamable object.</p>
  * Used to indicate that the implementing classes can be transformed into an array of bytes
  * in order to be sent through a stream directly.

@@ -3,17 +3,14 @@ package io.github.clamentos.blackhole.common.exceptions;
 //________________________________________________________________________________________________________________________________________
 
 // Only used for JavaDocs.
-import io.github.clamentos.blackhole.network.request.components.ResponseStatuses;
+import io.github.clamentos.blackhole.network.request.Response;
 
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <ul>
- *     <li><b>BEHAVIOUR: Enumeration.</b></li>
- *     <li><b>STEREOTYPE: Error signaling.</b></li>
- * </ul>
- * Enumeration of all possible failures. These codes will be translated into actual
- * {@link ResponseStatuses}.
+ * <p><b>Enumeration class.</b></p>
+ * Enumeration of all possible failures that can be used as an error code in a {@link Response}
+ * as well as in other situations.
  * <ul>
  *     <li>{@code SESSION_NOT_FOUND}: The request specified a non existant session id.</li>
  *     <li>{@code SESSION_EXPIRED}: The request specified an expired session id.</li>
@@ -28,6 +25,10 @@ import io.github.clamentos.blackhole.network.request.components.ResponseStatuses
  *     <li>{@code END_OF_STREAM}: End of stream reached.</li>
  *     <li>{@code UNSUPPORTED_METHOD}: The request specified an unsupported method
  *         for the target resource.</li>
+ *     <li>{@code UNKNOWN_METHOD}: The request specified an unknown method number.</li>
+ *     <li>{@code UNKNOWN_RESOURCE}: The request specified an unknown resource number.</li>
+ *     <li>{@code DATABASE_ERROR}: Generic, uncategorized database error.</li>
+ *     <li>{@code ERROR}: Generic, uncategorized failure.</li>
  * </ul>
 */
 public enum Failures {
@@ -42,7 +43,11 @@ public enum Failures {
     CLIENT_TOO_SLOW,
     CLIENT_TIMED_OUT,
     END_OF_STREAM,
-    UNSUPPORTED_METHOD;
+    UNSUPPORTED_METHOD,
+    UNKNOWN_METHOD,
+    UNKNOWN_RESOURCE,
+    DATABASE_ERROR,
+    ERROR;
 
     //____________________________________________________________________________________________________________________________________
 }

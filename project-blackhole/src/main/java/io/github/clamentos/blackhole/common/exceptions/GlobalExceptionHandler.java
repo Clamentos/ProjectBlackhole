@@ -13,10 +13,7 @@ import java.lang.Thread.UncaughtExceptionHandler;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <ul>
- *     <li><b>BEHAVIOUR: Eager-loaded singleton.</b></li>
- *     <li><b>STEREOTYPE: Error handling.</b></li>
- * </ul>
+ * <p><b>Eager-loaded singleton.</b></p>
  * <p>Global exception handler.</p>
  * Every thread should specify this class as its default exception handler,
  * in order to handle unexpected exceptions that would otherwise cause the thread

@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicLong;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>STEREOTYPE: Regular class.</p></b>
+ * <p><b>Generic class.</b></p>
  * <p>Task buffer.</p>
  * This class is responsible for holding the current alive tasks.
  * @param <T> The type of the task to hold.

@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicLong;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>STEREOTYPE: Eager-loaded singleton.</b></p>
+ * <p><b>Eager-loaded singleton.</b></p>
  * <p>Log printer service.</p>
  * <p>Printing class that holds the actual log printing methods.</p>
  * <p>The logs will have the following format:</p>

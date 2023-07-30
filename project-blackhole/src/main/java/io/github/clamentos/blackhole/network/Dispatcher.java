@@ -14,7 +14,7 @@ import java.util.HashMap;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>STEREOTYPE: Eager-loaded singleton.</b></p>
+ * <p><b>Eager-loaded singleton.</b></p>
  * <p>Request dispatching service.</p>
  * This class simply dispatches the incoming raw request to the appropriate servlet
 */
@@ -50,26 +50,15 @@ public class Dispatcher {
     // TODO: finish
     public byte[] dispatch(byte[] raw_request) {
 
-        Response response;
         Request request = Request.deserialize(raw_request);
         Servlet servlet = servlet_mappings.get(request.resource());
 
         if(servlet == null) {
 
-            //...
+            return(new Response(new Failure(Failures.UNKNOWN_RESOURCE),null).stream());
         }
 
-        try {
-
-            response = servlet.handle(request);
-        }
-
-        catch(UnsupportedOperationException exc) {
-
-            response = new Response(new Failure(Failures.UNSUPPORTED_METHOD), exc.getMessage());
-        }
-
-        return(response.stream());
+        return(servlet.handle(request).stream());
     }
 
     //____________________________________________________________________________________________________________________________________

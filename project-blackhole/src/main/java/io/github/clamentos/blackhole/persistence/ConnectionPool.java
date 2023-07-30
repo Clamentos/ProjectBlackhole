@@ -2,7 +2,14 @@ package io.github.clamentos.blackhole.persistence;
 
 //________________________________________________________________________________________________________________________________________
 
+import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
+import io.github.clamentos.blackhole.logging.LogLevel;
+import io.github.clamentos.blackhole.logging.Logger;
+
 import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
 import java.util.concurrent.LinkedBlockingQueue;
 
 //________________________________________________________________________________________________________________________________________
@@ -11,50 +18,89 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class ConnectionPool {
     
     private static final ConnectionPool INSTANCE = new ConnectionPool();
+    
+    private Logger logger;
+    private ConfigurationProvider configuration_provider;
+
     private LinkedBlockingQueue<Connection> pool;
 
     //____________________________________________________________________________________________________________________________________
 
     private ConnectionPool() {
 
-        pool = new LinkedBlockingQueue<>();
+        configuration_provider = ConfigurationProvider.getInstance();
+        logger = Logger.getInstance();
 
-        /*for(int i = 0; i < 10; i++) {
+        pool = new LinkedBlockingQueue<>(configuration_provider.NUM_DB_CONNECTIONS);
 
-            pool.add();
-        }*/
+        try {
+
+            Connection db_connection = createFresh();
+
+            // Set timeout and stuff...
+
+            for(int i = 0; i < configuration_provider.NUM_DB_CONNECTIONS; i++) {
+
+                pool.add(db_connection);
+            }
+        }
+
+        catch(SQLException exc) {
+
+            logger.log("...", LogLevel.ERROR);
+            System.exit(1);
+        }
     }
 
     //____________________________________________________________________________________________________________________________________
 
-    public static ConnectionPool getInstance() {
+    protected static ConnectionPool getInstance() {
 
         return(INSTANCE);
     }
 
     //____________________________________________________________________________________________________________________________________
 
-    public Connection aquireConnection() {
+    protected Connection aquireConnection() {
 
-        // check if alive...
+        Connection db_connection;
 
         while(true) {
 
             try {
 
-                return(pool.take());
+                db_connection = pool.take();
+
+                if(db_connection.isValid(configuration_provider.DB_CONNECTION_TIMEOUT) == false) {
+
+                    db_connection = createFresh();
+                }
+
+                return(db_connection);
             }
 
-            catch(InterruptedException exc) {
+            catch(InterruptedException | SQLException exc) {
 
                 //...
             }
         }
     }
 
-    public void releaseConnection(Connection connection) throws IllegalStateException {
+    protected void releaseConnection(Connection connection) throws IllegalStateException {
 
         pool.add(connection);
+    }
+
+    //____________________________________________________________________________________________________________________________________
+
+    private Connection createFresh() throws SQLException {
+
+        return(DriverManager.getConnection(
+
+            configuration_provider.DB_ADDRESS,
+            configuration_provider.DB_USERNAME,
+            configuration_provider.DB_PASSWORD
+        ));
     }
 
     //____________________________________________________________________________________________________________________________________

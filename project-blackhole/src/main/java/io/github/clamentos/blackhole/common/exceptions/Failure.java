@@ -3,10 +3,7 @@ package io.github.clamentos.blackhole.common.exceptions;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <ul>
- *     <li><b>BEHAVIOUR: Regular class.</b></li>
- *     <li><b>STEREOTYPE: Error signaling.</b></li>
- * </ul>
+ * <p><b>Regular class.</b></p>
  * Simple wrapper around the {@link Failures} enum, in order to make it {@link Throwable}.
 */
 public class Failure extends Throwable {

@@ -3,8 +3,7 @@ package io.github.clamentos.blackhole.framework.tasks;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>STEREOTYPE: Abstract behavioural class.</b></p>
- * <p>Non continuous task.</p>
+ * <p><b>Abstract behavioural class.</b></p>
  * This class implements the {@link Runnable} interface and enforces common behaviour
  * for any {@link Runnable} that executes for a relatively brief amount of time.
 */

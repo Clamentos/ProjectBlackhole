@@ -26,10 +26,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <ul>
- *     <li><b>BEHAVIOUR: Eager-loaded singleton.</b></li>
- *     <li><b>STEREOTYPE: Configuration.</b></li>
- * </ul>
+ * <p><b>Eager-loaded singleton.</b></p>
  * <p>Repository of all configuration constants.</p>
  * <p>This class will use the {@code Application.properties} file located in {@code /resources}.</p>
  * <p>The constructor will read the configuration file and if such file doesn't exist,

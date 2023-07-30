@@ -4,15 +4,15 @@ package io.github.clamentos.blackhole.persistence.models;
 
 /**
  * <p><b>Immutable data.</b></p>
- * <p>Tag resource entity.</p>
- * <p>This class represents the "tag" entity in the database.</p>
+ * <p>Type resource entity.</p>
+ * <p>This class represents the "type" entity in the database.</p>
  * The getter methods are all thread safe and standard.
 */
-public final record TagEntity(
+public record TypeEntity(
 
-    int id,
+    short id,
     String name,
-    int creation_date
+    boolean is_complex
 
     //____________________________________________________________________________________________________________________________________
 

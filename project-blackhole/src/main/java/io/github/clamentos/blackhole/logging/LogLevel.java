@@ -7,9 +7,9 @@ import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
 //________________________________________________________________________________________________________________________________________
 
 /**
+ * <p><b>Enumeration class.</b></p>
  * <p>Enumeration of all the possible log levels.</p>
  * <p>Each entry is composed of the log level name + color + destination.</p>
- * 
  * The log levels in increasing relevance are:
  * <ol>
  *     <li>{@code DEBUG}: Used for debugging.</li>

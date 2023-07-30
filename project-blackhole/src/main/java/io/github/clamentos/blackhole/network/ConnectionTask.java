@@ -19,14 +19,14 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.MissingResourceException;
 
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>STEREOTYPE: Continuous task.</b></p>
+ * <p><b>Continuous task.</b></p>
  * <p>This class is responsible for handling the client {@link Socket}. It will listen for incoming
  * requests and spawn a {@link RequestTask} for each one of them.</p>
- * 
  * NOTE:
  * <ol>
  *     <li>The TCP connection must exist and must be alive.</li>
@@ -136,35 +136,16 @@ public final class ConnectionTask extends ContinuousTask {
             try {
 
                 data_length = 0;
-
                 client_socket.setSoTimeout(configuration_provider.CLIENT_SOCKET_SAMPLE_TIME);
                 temp = in.read();
-
-                if(temp == -1) {
-
-                    respond("End of stream detected, closing the connection", Failures.END_OF_STREAM);
-                    closeSocket(client_socket);
-                    super.stop();
-                    
-                    return;
-                }
-
+                handleEndOfStream(temp);
                 data_length = data_length | (temp << 3);
                 client_socket.setSoTimeout(configuration_provider.MIN_CLIENT_SPEED);
 
                 for(int i = 2; i >= 0; i--) {
 
                     temp = in.read();
-
-                    if(temp == -1) {
-
-                        respond("End of stream detected, closing the connection", Failures.END_OF_STREAM);
-                        closeSocket(client_socket);
-                        super.stop();
-
-                        return;
-                    }
-
+                    handleEndOfStream(temp);
                     data_length = data_length | (temp << i);
                 }
 
@@ -177,24 +158,37 @@ public final class ConnectionTask extends ContinuousTask {
                     return;
                 }
 
-                data = in.readNBytes(data_length);
+                temp = in.read();
+                handleEndOfStream(temp);
 
-                if(data.length != data_length) {
+                if(temp == 0) {
 
-                    // the readNBytes() wasn't able to fetch the specified number of bytes
-                    // send a "bad request" response
+                    data = in.readNBytes(data_length);
 
-                    respond(
+                    if(data.length != data_length) {
 
-                        "Request of length: " + data.length +
-                        " doesn't match with the specified message length: " + data_length,
-                        Failures.BAD_FORMATTING
-                    );
+                        // the readNBytes() wasn't able to fetch the specified number of bytes
+                        // send a "bad request" response
+
+                        respond(
+
+                            "Request of length: " + data.length +
+                            " doesn't match with the specified message length: " + data_length,
+                            Failures.BAD_FORMATTING
+                        );
+                    }
+
+                    else {
+
+                        TaskManager.getInstance().launchNewRequestTask(data, out);
+                    }
                 }
 
                 else {
 
-                    TaskManager.getInstance().launchNewRequestTask(data, out);
+                    // TODO: Streaming mode.
+                    // No need to create a new task since the socket stream will be unavailable
+                    // for the entire request... Just handle it in-place here.
                 }
             }
 
@@ -211,6 +205,18 @@ public final class ConnectionTask extends ContinuousTask {
                         );
 
                         super.stop();
+                    }
+
+                    case MissingResourceException exc1 -> {
+
+                        logger.log(
+                        
+                            "ConnectionTask.run > End of stream detected, closing the connection",
+                            LogLevel.WARNING
+                        );
+
+                        super.stop();
+                        return;
                     }
 
                     case SocketException exc1 -> {
@@ -306,6 +312,15 @@ public final class ConnectionTask extends ContinuousTask {
     private void respond(String message, Failures failure) throws IOException {
 
         out.write(new Response(new Failure(failure), message).stream());
+    }
+
+    private void handleEndOfStream(int value) throws MissingResourceException, IOException {
+
+        if(value == -1) {
+
+            respond("End of stream detected, closing the connection", Failures.END_OF_STREAM);
+            closeSocket(client_socket);
+        }
     }
 
     //____________________________________________________________________________________________________________________________________

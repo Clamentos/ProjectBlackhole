@@ -2,8 +2,15 @@ package io.github.clamentos.blackhole.network.request.components;
 
 //________________________________________________________________________________________________________________________________________
 
+// Only used for JavaDocs.
+import io.github.clamentos.blackhole.network.request.Request;
+import io.github.clamentos.blackhole.network.request.Response;
+
+//________________________________________________________________________________________________________________________________________
+
 /**
- * Simple enumeration containing all the possible protocol data types.
+ * <p><b>Enumeration class.</b></p>
+ * Simple enumeration containing all the possible data types for {@link Request} and {@link Response}.
  * <ul>
  *     <li>{@code BYTE}: 1 byte signed integer.</li>
  *     <li>{@code SHORT}: 2 byte signed integer.</li>

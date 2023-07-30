@@ -7,9 +7,10 @@ import io.github.clamentos.blackhole.framework.Streamable;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>STEREOTYPE: Immutable data.</b></p>
- * <p>Semi-structured data.</p>
- * Simple class to represent semi-structured data that can be sent over a stream.
+ * <p><b>Immutable data.</b></p>
+ * <p>Semi-structured data holder.</p>
+ * <p>Simple class to represent semi-structured data that can be sent over a stream.</p>
+ * The getter methods are all thread safe and standard.
 */
 public final record DataEntry(
 

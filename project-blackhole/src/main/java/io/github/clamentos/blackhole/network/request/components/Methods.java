@@ -3,6 +3,7 @@ package io.github.clamentos.blackhole.network.request.components;
 //________________________________________________________________________________________________________________________________________
 
 /**
+ * <p><b>Enumeration class.</b></p>
  * Simple enumeration containing all the possible actions that can be done on {@link Resources}.
  * <ul>
  *     <li>{@code CREATE}: Specifies a create type action.</li>

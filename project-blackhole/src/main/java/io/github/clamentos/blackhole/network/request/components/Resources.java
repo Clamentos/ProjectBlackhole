@@ -4,6 +4,7 @@ package io.github.clamentos.blackhole.network.request.components;
 
 // TODO: put links in the doc
 /**
+ * <p><b>Enumeration class.</b></p>
  * Simple enumeration containing all the possible resource types in the system.
  * <ul>
  *     <li>{@code SYSTEM}: Targets the System entity, which can be used to aquire various stats

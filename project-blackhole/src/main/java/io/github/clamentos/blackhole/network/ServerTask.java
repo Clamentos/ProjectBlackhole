@@ -21,7 +21,7 @@ import java.util.HashMap;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>STEREOTYPE: Continuous task.</b></p>
+ * <p><b>Continuous task.</b></p>
  * This class is responsible for accepting the incoming client sockets.
 */
 public final class ServerTask extends ContinuousTask {

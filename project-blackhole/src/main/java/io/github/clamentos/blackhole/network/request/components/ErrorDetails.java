@@ -10,9 +10,9 @@ import java.util.List;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>STEREOTYPE: Immutable data.</b></p>
- * <p>Semi-structured data.</p>
- * Simple class that holds the message and the timestamp of the error.
+ * <p><b>Immutable data.</b></p>
+ * <p>Semi-structured data holder.</p>
+ * Simple class that holds the message and the timestamp for error responses.
 */
 public final record ErrorDetails(
 

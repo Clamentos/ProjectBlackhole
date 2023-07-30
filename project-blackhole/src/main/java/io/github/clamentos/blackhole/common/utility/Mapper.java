@@ -11,10 +11,7 @@ import java.util.regex.PatternSyntaxException;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <ul>
- *     <li><b>BEHAVIOUR: Eager-loaded singleton.</b></li>
- *     <li><b>STEREOTYPE: Utility.</b></li>
- * </ul>
+ * <p><b>Static class.</b></p>
  * <p>Generic global utility class.</p>
  * This class holds a variety of static utility methods accessible by all classes.
 */

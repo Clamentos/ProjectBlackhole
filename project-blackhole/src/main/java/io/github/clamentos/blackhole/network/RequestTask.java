@@ -10,7 +10,7 @@ import java.io.IOException;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>STEREOTYPE: Short-lived task.</b></p>
+ * <p><b>Short-lived task.</b></p>
  * This class is responsible for actually processing a single request.
 */
 public final class RequestTask extends Task {

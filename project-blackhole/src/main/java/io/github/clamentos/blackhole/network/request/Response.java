@@ -7,7 +7,6 @@ import io.github.clamentos.blackhole.framework.Reducible;
 import io.github.clamentos.blackhole.framework.Streamable;
 import io.github.clamentos.blackhole.network.request.components.DataEntry;
 import io.github.clamentos.blackhole.network.request.components.ErrorDetails;
-import io.github.clamentos.blackhole.network.request.components.ResponseStatuses;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,13 +14,14 @@ import java.util.List;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>STEREOTYPE: Immutable data.</b></p>
+ * <p><b>Immutable data.</b></p>
  * <p>Network response object.</p>
- * This class holds all the fields and data that can be sent through a stream.
+ * <p>This class holds all the fields and data that can be sent through a stream.</p>
+ * The getter methods are all thread safe and standard.
 */
 public final record Response(
 
-    ResponseStatuses response_status,
+    byte response_status,
     List<Reducible> data
 
 ) implements Streamable {
@@ -31,13 +31,24 @@ public final record Response(
     /**
      * <p><b>This method is thread safe.</b></p>
      * Instantiates a new error {@link Response}.
-     * @param error : The error itself, usually a {@link Throwable} or a {@link Failure}.
+     * @param error : The error itself.
      * @param error_message : The error message text.
      * @return The created error response.
     */
-    public Response(Throwable error, String error_message) {
+    public Response(Failure error, String error_message) {
 
-        this(calculateStatus(error), List.of(new ErrorDetails(error_message)));
+        this((byte)error.getError().ordinal(), List.of(new ErrorDetails(error_message)));
+    }
+
+    /**
+     * <p><b>This method is thread safe.</b></p>
+     * Instantiates a new successfull {@link Response}. The response status code for success will always be 255.
+     * @param data : The data to return.
+     * @return The created response.
+    */
+    public Response(List<Reducible> data) {
+
+        this((byte)255, data);
     }
 
     //____________________________________________________________________________________________________________________________________
@@ -72,7 +83,7 @@ public final record Response(
         }
 
         bytes = new byte[count + 5];
-        System.arraycopy(response_status.stream(), 0, bytes, 4, 1);
+        System.arraycopy(new byte[]{response_status}, 0, bytes, 4, 1);
         count = 1;
 
         for(int i = 0; i < stuff.length; i++) {
@@ -89,28 +100,6 @@ public final record Response(
         bytes[3] = (byte)(count & 0x000000FF);
 
         return(bytes);
-    }
-
-    //____________________________________________________________________________________________________________________________________
-
-    private static ResponseStatuses calculateStatus(Throwable error) {
-
-        if(error != null && error instanceof Failure) {
-
-            switch(((Failure)error).getError()) {
-
-                case SESSION_NOT_FOUND: return(ResponseStatuses.UNAUTHENTICATED);
-                case SESSION_EXPIRED: return(ResponseStatuses.UNAUTHENTICATED);
-                case NOT_ENOUGH_PRIVILEGES: return(ResponseStatuses.DENIED);
-                case BAD_FORMATTING: return(ResponseStatuses.BAD_REQUEST);
-                
-                // TODO: others
-
-                default: return(ResponseStatuses.ERROR);
-            }
-        }
-
-        return(ResponseStatuses.ERROR);
     }
 
     //____________________________________________________________________________________________________________________________________

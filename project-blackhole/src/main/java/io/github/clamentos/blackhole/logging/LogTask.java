@@ -12,7 +12,8 @@ import java.util.concurrent.TimeUnit;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>STEREOTYPE: Continuous task..</b></p>
+ * <p><b>Continuous task.</b></p>
+ * <p>Logging task.</p>
  * This class is responsible for fetching the logs from the log queue and printing them.
 */
 public final class LogTask extends ContinuousTask {

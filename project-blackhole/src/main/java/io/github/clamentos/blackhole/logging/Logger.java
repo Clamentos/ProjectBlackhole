@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>STEREOTYPE: Eager-loaded singleton.</b></p>
+ * <p><b>Eager-loaded singleton.</b></p>
  * <p>Logger service.</p>
  * This class inserts the produced logs into the log queue.
  * Use this class when asynchronous logging is needed for performance reasons.
