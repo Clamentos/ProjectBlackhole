@@ -2,6 +2,10 @@ package io.github.clamentos.blackhole.persistence;
 
 //________________________________________________________________________________________________________________________________________
 
+import io.github.clamentos.blackhole.logging.LogLevel;
+import io.github.clamentos.blackhole.logging.Logger;
+import io.github.clamentos.blackhole.persistence.pool.ConnectionPool;
+
 import java.io.InputStream;
 
 import java.sql.Connection;
@@ -18,13 +22,17 @@ public class Repository {
     
     private static final Repository INSTANCE = new Repository();
 
+    private Logger logger;
     private ConnectionPool connection_pool;
 
     //____________________________________________________________________________________________________________________________________
 
     private Repository() {
 
+        logger = Logger.getInstance();
         connection_pool = ConnectionPool.getInstance();
+
+        logger.log("Repository.new > Instantiation Successfull", LogLevel.SUCCESS);
     }
 
     //____________________________________________________________________________________________________________________________________
@@ -35,6 +43,19 @@ public class Repository {
     }
 
     //____________________________________________________________________________________________________________________________________
+
+    public String getPlaceholders(int num) {
+
+        String result = "(";
+
+        for(int i = 0; i < num; i++) {
+
+            result += "?";
+            if(i < num - 1) result += ",";
+        }
+
+        return(result + ")");
+    }
 
     public void insert(String query, List<List<QueryParameter>> parameters) throws PersistenceException {
 
@@ -64,7 +85,7 @@ public class Repository {
         catch(SQLException exc) {
 
             connection_pool.releaseConnection(connection);
-            SqlExceptionDecoder.decode(exc);
+            throw new PersistenceException(exc);
         }
     }
 
@@ -90,9 +111,7 @@ public class Repository {
         catch(SQLException exc) {
 
             connection_pool.releaseConnection(connection);
-            SqlExceptionDecoder.decode(exc);
-
-            return(null);
+            throw new PersistenceException(exc);
         }
     }
 

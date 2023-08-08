@@ -2,7 +2,39 @@ package io.github.clamentos.blackhole.session;
 
 public record Session(
 
+    byte[] id,
     int user_id,
-    // other...
+    int flags,
     long valid_to
 ) {}
+
+/*
+ * flags:
+ * 
+ *     00000000000000000000000000000001 -> tags create
+ *     00000000000000000000000000000010 -> tags read
+ *     00000000000000000000000000000100 -> tags update
+ *     00000000000000000000000000001000 -> tags delete
+ * 
+ *     00000000000000000000000000010000 -> type create
+ *     00000000000000000000000000100000 -> type read
+ *     00000000000000000000000001000000 -> type update
+ *     00000000000000000000000010000000 -> type delete
+ * 
+ *     resource ones should be checked after fetching ("post filter")
+ *     00000000000000000000000100000000 -> resource create
+ *     00000000000000000000001000000000 -> resource read
+ *     00000000000000000000010000000000 -> resource update
+ *     00000000000000000000100000000000 -> resource delete
+ *     00000000000000000001000000000000 -> private resource create
+ *     00000000000000000010000000000000 -> private resource read
+ *     00000000000000000100000000000000 -> private resource update
+ *     00000000000000001000000000000000 -> private resource delete
+ * 
+ *     00000000000000010000000000000000 -> user create
+ *     00000000000000100000000000000000 -> user read
+ *     00000000000001000000000000000000 -> user update
+ *     00000000000010000000000000000000 -> user delete
+ * 
+ *     00000000000100000000000000000000 -> system read
+*/

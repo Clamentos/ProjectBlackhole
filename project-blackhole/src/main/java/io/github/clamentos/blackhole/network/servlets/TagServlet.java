@@ -1,0 +1,255 @@
+package io.github.clamentos.blackhole.network.servlets;
+
+//________________________________________________________________________________________________________________________________________
+
+import io.github.clamentos.blackhole.exceptions.Failures;
+import io.github.clamentos.blackhole.exceptions.FailuresWrapper;
+import io.github.clamentos.blackhole.logging.LogLevel;
+import io.github.clamentos.blackhole.logging.Logger;
+import io.github.clamentos.blackhole.network.transfer.Request;
+import io.github.clamentos.blackhole.network.transfer.Response;
+import io.github.clamentos.blackhole.network.transfer.components.DataEntry;
+import io.github.clamentos.blackhole.network.transfer.components.Resources;
+import io.github.clamentos.blackhole.network.transfer.components.ResponseStatuses;
+import io.github.clamentos.blackhole.network.transfer.components.Types;
+import io.github.clamentos.blackhole.network.transfer.dtos.TagDto;
+import io.github.clamentos.blackhole.network.transfer.dtos.TagReadQuery;
+import io.github.clamentos.blackhole.persistence.PersistenceException;
+import io.github.clamentos.blackhole.persistence.QueryParameter;
+import io.github.clamentos.blackhole.persistence.Repository;
+import io.github.clamentos.blackhole.persistence.SqlTypes;
+import io.github.clamentos.blackhole.persistence.models.TagEntity;
+import io.github.clamentos.blackhole.scaffolding.Servlet;
+import io.github.clamentos.blackhole.session.SessionService;
+
+import java.util.ArrayList;
+import java.util.List;
+
+//________________________________________________________________________________________________________________________________________
+
+public class TagServlet implements Servlet {
+
+    private static final TagServlet INSTANCE = new TagServlet();
+
+    private Logger logger;
+    private Repository repository;
+    private SessionService session_service;
+
+    //____________________________________________________________________________________________________________________________________
+
+    private TagServlet() {
+
+        logger = Logger.getInstance();
+        repository = Repository.getInstance();
+        session_service = SessionService.getInstance();
+    }
+
+    //____________________________________________________________________________________________________________________________________
+
+    public static TagServlet getInstance() {
+
+        return(INSTANCE);
+    }
+
+    //____________________________________________________________________________________________________________________________________
+    
+    @Override
+    public Resources manages() {
+
+        return(Resources.TAG);
+    }
+
+    @Override
+    public Response handle(Request request) {
+        
+        switch(request.method()) {
+
+            case CREATE: return(handleCreate(request));
+            case READ: return(null);
+            case UPDATE: return(null);
+            case DELETE: return(null);
+
+            default: return(new Response(
+                
+                new FailuresWrapper(Failures.UNSUPPORTED_METHOD),
+                "The method " + request.method().name() +
+                " is not legal for the TAG resource. Only CREATE, READ, UPDATE and DELETE are allowed"
+            ));
+        }
+    }
+
+    //____________________________________________________________________________________________________________________________________
+
+    private Response handleCreate(Request request) {
+
+        List<List<QueryParameter>> query_parameters;
+
+        try {
+
+            query_parameters = new ArrayList<>();
+            session_service.checkPermissions(request.session_id(), 0x00000001);
+
+            for(DataEntry entry : request.data()) {
+
+                List<QueryParameter> temp = new ArrayList<>();
+
+                // The regex matches any combination of: a-z, A-Z, 0-9, -, _
+                // and must be between 3 and 32 long.
+                temp.add(new QueryParameter(
+
+                    entry.entryAsString("^[a-zA-Z0-9_-]{3,31}$", false),
+                    SqlTypes.STRING
+                ));
+
+                temp.add(new QueryParameter((int)System.currentTimeMillis(), SqlTypes.INT));
+                query_parameters.add(temp);
+            }
+
+            repository.insert(
+
+                "INSERT INTO tags(name, creation_date) VALUES(?, ?)",
+                query_parameters
+            );
+
+            return(new Response(ResponseStatuses.OK, null));
+        }
+
+        catch(Exception exc) {
+
+            logger.log(
+
+                "TagServlet.handleCreate > Could not handle the request, " +
+                exc.getClass().getSimpleName() + ": " + exc.getMessage(),
+                LogLevel.WARNING
+            );
+
+            switch(exc) {
+
+                case IllegalArgumentException exc1 -> {
+
+                    return(new Response(new FailuresWrapper(Failures.BAD_FORMATTING), exc1.getMessage()));
+                }
+
+                case PersistenceException exc1 -> {
+                    
+                    return(new Response(new FailuresWrapper(exc1.getFailureCause()), exc1.getMessage()));
+                }
+
+                case SecurityException exc1 -> {
+
+                    return(new Response(exc1.getCause(), exc1.getMessage()));
+                }
+
+                default -> {return(new Response(new FailuresWrapper(Failures.ERROR), "Unexpected error"));}
+            }
+        }
+    }
+
+    private Response handleRead(Request request) {
+
+        List<QueryParameter> query_parameters;
+        TagReadQuery query_dto;
+        String query;
+        boolean flag;
+
+        try {
+
+            session_service.checkPermissions(request.session_id(), 0x00000002);
+            query_dto = TagReadQuery.newInstance(request);
+            query_parameters = new ArrayList<>();
+            flag = false;
+
+            switch(query_dto.mode()) {
+
+                case 0:
+                    
+                    query = "SELECT " + TagEntity.getColumnNames(query_dto.fields()) +
+                    " FROM tags WHERE id IN" + repository.getPlaceholders(query_dto.by_ids().size());
+
+                    for(Integer val : query_dto.by_ids()) {
+
+                        query_parameters.add(new QueryParameter(val, SqlTypes.INT));
+                    }
+                
+                break;
+
+                case 1:
+                    
+                    query = "SELECT " + TagEntity.getColumnNames(query_dto.fields()) +
+                    " FROM tags WHERE name IN" + repository.getPlaceholders(query_dto.by_names().size());
+
+                    for(String val : query_dto.by_names()) {
+
+                        query_parameters.add(new QueryParameter(val, SqlTypes.STRING));
+                    }
+                
+                break;
+
+                case 2:
+
+                    query = "SELECT " + TagEntity.getColumnNames(query_dto.fields()) + " FROM tags WHERE ";
+
+                    if(query_dto.by_name_like() != null && query_dto.by_name_like() != "") {
+
+                        query += "name LIKE ? ";
+                        query_parameters.add(new QueryParameter(
+                            
+                            "%" + query_dto.by_name_like() + "%",
+                            SqlTypes.STRING
+                        ));
+
+                        flag = true;
+                    }
+
+                    if(query_dto.creation_date_start() != null) {
+
+                        if(flag == true) query += "AND ";
+                        query = "creation_date BETWEEN ? AND ? ";
+                        query_parameters.add(new QueryParameter(
+                            
+                            query_dto.creation_date_start(),
+                            SqlTypes.INT
+                        ));
+
+                        query_parameters.add(new QueryParameter(
+                            
+                            query_dto.creation_date_end(),
+                            SqlTypes.INT
+                        ));
+                    }
+
+                    query += "AND id > ?";
+                    query_parameters.add(new QueryParameter(query_dto.start(), SqlTypes.INT));
+
+                    if(query_dto.limit() != null) {
+
+                        query += "AND LIMIT ?";
+                        query_parameters.add(new QueryParameter(query_dto.limit(), SqlTypes.INT));
+                    }
+
+                break;
+
+                case 3:
+                
+                    query = "SELECT " + TagEntity.getColumnNames(query_dto.fields()) +
+                    " FROM tags WHERE id > ? LIMIT ?";
+                
+                break;
+
+                case 4: query = "COUNT(id) FROM tags"; break;
+
+                default: throw new IllegalArgumentException("Unknown query mode: " + query_dto.mode());
+            }
+
+            TagDto t = new TagDto(TagEntity.newInstances(repository.select(query, query_parameters)));
+            return(new Response(ResponseStatuses.OK, List.of(t)));
+        }
+
+        catch(Exception exc) {
+
+            //...
+        }
+    }
+
+    //____________________________________________________________________________________________________________________________________
+}

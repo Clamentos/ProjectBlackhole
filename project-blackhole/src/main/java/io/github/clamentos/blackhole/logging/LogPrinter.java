@@ -2,7 +2,7 @@ package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
+import io.github.clamentos.blackhole.configuration.ConfigurationProvider;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -16,23 +16,29 @@ import java.util.concurrent.atomic.AtomicLong;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>Eager-loaded singleton.</b></p>
- * <p>Log printer service.</p>
- * <p>Printing class that holds the actual log printing methods.</p>
+ * <h3>Log printer service</h3>
+ * 
+ * Printing class that holds the actual log printing methods.
+ * The methods, since they print directly to the destination, are all synchronous.
+ * 
  * <p>The logs will have the following format:</p>
  * {@code [ERROR]-[20/10/2023 14:10:34.123]-[1234567890]-[...]}
  * <ol>
  *     <li>{@code [ERROR]}: The log level.</li>
- *     <li>{@code [20/10/2023]}: The log event creation date and time.</li>
+ *     <li>{@code [20/10/2023 14:34:22.019]}: The log event creation date and time.</li>
  *     <li>{@code [1234567890]}: The unique log id.</li>
  *     <li>{@code [...]}: The actual log message.</li>
  * </ol>
+ * 
+ * @see {@link Logger}
+ * @apiNote This class is an <b>eager-loaded singleton.</b>
 */
 public final class LogPrinter {
 
     private static final LogPrinter INSTANCE = new LogPrinter();
 
-    private ConfigurationProvider configuration_provider;
+    private final int MIN_LOG_LEVEL;
+    private final int MAX_LOG_FILE_SIZE;
 
     private AtomicLong current_id;
     private BufferedWriter file_writer;
@@ -40,9 +46,16 @@ public final class LogPrinter {
 
     //____________________________________________________________________________________________________________________________________
 
+    /*
+     * This method initializes the singleton and finds an "eligible" log file (most recent & size < limit)
+     * in the {@code [classpath]/logs} path. If no file is eligible (or the directory is empty), it will
+     * create a new one.
+    */
     private LogPrinter() {
 
-        configuration_provider = ConfigurationProvider.getInstance();
+        MIN_LOG_LEVEL = ConfigurationProvider.getInstance().MIN_LOG_LEVEL;
+        MAX_LOG_FILE_SIZE = ConfigurationProvider.getInstance().MAX_LOG_FILE_SIZE;
+
         current_id = new AtomicLong(0);
 
         findEligible();
@@ -51,10 +64,7 @@ public final class LogPrinter {
 
     //____________________________________________________________________________________________________________________________________
 
-    /**
-     * <p><b>This method is thread safe.</p></b>
-     * @return The {@link ConfigurationProvider} instance created during class loading.
-    */
+    /** @return The {@link ConfigurationProvider} instance created during class loading. */
     public static LogPrinter getInstance() {
 
         return(INSTANCE);
@@ -63,44 +73,39 @@ public final class LogPrinter {
     //____________________________________________________________________________________________________________________________________
 
     /**
-     * <p><b>This method is partially thread safe.</b></p>
-     * <p>(Thread safe on a line-per-line basys. Interleaved lines are possible).</p>
-     * Synchronously log the given message with the specified severity to the console or file
-     * depending on the configuration (see {@link ConfigurationProvider}).
+     * Synchronously log the given message with the specified severity to the console or file depending on
+     * the configuration.
      * @param message : The message to log.
      * @param severity : The severity of the log event.
      * @throws IllegalArgumentException If {@code severity} is {@code null}.
+     * @see {@link ConfigurationProvider}
     */
     public void log(String message, LogLevel severity) throws IllegalArgumentException {
 
         if(severity == null) {
 
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Log level cannot be null");
         }
 
-        if(severity.ordinal() >= configuration_provider.MIN_LOG_LEVEL) {
+        if(severity.ordinal() >= MIN_LOG_LEVEL) {
 
-            printLog(new Log(message, severity));
+            printLog(new Log(message, severity, getNextId()));
         }
     }
 
     //____________________________________________________________________________________________________________________________________
 
-    /**
-     * <p><b>This method is thread safe.</b></p>
-     * @return The next unique log id. Overflows will simply wrap around without throwing any exception.
-    */
+    /** @return The next unique log id. Overflows will simply silently wrap around. */
     protected long getNextId() {
 
         return(current_id.getAndIncrement());
     }
 
     /**
-     * <p><b>This method is partially thread safe.</b></p>
-     * <p>(Thread safe on a line-per-line basys. Interleaved lines are possible).</p>
      * Synchronously logs the given message with the specified severity to the console or file
-     * depending on the configuration (see {@link ConfigurationProvider}).
+     * depending on the configuration.
      * @param log : The log to log.
+     * @see {@link ConfigurationProvider}
     */
     protected void printLog(Log log) {
 
@@ -153,7 +158,8 @@ public final class LogPrinter {
                 
                 "LogPrinter.printToFile > Could not write to log file, IOException: " +
                 exc.getMessage() + " Writing to console instead",
-                LogLevel.WARNING
+                LogLevel.WARNING,
+                getNextId()
             ));
 
             printToConsole(log);
@@ -164,23 +170,18 @@ public final class LogPrinter {
     private String partialString(Log log) {
 
         SimpleDateFormat formatter;
-
-        String timestamp;
         String id;
 
         formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss.SSS");
-
-        timestamp = "[" + formatter.format(log.timestamp()) + "]-";
         id = "[" + String.format("%016X", log.id()) + "]-";
 
-        return(timestamp + id);
+        return("[" + formatter.format(log.timestamp()) + "]-" + id);
     }
 
-    // TODO: maybe sync all?
     // Writes the data to the currently selected log file.
     private void write(String data) throws IOException {
 
-        if(file_size >= configuration_provider.MAX_LOG_FILE_SIZE) {
+        if(file_size >= MAX_LOG_FILE_SIZE) {
 
             findEligible();
         }
@@ -190,8 +191,8 @@ public final class LogPrinter {
         file_size += data.length();
     }
 
-    // TODO: check if sync all is needed
-    // Finds the most "recent" log file. If there are none, create one.
+    // TODO: check if finer grained locks can be done
+    // Finds the most "recent" log file below the size limit. If there are none, create one.
     private synchronized void findEligible() {
 
         File[] files;
@@ -211,7 +212,7 @@ public final class LogPrinter {
                 }
             }
 
-            if((found > 0) && (files[found - 1].length() < configuration_provider.MAX_LOG_FILE_SIZE)) {
+            if((found > 0) && (files[found - 1].length() < MAX_LOG_FILE_SIZE)) {
 
                 file_size = files[found - 1].length();
                 file_writer = new BufferedWriter(new FileWriter(files[found - 1], true));
@@ -219,7 +220,13 @@ public final class LogPrinter {
                 return;
             }
 
-            createNewLogFile();
+            if(file_writer != null) {
+
+                file_writer.close();
+            }
+
+            file_size = 0;
+            file_writer = new BufferedWriter(new FileWriter("logs/log_" + System.currentTimeMillis() + ".log"));
         }
 
         catch(IOException exc) {
@@ -227,35 +234,8 @@ public final class LogPrinter {
             printToConsole(new Log(
 
                 "LogFile.findEligible > Could not access file, IOException: " + exc.getMessage(),
-                LogLevel.ERROR
-            ));
-        }
-    }
-
-    // Creates a new log file with "log_<timestamp>.log" name.
-    private void createNewLogFile() {
-
-        String name;
-
-        try {
-
-            name = "logs/log_" + System.currentTimeMillis() + ".log";
-
-            if(file_writer != null) {
-
-                file_writer.close();
-            }
-
-            file_writer = new BufferedWriter(new FileWriter(name));
-            file_size = 0;
-        }
-
-        catch(IOException exc) {
-
-            printToConsole(new Log(
-
-                "LogFile.createNewLogFile > Could not access file, IOException: " + exc.getMessage(),
-                LogLevel.ERROR
+                LogLevel.ERROR,
+                getNextId()
             ));
         }
     }

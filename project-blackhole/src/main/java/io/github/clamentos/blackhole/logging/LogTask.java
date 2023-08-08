@@ -2,9 +2,9 @@ package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
-import io.github.clamentos.blackhole.common.exceptions.GlobalExceptionHandler;
-import io.github.clamentos.blackhole.framework.tasks.ContinuousTask;
+import io.github.clamentos.blackhole.configuration.ConfigurationProvider;
+import io.github.clamentos.blackhole.exceptions.GlobalExceptionHandler;
+import io.github.clamentos.blackhole.scaffolding.tasks.ContinuousTask;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -12,21 +12,22 @@ import java.util.concurrent.TimeUnit;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>Continuous task.</b></p>
- * <p>Logging task.</p>
+ * <h3>Logging task</h3>
  * This class is responsible for fetching the logs from the log queue and printing them.
+ * @apiNote This class is a <b>continuous runnable task</b>.
 */
 public final class LogTask extends ContinuousTask {
 
-    private ConfigurationProvider configuration_provider;
     private LogPrinter log_printer;
+
+    private final int MAX_LOG_QUEUE_POLLS;
+    private final int LOG_QUEUE_SAMPLE_TIME;
 
     private BlockingQueue<Log> queue;
 
     //____________________________________________________________________________________________________________________________________
 
     /**
-     * <p><b>This method is thread safe.</p></b>
      * Instantiates a new {@link LogTask} object.
      * @param queue : The log queue from where to fetch the logs.
      * @param id : The unique task id.
@@ -37,7 +38,9 @@ public final class LogTask extends ContinuousTask {
         super(id);
 
         log_printer = LogPrinter.getInstance();
-        configuration_provider = ConfigurationProvider.getInstance();
+        
+        MAX_LOG_QUEUE_POLLS = ConfigurationProvider.getInstance().MAX_LOG_QUEUE_POLLS;
+        LOG_QUEUE_SAMPLE_TIME = ConfigurationProvider.getInstance().LOG_QUEUE_SAMPLE_TIME;
 
         if(queue == null) {
 
@@ -51,35 +54,26 @@ public final class LogTask extends ContinuousTask {
 
     //____________________________________________________________________________________________________________________________________
 
-    /**
-     * <p><b>This method is thread safe.</p></b>
-     * {@inheritDoc}
-    */
+    /** {@inheritDoc} */
     @Override
     public void setup() {
 
         Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
-        log_printer.log("LogTask.setup > Log task started successfully", LogLevel.SUCCESS);
+        log_printer.log("LogTask.setup > Started successfully", LogLevel.SUCCESS);
     }
 
-    /**
-     * <p><b>This method is thread safe.</p></b>
-     * {@inheritDoc}
-    */
+    /** {@inheritDoc} */
     @Override
     public void work() {
 
         iteration();
     }
 
-    /**
-     * <p><b>This method is thread safe.</p></b>
-     * {@inheritDoc}
-    */
+    /** {@inheritDoc} */
     @Override
     public void terminate() {
 
-        // Loop as long as there are logs in the queue, then exit.
+        // Finish logging the leftovers, then exit.
         while(queue.isEmpty() == false) {
 
             iteration();
@@ -98,8 +92,8 @@ public final class LogTask extends ContinuousTask {
         boolean relax = true;
         int count = 0;
 
-        // Poll aggressively with N retries.
-        while(count < configuration_provider.MAX_LOG_QUEUE_POLLS) {
+        // Poll aggressively with some retries.
+        while(count < MAX_LOG_QUEUE_POLLS) {
 
             log = queue.poll();
 
@@ -114,13 +108,13 @@ public final class LogTask extends ContinuousTask {
             count++;
         }
 
-        // Block on queue when the retries are exhausted.
+        // Block on the queue when the retries have been exhausted.
         if(relax == true) {
 
             try {
 
                 // Poll doesn't generate InterrupredException when it times out, it simply returns null.
-                log = queue.poll(configuration_provider.LOG_QUEUE_SAMPLE_TIME, TimeUnit.MILLISECONDS);
+                log = queue.poll(LOG_QUEUE_SAMPLE_TIME, TimeUnit.MILLISECONDS);
 
                 if(log != null) {
 
@@ -129,6 +123,12 @@ public final class LogTask extends ContinuousTask {
             }
 
             catch(InterruptedException exc) {
+
+                log_printer.log(
+
+                    "LogTask.iteration > Interrupted while trying to fetch from the queue, retrying",
+                    LogLevel.WARNING
+                );
 
                 super.stop();
             }

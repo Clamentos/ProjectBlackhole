@@ -6,8 +6,6 @@ import java.net.Socket;
 
 import org.junit.jupiter.api.Test;
 
-import io.github.clamentos.blackhole.common.exceptions.GlobalExceptionHandler;
-
 public class AppTest {
 
     /*@Test

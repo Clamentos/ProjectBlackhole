@@ -1,29 +1,33 @@
 package io.github.clamentos.blackhole.persistence;
 
-//________________________________________________________________________________________________________________________________________
+import io.github.clamentos.blackhole.exceptions.Failures;
+import java.sql.SQLException;
 
-import io.github.clamentos.blackhole.common.exceptions.Failure;
-
-//________________________________________________________________________________________________________________________________________
-
+// TODO: finish
 public class PersistenceException extends Exception {
-
-    private String generic_message;
-
-    //____________________________________________________________________________________________________________________________________
     
-    public PersistenceException(String generic_message, String original_message, Failure cause) {
+    private Failures failure_cause;
 
-        super(original_message, cause);
-        this.generic_message = generic_message;
+    public PersistenceException(SQLException exc) {
+
+        super(decodeMessage(exc));
+        failure_cause = decodeCause(exc);
     }
 
-    //____________________________________________________________________________________________________________________________________
+    public Failures getFailureCause() {
 
-    public String getGenericMessage() {
-
-        return(generic_message);
+        return(failure_cause);
     }
 
-    //____________________________________________________________________________________________________________________________________
+    private static String decodeMessage(SQLException exc) {
+
+        //...
+        return(null);
+    }
+
+    private static Failures decodeCause(SQLException exc) {
+
+        //...
+        return(null);
+    }
 }

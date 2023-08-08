@@ -5,11 +5,11 @@ package io.github.clamentos.blackhole;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
-import io.github.clamentos.blackhole.common.exceptions.GlobalExceptionHandler;
-import io.github.clamentos.blackhole.framework.tasks.TaskManager;
+import io.github.clamentos.blackhole.configuration.ConfigurationProvider;
+import io.github.clamentos.blackhole.exceptions.GlobalExceptionHandler;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.LogPrinter;
+import io.github.clamentos.blackhole.scaffolding.tasks.TaskManager;
 
 import java.io.IOException;
 

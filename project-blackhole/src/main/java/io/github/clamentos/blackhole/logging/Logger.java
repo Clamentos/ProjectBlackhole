@@ -2,8 +2,8 @@ package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
-import io.github.clamentos.blackhole.framework.tasks.TaskManager;
+import io.github.clamentos.blackhole.configuration.ConfigurationProvider;
+import io.github.clamentos.blackhole.scaffolding.tasks.TaskManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,17 +13,23 @@ import java.util.concurrent.TimeUnit;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>Eager-loaded singleton.</b></p>
- * <p>Logger service.</p>
+ * <h3>Logger service</h3>
+ * 
  * This class inserts the produced logs into the log queue.
- * Use this class when asynchronous logging is needed for performance reasons.
- * See {@link LogPrinter} for direct synchronous logging.
+ * Use this class when asynchronous logging is desired for performance reasons.
+ * 
+ * @see {@link LogPrinter}
+ * @apiNote This class is an <b>eager-loaded singleton</b>.
 */
 public class Logger {
     
     private static final Logger INSTANCE = new Logger();
 
-    private ConfigurationProvider configuration_provider;
+    private final int NUM_LOG_TASKS;
+    private final int MAX_LOG_QUEUE_SIZE;
+    private final int MIN_LOG_LEVEL;
+    private final int INSERT_TIMEOUT;
+
     private LogPrinter log_printer;
 
     // Multiple queues allow to spread the lock contention (there could be millions of v-threads).
@@ -31,17 +37,21 @@ public class Logger {
 
     //____________________________________________________________________________________________________________________________________
 
-    // Thread safe.
+    // Instantiates all the queues and launches the log tasks.
     private Logger() {
 
-        configuration_provider = ConfigurationProvider.getInstance();
         log_printer = LogPrinter.getInstance();
+
+        NUM_LOG_TASKS = ConfigurationProvider.getInstance().NUM_LOG_TASKS;
+        MAX_LOG_QUEUE_SIZE = ConfigurationProvider.getInstance().MAX_LOG_QUEUE_SIZE;
+        MIN_LOG_LEVEL = ConfigurationProvider.getInstance().MIN_LOG_LEVEL;
+        INSERT_TIMEOUT = ConfigurationProvider.getInstance().LOG_QUEUE_INSERT_TIMEOUT;
 
         queues = new ArrayList<>();
 
-        for(int i = 0; i < configuration_provider.NUM_LOG_TASKS; i++) {
+        for(int i = 0; i < NUM_LOG_TASKS; i++) {
 
-            queues.add(new LinkedBlockingQueue<>(configuration_provider.MAX_LOG_QUEUE_SIZE));
+            queues.add(new LinkedBlockingQueue<>(MAX_LOG_QUEUE_SIZE));
             TaskManager.getInstance().launchNewLogTask(queues.get(i));
         }
 
@@ -50,10 +60,7 @@ public class Logger {
 
     //____________________________________________________________________________________________________________________________________
 
-    /**
-     * <p><b>This method is thread safe.</p></b>
-     * @return The {@link ConfigurationProvider} instance created during class loading.
-    */
+    /** @return The {@link ConfigurationProvider} instance created during class loading. */
     public static Logger getInstance() {
 
         return(INSTANCE);
@@ -62,11 +69,10 @@ public class Logger {
     //____________________________________________________________________________________________________________________________________
 
     /**
-     * <p><b>This method is thread safe.</p></b>
-     * <p>Inserts the log into the log queue.</p>
-     * This method will block the calling thread up to
-     * {@link ConfigurationProvider#LOG_QUEUE_INSERT_TIMEOUT} milliseconds.
-     * If the insert times out, this method will simply fallback to log synchronously.
+     * Inserts the log into the log queue.
+     * <p>This method will block the calling thread up to
+     * {@link ConfigurationProvider#LOG_QUEUE_INSERT_TIMEOUT} milliseconds. If the insert times out,
+     * this method will simply fallback to log synchronously.</p>
      * @param message : The message to log.
      * @param severity : The severity of the log event.
      * @throws IllegalArgumentException If {@code severity} is {@code null}.
@@ -74,46 +80,44 @@ public class Logger {
     public void log(String message, LogLevel severity) throws IllegalArgumentException {
 
         Log log;
-        int queue_index;
+        int idx;
 
         if(severity == null) {
 
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Log level cannot be null");
         }
 
-        if(severity.ordinal() >= configuration_provider.MIN_LOG_LEVEL) {
+        if(severity.ordinal() >= MIN_LOG_LEVEL) {
 
-            log = new Log(message, severity);
+            log = new Log(message, severity, log_printer.getNextId());
 
             while(true) {
 
                 try {
 
-                    // Choose the queue. Use the MOD operation to guarantee uniformity so that
-                    // each queue gets an equal amount of work.
-                    queue_index = (int)(log.id() % queues.size());
+                    /*
+                     * Choose the queue. Use the MOD operation to guarantee uniformity so that
+                     * each queue gets an equal amount of work.
+                    */
 
-                    if(queues.get(queue_index).offer(log, configuration_provider.LOG_QUEUE_INSERT_TIMEOUT, TimeUnit.MILLISECONDS) == true) {
+                    idx = (int)(log.id() % queues.size());
+
+                    if(queues.get(idx).offer(log, INSERT_TIMEOUT, TimeUnit.MILLISECONDS) == true) {
 
                         return;
                     }
 
-                    else {
-
-                        log_printer.log(message, severity);
-                    }
+                    log_printer.log(message, severity);
                 }
 
                 catch(InterruptedException exc) {
 
                     log_printer.log(
 
-                        "Logger.log > Could not insert into the log queue, InterruptedException: " +
-                        exc.getMessage() + " Retrying",
+                        "Logger.log > Interrupted while trying to insert a log into the queue, retrying",
                         LogLevel.WARNING
                     );
                 }
-
             }
         }
     }

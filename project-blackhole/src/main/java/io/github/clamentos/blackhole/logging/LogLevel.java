@@ -2,14 +2,15 @@ package io.github.clamentos.blackhole.logging;
 
 //________________________________________________________________________________________________________________________________________
 
-import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
+import io.github.clamentos.blackhole.configuration.ConfigurationProvider;
 
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>Enumeration class.</b></p>
- * <p>Enumeration of all the possible log levels.</p>
+ * <h3>Enumeration of all the possible log levels</h3>
+ * 
  * <p>Each entry is composed of the log level name + color + destination.</p>
+ * 
  * The log levels in increasing relevance are:
  * <ol>
  *     <li>{@code DEBUG}: Used for debugging.</li>
@@ -21,6 +22,8 @@ import io.github.clamentos.blackhole.common.configuration.ConfigurationProvider;
  *     <li>{@code ERROR}: Used to indicate that a critical process encountered an unusual or unexpected
  *         situation that was not able to recover without service interruptions.</li>
  * </ol>
+ * 
+ * @apiNote This class is an <b>enumeration</b>.
 */
 public enum LogLevel {
     
@@ -39,7 +42,6 @@ public enum LogLevel {
 
     //____________________________________________________________________________________________________________________________________
 
-    // Thread safe obviously.
     private LogLevel(String value, String color, boolean to_file) {
 
         this.value = value;
@@ -49,28 +51,19 @@ public enum LogLevel {
 
     //____________________________________________________________________________________________________________________________________
 
-    /**
-     * <p><b>This method is thread safe.</p></b>
-     * @return the associated log level string.
-    */
+    /** @return the associated space-padded log level name string. */
     public String getValue() {
 
         return(value);
     }
 
-    /**
-     * <p><b>This method is thread safe.</p></b>
-     * @return the associated log level color.
-    */
+    /** @return the associated log level color escape string. */
     public String getColor() {
 
         return(color);
     }
 
-    /**
-     * <p><b>This method is thread safe.</p></b>
-     * @return {@code true} if the destination is the log file, {@code false} if console.
-    */
+    /** @return {@code true} if the destination is the log file, {@code false} if console. */
     public boolean toFile() {
 
         return(to_file);

@@ -3,8 +3,10 @@ package io.github.clamentos.blackhole.persistence;
 //________________________________________________________________________________________________________________________________________
 
 /**
- * <p><b>Enumeration class.</b></p>
- * Simple enumeration containing all the possible accepted SQL data types for {@link QueryParameter}.
+ * <h3>Common SQL data types</h3>
+ * 
+ * Simple enumeration containing all the possible accepted SQL data types for the query parameters.
+ * 
  * <ul>
  *     <li>{@code BYTE}: 1 byte signed integer.</li>
  *     <li>{@code SHORT}: 2 byte signed integer.</li>
@@ -15,6 +17,9 @@ package io.github.clamentos.blackhole.persistence;
  *     <li>{@code STRING}: UTF-8 encoded string.</li>
  *     <li>{@code BLOB}: Raw bynary data.</li>
  * </ul>
+ * 
+ * @see {@link QueryParameter}
+ * @apiNote This class is an <b>enumeration</b>.
 */
 public enum SqlTypes {
     
