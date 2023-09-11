@@ -7,6 +7,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ArrayUtils {
+
+    public static void writeInteger(byte[] destination, int source, int start) {
+
+        for(int i = 0; i < 4; i++) {
+
+            destination[i + start] = (byte)(source & (0xFF000000 >> i));
+        }
+    }
     
     /** true if null, false if empty, exception otherwise */
     public static boolean checkIfNullOrEmpty(List<DataEntry> data_entries, int start) throws IllegalStateException {

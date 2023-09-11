@@ -1,7 +1,6 @@
 package io.github.clamentos.blackhole.logging;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 import io.github.clamentos.blackhole.configuration.ConfigurationProvider;
 import io.github.clamentos.blackhole.scaffolding.tasks.TaskManager;
 
@@ -10,8 +9,7 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <h3>Logger service</h3>
  * 
@@ -22,7 +20,8 @@ import java.util.concurrent.TimeUnit;
  * @apiNote This class is an <b>eager-loaded singleton</b>.
 */
 public class Logger {
-    
+
+    ///
     private static final Logger INSTANCE = new Logger();
 
     private final int NUM_LOG_TASKS;
@@ -35,19 +34,17 @@ public class Logger {
     // Multiple queues allow to spread the lock contention (there could be millions of v-threads).
     private List<LinkedBlockingQueue<Log>> queues;
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     // Instantiates all the queues and launches the log tasks.
     private Logger() {
 
+        queues = new ArrayList<>();
         log_printer = LogPrinter.getInstance();
 
         NUM_LOG_TASKS = ConfigurationProvider.getInstance().NUM_LOG_TASKS;
         MAX_LOG_QUEUE_SIZE = ConfigurationProvider.getInstance().MAX_LOG_QUEUE_SIZE;
         MIN_LOG_LEVEL = ConfigurationProvider.getInstance().MIN_LOG_LEVEL;
         INSERT_TIMEOUT = ConfigurationProvider.getInstance().LOG_QUEUE_INSERT_TIMEOUT;
-
-        queues = new ArrayList<>();
 
         for(int i = 0; i < NUM_LOG_TASKS; i++) {
 
@@ -58,16 +55,14 @@ public class Logger {
         log_printer.log("Logger.new > Instantiated successfully", LogLevel.SUCCESS);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /** @return The {@link ConfigurationProvider} instance created during class loading. */
     public static Logger getInstance() {
 
         return(INSTANCE);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
      * Inserts the log into the log queue.
      * <p>This method will block the calling thread up to
@@ -76,6 +71,7 @@ public class Logger {
      * @param message : The message to log.
      * @param severity : The severity of the log event.
      * @throws IllegalArgumentException If {@code severity} is {@code null}.
+     * @see {@link LogLevel}
     */
     public void log(String message, LogLevel severity) throws IllegalArgumentException {
 
@@ -95,11 +91,7 @@ public class Logger {
 
                 try {
 
-                    /*
-                     * Choose the queue. Use the MOD operation to guarantee uniformity so that
-                     * each queue gets an equal amount of work.
-                    */
-
+                    // Choose the queue. Use the MOD operation to uniformely distribute the amount of work.
                     idx = (int)(log.id() % queues.size());
 
                     if(queues.get(idx).offer(log, INSERT_TIMEOUT, TimeUnit.MILLISECONDS) == true) {
@@ -122,5 +114,5 @@ public class Logger {
         }
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

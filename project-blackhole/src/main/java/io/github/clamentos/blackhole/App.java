@@ -3,8 +3,7 @@
 // mvn test
 package io.github.clamentos.blackhole;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 import io.github.clamentos.blackhole.configuration.ConfigurationProvider;
 import io.github.clamentos.blackhole.exceptions.GlobalExceptionHandler;
 import io.github.clamentos.blackhole.logging.LogLevel;
@@ -23,15 +22,13 @@ import java.sql.Statement;
 
 import java.util.Scanner;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * Main App class, initialize and start.
 */
 public class App {
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     public static void main(String[] args) {
 
         try { // Print the very cool banner.
@@ -140,8 +137,7 @@ public class App {
         log_printer.log("App.main > Shut down successfull", LogLevel.SUCCESS);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     // Thread safe.
     private static void directQuery(String file_path) throws IOException, SQLException {
 
@@ -158,8 +154,8 @@ public class App {
         db_connection.close();
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }
 
-// TODO: IMPORTANT! modify ConnectionTask & RequestTask for big data (use stream)
+// TODO: IMPORTANT! modify ConnectionTask for big data (use stream)
 // TODO: update the javadocs on the code

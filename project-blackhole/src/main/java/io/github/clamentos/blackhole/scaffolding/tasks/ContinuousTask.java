@@ -1,12 +1,10 @@
 package io.github.clamentos.blackhole.scaffolding.tasks;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 import io.github.clamentos.blackhole.scaffolding.Stoppable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <h3>Abstract continuous task</h3>
  * 
@@ -20,8 +18,7 @@ public abstract class ContinuousTask implements Stoppable {
     private final long ID;
     private AtomicBoolean stop;
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
      * Instantiates a new {@link ContinuousTask} object.
      * @param id : The task id.
@@ -32,16 +29,14 @@ public abstract class ContinuousTask implements Stoppable {
         stop = new AtomicBoolean(false);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /** @return The stopped status flag. */
     public boolean isStopped() {
 
         return(stop.get());
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /** Method to perform the setup operations before entering the loop. */
     public abstract void setup();
 
@@ -51,8 +46,7 @@ public abstract class ContinuousTask implements Stoppable {
     /** Method to perform cleanup operations after the the loop. */
     public abstract void terminate();
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
      * <p>Main execution method.</p>
      * This method will perform the following:
@@ -89,5 +83,5 @@ public abstract class ContinuousTask implements Stoppable {
         stop.set(true);
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

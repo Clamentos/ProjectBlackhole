@@ -1,7 +1,6 @@
 package io.github.clamentos.blackhole.network.servlets;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 import io.github.clamentos.blackhole.exceptions.Failures;
 import io.github.clamentos.blackhole.exceptions.FailuresWrapper;
 import io.github.clamentos.blackhole.logging.LogLevel;
@@ -12,47 +11,40 @@ import io.github.clamentos.blackhole.network.transfer.components.DataEntry;
 import io.github.clamentos.blackhole.network.transfer.components.Resources;
 import io.github.clamentos.blackhole.network.transfer.components.ResponseStatuses;
 import io.github.clamentos.blackhole.network.transfer.components.Types;
-import io.github.clamentos.blackhole.network.transfer.dtos.TagDto;
 import io.github.clamentos.blackhole.network.transfer.dtos.TagReadQuery;
 import io.github.clamentos.blackhole.persistence.PersistenceException;
-import io.github.clamentos.blackhole.persistence.QueryParameter;
-import io.github.clamentos.blackhole.persistence.Repository;
-import io.github.clamentos.blackhole.persistence.SqlTypes;
 import io.github.clamentos.blackhole.persistence.models.TagEntity;
+import io.github.clamentos.blackhole.persistence.repositories.TagRepository;
 import io.github.clamentos.blackhole.scaffolding.Servlet;
 import io.github.clamentos.blackhole.session.SessionService;
 
 import java.util.ArrayList;
 import java.util.List;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 public class TagServlet implements Servlet {
 
     private static final TagServlet INSTANCE = new TagServlet();
 
     private Logger logger;
-    private Repository repository;
+    private TagRepository repository;
     private SessionService session_service;
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     private TagServlet() {
 
         logger = Logger.getInstance();
-        repository = Repository.getInstance();
+        repository = TagRepository.getInstance();
         session_service = SessionService.getInstance();
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     public static TagServlet getInstance() {
 
         return(INSTANCE);
     }
 
-    //____________________________________________________________________________________________________________________________________
-    
+    ///
     @Override
     public Resources manages() {
 
@@ -60,33 +52,30 @@ public class TagServlet implements Servlet {
     }
 
     @Override
-    public Response handle(Request request) {
+    public Response handle(Request request, int request_counter) {
         
         switch(request.method()) {
 
-            case CREATE: return(handleCreate(request));
-            case READ: return(null);
+            case CREATE: return(handleCreate(request, request_counter));
+            case READ: return(handleRead(request, request_counter));
             case UPDATE: return(null);
             case DELETE: return(null);
 
             default: return(new Response(
                 
                 new FailuresWrapper(Failures.UNSUPPORTED_METHOD),
+                request_counter,
                 "The method " + request.method().name() +
                 " is not legal for the TAG resource. Only CREATE, READ, UPDATE and DELETE are allowed"
             ));
         }
     }
 
-    //____________________________________________________________________________________________________________________________________
-
-    private Response handleCreate(Request request) {
-
-        List<List<QueryParameter>> query_parameters;
+    ///
+    private Response handleCreate(Request request, int request_counter) {
 
         try {
 
-            query_parameters = new ArrayList<>();
             session_service.checkPermissions(request.session_id(), 0x00000001);
 
             for(DataEntry entry : request.data()) {
@@ -111,7 +100,7 @@ public class TagServlet implements Servlet {
                 query_parameters
             );
 
-            return(new Response(ResponseStatuses.OK, null));
+            return(new Response(ResponseStatuses.OK, request_counter, null));
         }
 
         catch(Exception exc) {
@@ -127,28 +116,29 @@ public class TagServlet implements Servlet {
 
                 case IllegalArgumentException exc1 -> {
 
-                    return(new Response(new FailuresWrapper(Failures.BAD_FORMATTING), exc1.getMessage()));
+                    return(new Response(new FailuresWrapper(Failures.BAD_FORMATTING), request_counter, exc1.getMessage()));
                 }
 
                 case PersistenceException exc1 -> {
                     
-                    return(new Response(new FailuresWrapper(exc1.getFailureCause()), exc1.getMessage()));
+                    return(new Response(new FailuresWrapper(exc1.getFailureCause()), request_counter, exc1.getMessage()));
                 }
 
                 case SecurityException exc1 -> {
 
-                    return(new Response(exc1.getCause(), exc1.getMessage()));
+                    return(new Response(exc1.getCause(), request_counter, exc1.getMessage()));
                 }
 
-                default -> {return(new Response(new FailuresWrapper(Failures.ERROR), "Unexpected error"));}
+                default -> {return(new Response(new FailuresWrapper(Failures.ERROR), request_counter, "Unexpected error"));}
             }
         }
     }
 
-    private Response handleRead(Request request) {
+    private Response handleRead(Request request, int request_counter) {
 
         List<QueryParameter> query_parameters;
         TagReadQuery query_dto;
+        List<TagEntity> tags;
         String query;
         boolean flag;
 
@@ -241,15 +231,42 @@ public class TagServlet implements Servlet {
                 default: throw new IllegalArgumentException("Unknown query mode: " + query_dto.mode());
             }
 
-            TagDto t = new TagDto(TagEntity.newInstances(repository.select(query, query_parameters)));
-            return(new Response(ResponseStatuses.OK, List.of(t)));
+            tags = TagEntity.newInstances(repository.select(query, query_parameters));
+
+            return(new Response(
+
+                ResponseStatuses.OK,
+                request_counter,
+                () -> {
+
+                    List<DataEntry> entries = new ArrayList<>();
+
+                    entries.add(new DataEntry(Types.BEGIN, null));
+                    
+                    for(TagEntity tag : tags) {
+
+                        entries.addAll(tag.reduce());
+                    }
+
+                    entries.add(new DataEntry(Types.END, null));
+
+                    return(entries);                    
+                }
+            ));
         }
 
         catch(Exception exc) {
 
-            //...
+            logger.log(
+                
+                "TagServlet.handleRead > Could not complete the request, " +
+                exc.getClass().getSimpleName() + ": " + exc.getMessage(),
+                LogLevel.ERROR
+            );
+
+            return(new Response(exc.getCause(), request_counter, exc.getMessage()));
         }
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

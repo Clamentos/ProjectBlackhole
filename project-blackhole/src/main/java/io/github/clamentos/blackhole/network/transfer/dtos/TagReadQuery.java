@@ -1,7 +1,6 @@
 package io.github.clamentos.blackhole.network.transfer.dtos;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 import io.github.clamentos.blackhole.network.transfer.Request;
 import io.github.clamentos.blackhole.network.transfer.components.DataEntry;
 import io.github.clamentos.blackhole.utility.ArrayUtils;
@@ -9,8 +8,7 @@ import io.github.clamentos.blackhole.persistence.models.TagEntity;
 
 import java.util.List;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <h3>Tag read query DTO</h3>
  * 
@@ -67,8 +65,7 @@ public record TagReadQuery(
 
 ) {
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     public String getByIdsValues() {
 
         String result = by_ids.toString();
@@ -81,8 +78,7 @@ public record TagReadQuery(
         return(result.substring(1, result.length() - 1));
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
      * Instantiates a new {@link TagReadQuery} object.
      * @param request : The input request.
@@ -201,5 +197,5 @@ public record TagReadQuery(
         ));
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

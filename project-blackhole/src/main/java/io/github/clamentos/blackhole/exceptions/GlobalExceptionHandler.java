@@ -1,7 +1,6 @@
 package io.github.clamentos.blackhole.exceptions;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.LogPrinter;
 
@@ -10,8 +9,7 @@ import java.io.StringWriter;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <h3>Global exception handler</h3>
  * 
@@ -22,27 +20,25 @@ import java.lang.Thread.UncaughtExceptionHandler;
 */
 public final class GlobalExceptionHandler implements UncaughtExceptionHandler {
 
+    ///
     private static final GlobalExceptionHandler INSTANCE = new GlobalExceptionHandler();
     private LogPrinter log_printer;
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     private GlobalExceptionHandler() {
 
         log_printer = LogPrinter.getInstance();
         log_printer.log("GlobalExceptionHandler.new > Instantiated successfully", LogLevel.SUCCESS);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /** @return The {@link GlobalExceptionHandler} instance created during class loading. */
     public static GlobalExceptionHandler getInstance() {
 
         return(INSTANCE);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
      * Catches the uncaught exception! As of now, this method will only print the exception and the stack
      * trace to the console.
@@ -66,5 +62,5 @@ public final class GlobalExceptionHandler implements UncaughtExceptionHandler {
         );
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

@@ -1,7 +1,6 @@
 package io.github.clamentos.blackhole.network.tasks;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 import io.github.clamentos.blackhole.configuration.ConfigurationProvider;
 import io.github.clamentos.blackhole.exceptions.GlobalExceptionHandler;
 import io.github.clamentos.blackhole.logging.LogLevel;
@@ -18,8 +17,7 @@ import java.net.SocketTimeoutException;
 
 import java.util.HashMap;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <h3>Client socket accepting task</h3>
  * This class is responsible for accepting the incoming client sockets.
@@ -39,8 +37,7 @@ public final class ServerTask extends ContinuousTask {
     private HashMap<SocketAddress, Integer> sockets_per_ip;
     private int accept_retries;
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
      * Instantiates a new {@link ServerTask} object.
      * @param id : The unique task id.
@@ -63,8 +60,7 @@ public final class ServerTask extends ContinuousTask {
         logger.log("ServerTask.new > Instantiated successfully", LogLevel.SUCCESS);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /** {@inheritDoc} */
     @Override
     public void setup() {
@@ -207,5 +203,5 @@ public final class ServerTask extends ContinuousTask {
         }
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

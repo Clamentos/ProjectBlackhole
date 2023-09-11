@@ -1,7 +1,6 @@
 package io.github.clamentos.blackhole.scaffolding;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <p><b>Interface.</b></p>
  * <p>Stoppable runnable.</p>
@@ -13,5 +12,5 @@ public interface Stoppable extends Runnable {
     /** Signals {@code this} {@link Runnable} to start the halting procedure. */
     void stop();
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

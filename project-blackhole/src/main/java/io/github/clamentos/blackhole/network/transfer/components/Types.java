@@ -1,13 +1,12 @@
 package io.github.clamentos.blackhole.network.transfer.components;
 
-//________________________________________________________________________________________________________________________________________
+///
 // Some imports are only used for JavaDocs.
 
 import io.github.clamentos.blackhole.network.transfer.Request;
 import io.github.clamentos.blackhole.network.transfer.Response;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <h3>Enumeration of all network data types</h3>
  * 
@@ -46,5 +45,5 @@ public enum Types {
     BEGIN,
     END;
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

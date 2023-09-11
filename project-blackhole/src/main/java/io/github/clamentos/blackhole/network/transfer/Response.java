@@ -1,96 +1,91 @@
 package io.github.clamentos.blackhole.network.transfer;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 import io.github.clamentos.blackhole.exceptions.FailuresWrapper;
 import io.github.clamentos.blackhole.network.transfer.components.DataEntry;
 import io.github.clamentos.blackhole.network.transfer.components.ErrorDetails;
 import io.github.clamentos.blackhole.network.transfer.components.ResponseStatuses;
 import io.github.clamentos.blackhole.scaffolding.Reducible;
 import io.github.clamentos.blackhole.scaffolding.Streamable;
+import io.github.clamentos.blackhole.utility.ArrayUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <h3>Network response object</h3>
+ * 
  * This class holds all the fields and data that can be sent through a stream. The actual response that is
  * sent over sockets, has an extra 4 bytes at the beginning to specify the length of the message
  * (this class doesn't account for that).
+ * 
  * @apiNote This class is <b>immutable data</b>.
 */
 public final record Response(
 
     ResponseStatuses response_status,
-    List<Reducible> data
+    int remaining_requests,
+    Reducible data
 
 ) implements Streamable {
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
      * Instantiates a new error {@link Response} object.
      * @param cause : The error cause.
+     * @param remaining_requests : The number of remaining requests for the client.
      * @param message : The error message.
      * @see {@link FailuresWrapper}
     */
-    public Response(Throwable cause, String message) {
+    public Response(Throwable cause, int remaining_requests, String message) {
 
-        this(decode(cause), List.of(new ErrorDetails(message)));
+        this(decode(cause), remaining_requests, new ErrorDetails(message));
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /** {@inheritDoc} */
     @Override
     public byte[] stream() {
 
-        List<DataEntry> temp = new ArrayList<>();
-        byte[][] stuff;
         byte[] bytes;
-        int count;
+        byte[][] raw_data;
+        int accumulator;
+        List<DataEntry> reduced_data;
+
+        reduced_data = new ArrayList<>();
 
         if(data != null) {
 
-            for(Reducible streamable : data) {
-
-                temp.addAll(streamable.reduce());
-            }
+            reduced_data = data.reduce();
         }
 
-        stuff = new byte[temp.size()][];
-        count = 0;
+        raw_data = new byte[reduced_data.size()][];
+        accumulator = 0;
 
-        for(int i = 0; i < stuff.length; i++) {
+        for(int i = 0; i < raw_data.length; i++) {
 
-            stuff[i] = temp.get(i).stream();
-            count += stuff[i].length;
+            raw_data[i] = reduced_data.get(i).stream();
+            accumulator += raw_data[i].length;
         }
 
-        bytes = new byte[count + 5];
-        System.arraycopy(new byte[]{(byte)response_status.ordinal()}, 0, bytes, 4, 1);
-        count = 1;
+        bytes = new byte[accumulator + 9];
+        ArrayUtils.writeInteger(bytes, accumulator, 0);
+        ArrayUtils.writeInteger(bytes, remaining_requests, 5);
+        bytes[4] = (byte)response_status.ordinal();
 
-        for(int i = 0; i < stuff.length; i++) {
-
-            System.arraycopy(stuff[i], 0, bytes, count, stuff[i].length);
-            count += stuff[i].length;
-        }
-
-        count = bytes.length - 4;
+        accumulator = 0;
         
-        bytes[0] = (byte)(count & 0xFF000000);
-        bytes[1] = (byte)(count & 0x00FF0000);
-        bytes[2] = (byte)(count & 0x0000FF00);
-        bytes[3] = (byte)(count & 0x000000FF);
+        for(int i = 0; i < raw_data.length; i++) {
+
+            System.arraycopy(raw_data[i], 0, bytes, accumulator, raw_data[i].length);
+            accumulator += raw_data[i].length;
+        }
 
         return(bytes);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     // TODO: actual decode
     private static ResponseStatuses decode(Throwable cause) {
 
@@ -108,5 +103,5 @@ public final record Response(
         }
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

@@ -1,7 +1,6 @@
 package io.github.clamentos.blackhole.session;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 import io.github.clamentos.blackhole.configuration.ConfigurationProvider;
 import io.github.clamentos.blackhole.exceptions.Failures;
 import io.github.clamentos.blackhole.exceptions.FailuresWrapper;
@@ -11,8 +10,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 public class SessionService {
     
     private static final SessionService INSTANCE = new SessionService();
@@ -24,8 +22,7 @@ public class SessionService {
     private ConcurrentHashMap<Integer, ArrayList<Session>> mappings;
     private SecureRandom id_generator;
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     private SessionService() {
 
         sessions = new ConcurrentHashMap<>();
@@ -36,16 +33,14 @@ public class SessionService {
         SESSION_DURATION = ConfigurationProvider.getInstance().SESSION_DURATION;
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /** @return The {@link SessionService} instance created during class loading. */
     public static SessionService getInstance() {
 
         return(INSTANCE);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
      * Checks the permissions of a given session against the provided flags.
      * @param session_id : The session identifier.
@@ -155,5 +150,5 @@ public class SessionService {
         }
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

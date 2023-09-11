@@ -1,6 +1,6 @@
 package io.github.clamentos.blackhole.network.transfer.components;
 
-//________________________________________________________________________________________________________________________________________
+///
 // Some imports are only used for JavaDocs.
 
 import io.github.clamentos.blackhole.network.transfer.Response;
@@ -9,8 +9,7 @@ import io.github.clamentos.blackhole.scaffolding.Reducible;
 import java.util.ArrayList;
 import java.util.List;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <h3>Response error details holder</h3>
  * Simple record class that holds the message and the timestamp for error responses.
@@ -24,8 +23,7 @@ public final record ErrorDetails(
 
 ) implements Reducible {
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
      * Instantiates a new {@link ErrorDetails} object. 
      * @param message : The error message.
@@ -35,8 +33,7 @@ public final record ErrorDetails(
         this(System.currentTimeMillis(), message);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /** {@inheritDoc} */
     @Override
     public List<DataEntry> reduce() {
@@ -49,5 +46,5 @@ public final record ErrorDetails(
         return(result);
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

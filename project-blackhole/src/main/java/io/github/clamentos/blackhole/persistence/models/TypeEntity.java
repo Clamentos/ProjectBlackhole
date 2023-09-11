@@ -1,7 +1,14 @@
 package io.github.clamentos.blackhole.persistence.models;
 
-//________________________________________________________________________________________________________________________________________
+///
+import io.github.clamentos.blackhole.network.transfer.components.DataEntry;
+import io.github.clamentos.blackhole.network.transfer.components.Types;
+import io.github.clamentos.blackhole.scaffolding.Reducible;
 
+import java.util.ArrayList;
+import java.util.List;
+
+///
 /**
  * <p><b>Immutable data.</b></p>
  * <p>Type resource entity.</p>
@@ -10,10 +17,24 @@ package io.github.clamentos.blackhole.persistence.models;
 */
 public record TypeEntity(
 
-    short id,
+    Short id,
     String name,
-    boolean is_complex
+    Boolean is_complex
 
-    //____________________________________________________________________________________________________________________________________
+    ///
+) implements Reducible {
 
-) {}
+    @Override
+    public List<DataEntry> reduce() {
+
+        List<DataEntry> entries = new ArrayList<>();
+
+        if(id != null) entries.add(new DataEntry(Types.SHORT, id));
+        if(name != null) entries.add(new DataEntry(Types.STRING, name));
+        if(is_complex != null) entries.add(new DataEntry(Types.BYTE, is_complex == true ? (byte)1 : (byte)0));
+
+        return(entries);
+    }
+
+    ///
+}

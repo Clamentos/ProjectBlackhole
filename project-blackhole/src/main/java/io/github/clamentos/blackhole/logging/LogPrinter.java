@@ -1,7 +1,6 @@
 package io.github.clamentos.blackhole.logging;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 import io.github.clamentos.blackhole.configuration.ConfigurationProvider;
 
 import java.io.BufferedWriter;
@@ -13,8 +12,7 @@ import java.text.SimpleDateFormat;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <h3>Log printer service</h3>
  * 
@@ -35,6 +33,7 @@ import java.util.concurrent.atomic.AtomicLong;
 */
 public final class LogPrinter {
 
+    ///
     private static final LogPrinter INSTANCE = new LogPrinter();
 
     private final int MIN_LOG_LEVEL;
@@ -44,8 +43,7 @@ public final class LogPrinter {
     private BufferedWriter file_writer;
     private long file_size;
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /*
      * This method initializes the singleton and finds an "eligible" log file (most recent & size < limit)
      * in the {@code [classpath]/logs} path. If no file is eligible (or the directory is empty), it will
@@ -62,16 +60,14 @@ public final class LogPrinter {
         printLog(new Log("LogPrinter.new > Instantiated successfully", LogLevel.SUCCESS, getNextId()));
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /** @return The {@link ConfigurationProvider} instance created during class loading. */
     public static LogPrinter getInstance() {
 
         return(INSTANCE);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
      * Synchronously log the given message with the specified severity to the console or file depending on
      * the configuration.
@@ -79,6 +75,7 @@ public final class LogPrinter {
      * @param severity : The severity of the log event.
      * @throws IllegalArgumentException If {@code severity} is {@code null}.
      * @see {@link ConfigurationProvider}
+     * @see {@link LogLevel}
     */
     public void log(String message, LogLevel severity) throws IllegalArgumentException {
 
@@ -93,8 +90,7 @@ public final class LogPrinter {
         }
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /** @return The next unique log id. Overflows will simply silently wrap around. */
     protected long getNextId() {
 
@@ -120,8 +116,7 @@ public final class LogPrinter {
         }
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     // Formats and prints to the console.
     private void printToConsole(Log log) {
 
@@ -240,5 +235,5 @@ public final class LogPrinter {
         }
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

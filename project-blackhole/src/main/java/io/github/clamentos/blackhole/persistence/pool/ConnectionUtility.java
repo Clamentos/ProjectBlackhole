@@ -1,13 +1,15 @@
 package io.github.clamentos.blackhole.persistence.pool;
 
-//________________________________________________________________________________________________________________________________________
+///
+import io.github.clamentos.blackhole.persistence.Queries;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.EnumMap;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <h3>Connection utility</h3>
  * This class offers some simple methods to create and refresh JDBC connections.
@@ -15,19 +17,18 @@ import java.sql.SQLException;
 */
 public class ConnectionUtility {
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
-     * @param db_connection : The current {@link Connection} to be tested or refreshed.
+     * @param db_connection : The current {@link PooledConnection} to be tested or refreshed.
      * @param url : The database URL address.
      * @param username : The username for the database.
      * @param password : The password for the database.
      * @return {@code db_connection} if it's valid, a new one if it's not.
      * @throws SQLException If a database connection error or timeout occurs.
     */
-    public static Connection refresh(Connection db_connection, String url, String username, String password) throws SQLException {
+    public static PooledConnection refresh(PooledConnection db_connection, String url, String username, String password) throws SQLException {
 
-        if(db_connection.isValid(5) == false) {
+        if(db_connection.getDbConnection().isValid(5) == false) {
 
             return(create(url, username, password));
         }
@@ -39,13 +40,21 @@ public class ConnectionUtility {
      * @param url : The database URL address.
      * @param username : The username for the database.
      * @param password : The password for the database.
-     * @return A new {@link Connection} with the specified parameters.
+     * @return A new {@link PooledConnection} with the specified parameters.
      * @throws SQLException If a database connection error or timeout occurs.
     */
-    protected static Connection create(String url, String username, String password) throws SQLException {
+    protected static PooledConnection create(String url, String username, String password) throws SQLException {
 
-        return(DriverManager.getConnection(url, username, password));
+        Connection db_connection = DriverManager.getConnection(url, username, password);
+        EnumMap<Queries, PreparedStatement> statements = new EnumMap<>(Queries.class);
+
+        for(Queries query : Queries.values()) {
+
+            statements.putIfAbsent(query, db_connection.prepareStatement(query.getQuery()));
+        }
+
+        return(new PooledConnection(db_connection, statements));
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

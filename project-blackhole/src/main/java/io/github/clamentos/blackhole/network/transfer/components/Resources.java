@@ -1,6 +1,6 @@
 package io.github.clamentos.blackhole.network.transfer.components;
 
-//________________________________________________________________________________________________________________________________________
+///
 // Some imports are only used for JavaDocs.
 
 import io.github.clamentos.blackhole.persistence.models.ResourceEntity;
@@ -9,8 +9,7 @@ import io.github.clamentos.blackhole.persistence.models.TagEntity;
 import io.github.clamentos.blackhole.persistence.models.TypeEntity;
 import io.github.clamentos.blackhole.persistence.models.UserEntity;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <h3>Resource types</h3>
  * 
@@ -40,8 +39,7 @@ public enum Resources {
     RESOURCE,
     TYPE;
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
      * @param resource_id : The type of resource.
      * @return The corresponding {@link Resources} constant.
@@ -62,6 +60,5 @@ public enum Resources {
         }
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
 }

@@ -1,7 +1,6 @@
 package io.github.clamentos.blackhole.network.tasks;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 import io.github.clamentos.blackhole.configuration.ConfigurationProvider;
 import io.github.clamentos.blackhole.exceptions.Failures;
 import io.github.clamentos.blackhole.exceptions.FailuresWrapper;
@@ -22,8 +21,7 @@ import java.net.SocketTimeoutException;
 
 import java.util.NoSuchElementException;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <h3>Client connection managing task</h3>
  * 
@@ -60,8 +58,7 @@ public final class ConnectionTask extends ContinuousTask {
     private Socket client_socket;
     private int request_counter;
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
      * Instantiates a new {@link ConnectionTask} object.
      * @param client_socket : The client {@link Socket}.
@@ -92,8 +89,7 @@ public final class ConnectionTask extends ContinuousTask {
         logger.log("ConnectionTask.new > Instantiated successfully", LogLevel.SUCCESS);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /** {@inheritDoc} */
     @Override
     public void setup() {
@@ -158,6 +154,7 @@ public final class ConnectionTask extends ContinuousTask {
                         out.write(new Response(
                             
                             new FailuresWrapper(Failures.BAD_FORMATTING),
+                            MAX_REQUESTS_PER_CLIENT - request_counter,
                             "Request of length: " + data.length +
                             " doesn't match with the specified message length: " + data_length
 
@@ -166,7 +163,7 @@ public final class ConnectionTask extends ContinuousTask {
 
                     else {
 
-                        TaskManager.getInstance().launchNewRequestTask(data, out);
+                        TaskManager.getInstance().launchNewRequestTask(data, out, request_counter);
                     }
                 }
 
@@ -292,7 +289,7 @@ public final class ConnectionTask extends ContinuousTask {
         logger.log("ConnectionTask.terminate > Shut down successfull", LogLevel.SUCCESS);
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
     // Utility methods.
 
     private void checkSocket(Socket socket) throws IllegalStateException {
@@ -313,6 +310,7 @@ public final class ConnectionTask extends ContinuousTask {
             out.write(new Response(
                 
                 new FailuresWrapper(Failures.END_OF_STREAM),
+                MAX_REQUESTS_PER_CLIENT - request_counter,
                 "End of stream detected, closing the connection"
             
             ).stream());
@@ -342,5 +340,5 @@ public final class ConnectionTask extends ContinuousTask {
         return(data_length);
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

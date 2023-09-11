@@ -1,13 +1,11 @@
 package io.github.clamentos.blackhole.scaffolding.tasks;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <h3>Task buffer</h3>
  * This class is responsible for holding the currently assigned alive tasks.
@@ -19,8 +17,7 @@ public class TaskBuffer<T extends Runnable> {
     private AtomicLong current_id;
     private ConcurrentHashMap<Long, T> buffer;
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /** Instantiates a new {@link TaskBuffer} object. */
     public TaskBuffer() {
 
@@ -28,8 +25,7 @@ public class TaskBuffer<T extends Runnable> {
         current_id = new AtomicLong(0);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**  @return The next unique task id. Overflows silently wrap around. */
     public long getNextId() {
 
@@ -68,5 +64,5 @@ public class TaskBuffer<T extends Runnable> {
         return(buffer.isEmpty());
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

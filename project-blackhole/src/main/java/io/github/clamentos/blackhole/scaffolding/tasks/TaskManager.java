@@ -1,7 +1,6 @@
 package io.github.clamentos.blackhole.scaffolding.tasks;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 import io.github.clamentos.blackhole.logging.Log;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.LogPrinter;
@@ -9,18 +8,14 @@ import io.github.clamentos.blackhole.logging.LogTask;
 import io.github.clamentos.blackhole.network.tasks.ConnectionTask;
 import io.github.clamentos.blackhole.network.tasks.RequestTask;
 import io.github.clamentos.blackhole.network.tasks.ServerTask;
-import io.github.clamentos.blackhole.persistence.pool.ConnectionCheckingTask;
 
 import java.io.BufferedOutputStream;
 
 import java.net.Socket;
 
-import java.sql.Connection;
-
 import java.util.concurrent.BlockingQueue;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <h3>Global task manager</h3>
  * Utility class to launch and manage tasks with virtual threads. All tasks must be launched via this class.
@@ -36,10 +31,8 @@ public final class TaskManager {
     private TaskBuffer<ConnectionTask> connection_tasks_buffer;
     private TaskBuffer<RequestTask> request_tasks_buffer;
     private TaskBuffer<LogTask> log_tasks_buffer;
-    private TaskBuffer<ConnectionCheckingTask> pool_checking_task_buffer;
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     private TaskManager() {
 
         log_printer = LogPrinter.getInstance();
@@ -48,21 +41,18 @@ public final class TaskManager {
         connection_tasks_buffer = new TaskBuffer<>();
         request_tasks_buffer = new TaskBuffer<>();
         log_tasks_buffer = new TaskBuffer<>();
-        pool_checking_task_buffer = new TaskBuffer<>();
 
         log_printer.log("TaskManager.new > Instantiated successfully", LogLevel.SUCCESS);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /** @return The {@link TaskManager} instance created during class loading. */
     public static TaskManager getInstance() {
 
         return(INSTANCE);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
      * Creates a new {@link ServerTask} and places it into the managing buffer.
      * The method will also start a new virtual thread on the created task.
@@ -110,10 +100,10 @@ public final class TaskManager {
      * @param raw_request : The request needed by the request task.
      * @param out : The output stream needed by the request task.
     */
-    public void launchNewRequestTask(byte[] raw_request, BufferedOutputStream out) {
+    public void launchNewRequestTask(byte[] raw_request, BufferedOutputStream out, int request_counter) {
 
         long id = request_tasks_buffer.getNextId();
-        RequestTask task = new RequestTask(raw_request, out, id);
+        RequestTask task = new RequestTask(raw_request, out, id, request_counter);
         request_tasks_buffer.put(id, task);
         Thread.ofVirtual().start(task);
     }
@@ -128,19 +118,6 @@ public final class TaskManager {
         long id = log_tasks_buffer.getNextId();
         LogTask task = new LogTask(queue, id);
         log_tasks_buffer.put(id, task);
-        Thread.ofVirtual().start(task);
-    }
-
-    /**
-     * Creates a new {@link ConnectionCheckingTask} and places it into the managing buffer.
-     * This method will also launch a new virtual thread on the created task.
-     * @param pool : The connection pool used by the connection checking task.
-    */
-    public void launchNewConnectionCheckingTask(BlockingQueue<Connection> pool) {
-
-        long id = pool_checking_task_buffer.getNextId();
-        ConnectionCheckingTask task = new ConnectionCheckingTask(pool, id);
-        pool_checking_task_buffer.put(id, task);
         Thread.ofVirtual().start(task);
     }
 
@@ -190,13 +167,6 @@ public final class TaskManager {
         waitForEmptyness(connection_tasks_buffer);
         waitForEmptyness(request_tasks_buffer);
 
-        for(ConnectionCheckingTask t : pool_checking_task_buffer.getBufferedValues()) {
-
-            t.stop();
-        }
-
-        waitForEmptyness(pool_checking_task_buffer);
-
         for(LogTask t : log_tasks_buffer.getBufferedValues()) {
 
             t.stop();
@@ -205,8 +175,7 @@ public final class TaskManager {
         waitForEmptyness(log_tasks_buffer);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     // Waits untill the specified buffer is empty. Thread safe.
     private void waitForEmptyness(TaskBuffer<?> tasks) {
 
@@ -228,5 +197,5 @@ public final class TaskManager {
         }
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

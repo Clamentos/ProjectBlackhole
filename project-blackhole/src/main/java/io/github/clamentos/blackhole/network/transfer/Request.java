@@ -1,7 +1,6 @@
 package io.github.clamentos.blackhole.network.transfer;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 import io.github.clamentos.blackhole.network.transfer.components.DataEntry;
 import io.github.clamentos.blackhole.network.transfer.components.Methods;
 import io.github.clamentos.blackhole.network.transfer.components.Resources;
@@ -9,8 +8,7 @@ import io.github.clamentos.blackhole.network.transfer.components.Resources;
 import java.util.ArrayList;
 import java.util.List;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <h3>Network request object</h3>
  * This class holds all the fields and data required to handle a network request. The actual request that is
@@ -27,8 +25,7 @@ public final record Request(
 
 ) {
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
      * Deserializes the given data byte array into a new {@link Request} object.
      * @param data : The input data array, usually taken from a stream.
@@ -81,5 +78,6 @@ public final record Request(
         return(new Request(resource, method, session_id, stuff));
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }
+// TODO: equal & hashcode

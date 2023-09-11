@@ -25,3 +25,6 @@ replay_pid*
 
 # maven /target directory
 target/
+
+# scratch notes
+scratch/

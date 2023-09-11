@@ -1,7 +1,6 @@
 package io.github.clamentos.blackhole.logging;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 import io.github.clamentos.blackhole.configuration.ConfigurationProvider;
 import io.github.clamentos.blackhole.exceptions.GlobalExceptionHandler;
 import io.github.clamentos.blackhole.scaffolding.tasks.ContinuousTask;
@@ -9,8 +8,7 @@ import io.github.clamentos.blackhole.scaffolding.tasks.ContinuousTask;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <h3>Logging task</h3>
  * This class is responsible for fetching the logs from the log queue and printing them.
@@ -18,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 */
 public final class LogTask extends ContinuousTask {
 
+    ///
     private LogPrinter log_printer;
 
     private final int MAX_LOG_QUEUE_POLLS;
@@ -25,8 +24,7 @@ public final class LogTask extends ContinuousTask {
 
     private BlockingQueue<Log> queue;
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
      * Instantiates a new {@link LogTask} object.
      * @param queue : The log queue from where to fetch the logs.
@@ -52,8 +50,7 @@ public final class LogTask extends ContinuousTask {
         log_printer.log("LogTask.new > Instantiated successfully", LogLevel.SUCCESS);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /** {@inheritDoc} */
     @Override
     public void setup() {
@@ -82,8 +79,7 @@ public final class LogTask extends ContinuousTask {
         log_printer.log("LogTask.terminate > Shut down successfull", LogLevel.SUCCESS);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     // Fetches 1 log and prints it (thread safe).
     private void iteration() {
 
@@ -135,5 +131,5 @@ public final class LogTask extends ContinuousTask {
         }
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

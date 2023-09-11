@@ -1,14 +1,12 @@
 package io.github.clamentos.blackhole.network.transfer.components;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 import io.github.clamentos.blackhole.scaffolding.Streamable;
 
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <h3>Semi-structured request and response data holder</h3>
  * Simple record class to represent semi-structured data that can be sent over a stream.
@@ -21,8 +19,7 @@ public final record DataEntry(
 
 ) implements Streamable {
 
-    //____________________________________________________________________________________________________________________________________
-    
+    ///
     /**
      * Instantiates a new {@link DataEntry} object.
      * @param data : The raw data buffer.
@@ -136,8 +133,7 @@ public final record DataEntry(
         return(new DataEntry(type, stuff));
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
      * Converts {@code this} to a byte.
      * <p>The method also checks if the input conforms to the specified boundaries.</p>
@@ -276,8 +272,7 @@ public final record DataEntry(
         return((byte[])checker(data, nullable, Types.RAW));
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /** {@inheritDoc} */
     @Override
     public byte[] stream() {
@@ -306,7 +301,7 @@ public final record DataEntry(
         return(bytes);
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
     // Utility methods.
 
     // Converts the number (passed as Object) into an array of bytes.
@@ -360,5 +355,5 @@ public final record DataEntry(
         return(null);
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

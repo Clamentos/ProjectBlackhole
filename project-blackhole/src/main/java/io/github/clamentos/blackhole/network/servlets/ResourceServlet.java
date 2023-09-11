@@ -26,7 +26,7 @@ public class ResourceServlet implements Servlet {
     }
 
     @Override
-    public Response handle(Request request) {
+    public Response handle(Request request, int request_counter) {
 
         return(null);
     }

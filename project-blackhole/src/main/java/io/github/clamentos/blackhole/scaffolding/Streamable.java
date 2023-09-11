@@ -1,7 +1,6 @@
 package io.github.clamentos.blackhole.scaffolding;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <p><b>Interface.</b></p>
  * <p>Streamable object.</p>
@@ -11,10 +10,9 @@ package io.github.clamentos.blackhole.scaffolding;
 @FunctionalInterface
 public interface Streamable {
 
-    //____________________________________________________________________________________________________________________________________
-    
+    ///
     /** @return A never {@code null} array of bytes representing {@code this}. */
     byte[] stream();
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

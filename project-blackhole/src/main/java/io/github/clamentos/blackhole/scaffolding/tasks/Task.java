@@ -1,7 +1,6 @@
 package io.github.clamentos.blackhole.scaffolding.tasks;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <h3>Abstract ephimeral task</h3>
  * 
@@ -14,8 +13,7 @@ public abstract class Task implements Runnable {
 
     private final long ID;
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
      * <p><b>This method is thread safe.</p></b>
      * @param id : The task id.
@@ -26,13 +24,11 @@ public abstract class Task implements Runnable {
         ID = id;
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /** Method to perform the operations. */
     public abstract void work();
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
      * <p><b>This method is thread safe. However, the called abstract methods might not.</p></b>
      * <p>Main execution method.</p>
@@ -49,5 +45,5 @@ public abstract class Task implements Runnable {
         TaskManager.getInstance().removeTask(ID, this);
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

@@ -1,14 +1,8 @@
-package io.github.clamentos.blackhole.network;
+package io.github.clamentos.blackhole.network.servlets;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
-import io.github.clamentos.blackhole.network.servlets.ResourceServlet;
-import io.github.clamentos.blackhole.network.servlets.SystemServlet;
-import io.github.clamentos.blackhole.network.servlets.TagServlet;
-import io.github.clamentos.blackhole.network.servlets.TypeServlet;
-import io.github.clamentos.blackhole.network.servlets.UserServlet;
 import io.github.clamentos.blackhole.network.transfer.Request;
 import io.github.clamentos.blackhole.network.transfer.Response;
 import io.github.clamentos.blackhole.network.transfer.components.Resources;
@@ -16,8 +10,7 @@ import io.github.clamentos.blackhole.scaffolding.Servlet;
 
 import java.util.HashMap;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <h3>Request dispatcher</h3>
  * This class simply dispatches the incoming raw request to the appropriate mapped servlet.
@@ -30,8 +23,7 @@ public class Dispatcher {
     private Logger logger;
     private HashMap<Resources, Servlet> servlet_mappings;
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     // Instantiate all the servlets and put them into a map depending on which resource they handle.
     private Dispatcher() {
 
@@ -51,29 +43,27 @@ public class Dispatcher {
         servlet_mappings.put(user_servlet.manages(), user_servlet);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /** @return The {@link Dispatcher} instance created during class loading. */
     public static Dispatcher getInstance() {
 
         return(INSTANCE);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
      * Deserializes and dispatches the request to the target servlet.
      * @param raw_request : The raw input request bytes.
      * @return The raw response bytes.
     */
-    public byte[] dispatch(byte[] raw_request) {
+    public byte[] dispatch(byte[] raw_request, int request_counter) {
 
         try {
 
             Request request = Request.deserialize(raw_request);
             Servlet servlet = servlet_mappings.get(request.resource());
 
-            return(servlet.handle(request).stream());
+            return(servlet.handle(request, request_counter).stream());
         }
 
         catch(IllegalArgumentException | IndexOutOfBoundsException exc) {
@@ -85,9 +75,9 @@ public class Dispatcher {
                 LogLevel.ERROR
             );
 
-            return(new Response(exc.getCause(), exc.getMessage()).stream());
+            return(new Response(exc.getCause(), request_counter, exc.getMessage()).stream());
         }
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

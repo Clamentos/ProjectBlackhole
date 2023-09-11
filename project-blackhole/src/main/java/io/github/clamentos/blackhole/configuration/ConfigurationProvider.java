@@ -1,11 +1,11 @@
 package io.github.clamentos.blackhole.configuration;
 
-//________________________________________________________________________________________________________________________________________
+///
 // Some imports are only used for JavaDocs.
 
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.LogTask;
-import io.github.clamentos.blackhole.logging.Logger;
+import io.github.clamentos.blackhole.network.tasks.ServerTask;
 
 import java.io.IOException;
 
@@ -20,94 +20,93 @@ import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.LinkedBlockingQueue;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <h3>Repository of all configuration constants</h3>
  * 
  * <p>This class will use the {@code Application.properties} file located in
  * {@code [classpath]/resources}.</p>
  * 
- * <p>The constructor will read the configuration file and if such file doesn't exist,
- * then the defaults for all properties will be used. If a particular property
- * isn't defined in the file, then the default (for that particular constant) will be used.</p>
+ * The constructor will read the configuration file and if such file doesn't exist, then the defaults for
+ * all properties will be used. If a particular property isn't defined in the file, then its default will be
+ * used.
  * 
  * The configuration properties are:
  * <ul>
- *     <li>{@code MAX_LOG_QUEUE_POLLS}: Maximum number of polls on {@link LinkedBlockingQueue}
- *         before blocking. Used by {@link LogTask} and {@link Logger}.</li>
- *     <li>{@code LOG_QUEUE_SAMPLE_TIME}: Specifies the maximum queue wait time (in milliseconds)
- *         of each poll sample on {@link LinkedBlockingQueue}. Used by {@link Logger}.</li>
- *     <li>{@code LOG_QUEUE_INSERT_TIMEOUT}: Specifies the timeout (in milliseconds) when attempting
- *         to insert a log in the log queue.</li>
- *     <li>{@code MAX_LOG_QUEUE_SIZE}: Specifies the maximum number of logs that the queue
- *         can hold.</li>
- *     <li>{@code NUM_LOG_TASKS}: Specifies the number of concurrent {@link LogTask}
- *         present in the system.</li>
- *     <li>{@code MAX_LOG_FILE_SIZE}: Maximum log file size in bytes. Above this,
- *         a new log file will be created.</li>
- *     <li>{@code MIN_LOG_LEVEL}: Minimum log level (index) below which logs are discarded.</li>
- *     <li>{@code DEBUG_LEVEL_TO_FILE}: Specifies if logs with level of {@link LogLevel#DEBUG}
- *         should be printed to file or console.</li>
- *     <li>{@code INFO_LEVEL_TO_FILE}: Specifies if logs with level of {@link LogLevel#INFO}
- *         should be printed to file or console.</li>
- *     <li>{@code SUCCESS_LEVEL_TO_FILE}: Specifies if logs with level of {@link LogLevel#SUCCESS}
- *         should be printed to file or console.</li>
- *     <li>{@code NOTE_LEVEL_TO_FILE}: Specifies if logs with level of {@link LogLevel#NOTE}
- *         should be printed to file or console.</li>
- *     <li>{@code WARNING_LEVEL_TO_FILE}: Specifies if logs with level of {@link LogLevel#WARNING}
- *         should be printed to file or console.</li>
- *     <li>{@code ERROR_LEVEL_TO_FILE}: Specifies if logs with level of {@link LogLevel#ERROR}
- *         should be printed to file or console.</li>
+ *     <li>{@code MAX_LOG_QUEUE_POLLS}: Specifies the maximum number of polls on the log queue.</li>
+ *     <li>{@code LOG_QUEUE_SAMPLE_TIME}: Specifies the maximum log queue wait time (in milliseconds) of each
+ *         poll sample.</li>
+ *     <li>{@code LOG_QUEUE_INSERT_TIMEOUT}: Specifies the log queue timeout (in milliseconds) when 
+ *         attempting to insert a log.</li>
+ *     <li>{@code MAX_LOG_QUEUE_SIZE}: Specifies the maximum number of logs that the queue can hold.</li>
+ *     <li>{@code NUM_LOG_TASKS}: Specifies the number of concurrent log tasks present in the system.</li>
+ *     <li>{@code MAX_LOG_FILE_SIZE}: Specifies the maximum log file size in bytes. Above this, a new log 
+ *         file will be created.</li>
+ *     <li>{@code MIN_LOG_LEVEL}: Specifies the minimum log level (index) below which logs are discarded.
+ *         </li>
+ *     <li>{@code DEBUG_LEVEL_TO_FILE}: Specifies if logs with level of {@link LogLevel#DEBUG} should be
+ *         printed to file or console.</li>
+ *     <li>{@code INFO_LEVEL_TO_FILE}: Specifies if logs with level of {@link LogLevel#INFO} should be
+ *         printed to file or console.</li>
+ *     <li>{@code SUCCESS_LEVEL_TO_FILE}: Specifies if logs with level of {@link LogLevel#SUCCESS} should be
+ *         printed to file or console.</li>
+ *     <li>{@code NOTE_LEVEL_TO_FILE}: Specifies if logs with level of {@link LogLevel#NOTE} should be
+ *         printed to file or console.</li>
+ *     <li>{@code WARNING_LEVEL_TO_FILE}: Specifies if logs with level of {@link LogLevel#WARNING} should be
+ *         printed to file or console.</li>
+ *     <li>{@code ERROR_LEVEL_TO_FILE}: Specifies if logs with level of {@link LogLevel#ERROR} should be
+ *         printed to file or console.</li>
  *     <li>{@code SERVER_PORT}: Specifies the TCP port of the server.</li>
- *     <li>{@code MAX_SERVER_START_ATTEMPTS}: Specifies how many attempts to do before giving up
- *         when attempting to start the server.</li>
+ *     <li>{@code MAX_SERVER_START_ATTEMPTS}: Specifies how many attempts to do before giving up when
+ *         attempting to start the server.</li>
  *     <li>{@code SERVER_SOCKET_SAMPLE_TIME}: Specifies the server socket timeout for one sample.</li>
- *     <li>{@code MAX_SERVER_SOCKET_SAMPLES}: Specifies the maximum number of server socket timeout
- *         samples before actually timing out.</li>
+ *     <li>{@code MAX_SERVER_SOCKET_SAMPLES}: Specifies the maximum number of server socket timeout samples
+ *         before actually timing out.</li>
  *     <li>{@code STREAM_BUFFER_SIZE}: Specifies the size of the stream buffers in bytes.</li>
  *     <li>{@code CLIENT_SOCKET_SAMPLE_TIME}: Specifies the client socket timeout for one sample.</li>
- *     <li>{@code MAX_CLIENT_SOCKET_SAMPLES}: Specifies the maximum number of client socket timeout
- *         samples before actually timing out.</li>
- *     <li>{@code MAX_REQUESTS_PER_CLIENT}: Specifies the maximum number of requests that a socket
- *         can have throughout its lifetime. If the limit is exceeded, it must be closed.</li>
- *     <li>{@code MAX_CLIENTS_PER_IP}: Specifies the maximum number of sockets that a particular ip
- *         address can have. Beyond this, sockets must be refused for that address.</li>
- *     <li>{@code MIN_CLIENT_SPEED}: Specifies the maximum wait time (in milliseconds) that the
- *         server is allowed to wait on each read, above which the socket will be closed.</li>
+ *     <li>{@code MAX_CLIENT_SOCKET_SAMPLES}: Specifies the maximum number of client socket timeout samples
+ *         before actually timing out.</li>
+ *     <li>{@code MAX_REQUESTS_PER_CLIENT}: Specifies the maximum number of requests that a socket can have
+ *         throughout its lifetime. If the limit is exceeded, it must be closed.</li>
+ *     <li>{@code MAX_CLIENTS_PER_IP}: Specifies the maximum number of sockets that a particular ip address
+ *         can have. Beyond this, sockets must be refused for that address.</li>
+ *     <li>{@code MIN_CLIENT_SPEED}: Specifies the maximum wait time (in milliseconds) that the server is
+ *         allowed to wait on each read, above which the socket will be closed.</li>
  *     <li>{@code MAX_USER_SESSIONS}: Specifies the maximum number of sessions that a user can have.</li>
  *     <li>{@code SESSION_DURATION}: Specifies the duration (in milliseconds) of user sessions.</li>
- *     <li>{@code GEN_BD_SCHEMA}: Specifies if it's necessary to export the schema
- *         to the database or not.</li>
- *     <li>{@code INIT_DB_DATA}: Specifies if it's necessary to export the data
- *         to the database or not.</li>
+ *     <li>{@code GEN_BD_SCHEMA}: Specifies if it's necessary to export the schema to the database or not
+ *         during application startup.</li>
+ *     <li>{@code INIT_DB_DATA}: Specifies if it's necessary to export the data to the database or not
+ *         during application startup.</li>
  *     <li>{@code DB_ADDRESS}: Specifies the address of the database.</li>
  *     <li>{@code DB_USERNAME}: Specifies the database username.</li>
  *     <li>{@code DB_PASSWORD}: Specifies the database password.</li>
- *     <li>{@code NUM_DB_CONNECTIONS}: Specifies the number of connections in the database
- *         connection pool.</li>
- *     <li>{@code DB_CONNECTION_TIMEOUT}: Specifies the timeout (in milliseconds) of
- *         a single database connection.</li>
+ *     <li>{@code NUM_DB_CONNECTIONS}: Specifies the number of connections in the database connection pool.
+ *         </li>
+ *     <li>{@code DB_CONNECTION_TIMEOUT}: Specifies the timeout (in milliseconds) of a single database
+ *         connection.</li>
  *     <li>{@code POOL_TASK_SCHEDULE_TIME}: Specifies the DB connection pool refreshing task
  *         scheduling interval (in milliseconds).</li>
  * </ul>
  * 
+ * @see {@link LogTask}
+ * @see {@link LogLevel}
+ * @see {@link ServerTask}
  * @apiNote This class is an <b>eager-loaded singleton</b>.
 */
 public final class ConfigurationProvider {
 
+    ///
     private static final ConfigurationProvider INSTANCE = new ConfigurationProvider();
     private Map<String, String> problems;
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     public final int MAX_LOG_QUEUE_POLLS;
     public final int LOG_QUEUE_SAMPLE_TIME;
     public final int LOG_QUEUE_INSERT_TIMEOUT;
     public final int MAX_LOG_QUEUE_SIZE;
-    
+
     public final int NUM_LOG_TASKS;
 
     public final int MAX_LOG_FILE_SIZE;
@@ -121,8 +120,7 @@ public final class ConfigurationProvider {
     public final boolean WARNING_LEVEL_TO_FILE;
     public final boolean ERROR_LEVEL_TO_FILE;
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     public final int SERVER_PORT;
     public final int MAX_SERVER_START_ATTEMPTS;
 
@@ -137,13 +135,11 @@ public final class ConfigurationProvider {
     public final int MAX_CLIENTS_PER_IP;
     public final int MIN_CLIENT_SPEED;
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     public final int MAX_USER_SESSIONS;
     public final long SESSION_DURATION;
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     public final boolean GEN_BD_SCHEMA;
     public final boolean INIT_DB_DATA;
 
@@ -156,8 +152,7 @@ public final class ConfigurationProvider {
 
     public final int POOL_TASK_SCHEDULE_TIME;
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /*
      * This method reads the Application.properties file and initializes all the constants as well as
      * the "problems" map. The map can be used by other objects to see if the value of a specific
@@ -221,16 +216,14 @@ public final class ConfigurationProvider {
         printFields();
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /** @return The {@link ConfigurationProvider} instance created during class loading. */
     public static ConfigurationProvider getInstance() {
 
         return(INSTANCE);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
      * Gets the problems map, which associates configuration names with the error generated
      * during property initialization. If a configuration constant didn't generate an error,
@@ -242,7 +235,7 @@ public final class ConfigurationProvider {
         return(problems);
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
     // These methods check if the value of a particular property is "ok", else they use the provided default.
 
     private int checkInt(Properties p, String name, String def, int low, int high) {
@@ -444,5 +437,5 @@ public final class ConfigurationProvider {
         System.out.println(level + "[" + formatter.format(System.currentTimeMillis()) + "]" + message);
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }

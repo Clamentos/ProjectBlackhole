@@ -1,10 +1,9 @@
 package io.github.clamentos.blackhole.persistence.models;
 
+///
 import io.github.clamentos.blackhole.network.transfer.components.DataEntry;
 import io.github.clamentos.blackhole.network.transfer.components.Types;
-
-//________________________________________________________________________________________________________________________________________
-
+import io.github.clamentos.blackhole.persistence.PersistenceException;
 import io.github.clamentos.blackhole.scaffolding.Reducible;
 
 import java.sql.ResultSet;
@@ -12,8 +11,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <p><b>Immutable data.</b></p>
  * <p>Tag resource entity.</p>
@@ -26,8 +24,7 @@ public final record TagEntity(
     String name,
     Integer creation_date
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
 ) implements Reducible {
 
     @Override
@@ -42,16 +39,25 @@ public final record TagEntity(
         return(entries);
     }
 
-    public static List<TagEntity> newInstances(ResultSet result_set) throws SQLException {
+    ///
+    public static List<TagEntity> newInstances(ResultSet result_set) throws PersistenceException {
 
         List<TagEntity> tags = new ArrayList<>();
 
-        while(result_set.next() == true) {
+        try {
 
-            tags.add(new TagEntity(result_set.getInt(0), result_set.getString(1), result_set.getInt(2)));
+            while(result_set.next() == true) {
+
+                tags.add(new TagEntity(result_set.getInt(0), result_set.getString(1), result_set.getInt(2)));
+            }
+
+            return(tags);
         }
 
-        return(tags);
+        catch(SQLException exc) {
+
+            throw new PersistenceException(exc);
+        }
     }
 
     public static String getColumnNames(byte fields) {
@@ -66,4 +72,6 @@ public final record TagEntity(
 
         return(result.substring(1, result.length() - 1));
     }
+
+    ///
 }

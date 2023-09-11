@@ -1,19 +1,15 @@
 package io.github.clamentos.blackhole.persistence.pool;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 import io.github.clamentos.blackhole.configuration.ConfigurationProvider;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
-import io.github.clamentos.blackhole.scaffolding.tasks.TaskManager;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 
 import java.util.concurrent.LinkedBlockingQueue;
 
-//________________________________________________________________________________________________________________________________________
-
+///
 /**
  * <h3>Database connection pool</h3>
  * This class implements connection pooling for the persistence layer.
@@ -29,11 +25,10 @@ public class ConnectionPool {
     private final String DB_PASSWORD;
 
     private Logger logger;
-    private LinkedBlockingQueue<Connection> pool;
+    private LinkedBlockingQueue<PooledConnection> pool;   // TODO: multiple queues to spread lock contention
 
-    //____________________________________________________________________________________________________________________________________
-
-    // Populate the queue with connections.
+    ///
+    // Populate the queue with connections. Each connection has ALL the statements ready to go.
     private ConnectionPool() {
 
         logger = Logger.getInstance();
@@ -52,7 +47,6 @@ public class ConnectionPool {
                 pool.add(ConnectionUtility.create(DB_ADDRESS, DB_USERNAME, DB_PASSWORD));
             }
 
-            TaskManager.getInstance().launchNewConnectionCheckingTask(pool);
             logger.log("ConnectionPool.new > Instantiation successfull", LogLevel.SUCCESS);
         }
 
@@ -69,22 +63,20 @@ public class ConnectionPool {
         }
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /** @return The {@link ConnectionPool} instance created during class loading. */
     public static ConnectionPool getInstance() {
 
         return(INSTANCE);
     }
 
-    //____________________________________________________________________________________________________________________________________
-
+    ///
     /**
-     * Aquires a {@link Connection} from the connection pool.
+     * Aquires a {@link PooledConnection} from the connection pool.
      * This method does NOT guarantee that the aquired connections are valid.
      * @return One connection from the pool.
     */
-    public Connection aquireConnection() {
+    public PooledConnection aquireConnection() {
 
         while(true) {
 
@@ -101,14 +93,14 @@ public class ConnectionPool {
     }
 
     /**
-     * Releases the specified {@link Connection} back into the pool.
+     * Releases the specified {@link PooledConnection} back into the pool.
      * @param connection : The connection.
      * @throws IllegalStateException If the pool capacity is somehow exceeded.
     */
-    public void releaseConnection(Connection connection) throws IllegalStateException {
+    public void releaseConnection(PooledConnection connection) throws IllegalStateException {
 
         pool.add(connection);
     }
 
-    //____________________________________________________________________________________________________________________________________
+    ///
 }
