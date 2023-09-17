@@ -14,12 +14,24 @@ public class PersistenceException extends Exception {
         failure_cause = decodeCause(exc);
     }
 
+    public PersistenceException(Failures failure) {
+
+        super(decodeMessage(failure));
+        failure_cause = failure;
+    }
+
     public Failures getFailureCause() {
 
         return(failure_cause);
     }
 
     private static String decodeMessage(SQLException exc) {
+
+        //...
+        return(null);
+    }
+
+    private static String decodeMessage(Failures failure) {
 
         //...
         return(null);

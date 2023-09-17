@@ -4,8 +4,7 @@ package io.github.clamentos.blackhole.persistence.pool;
 import io.github.clamentos.blackhole.configuration.ConfigurationProvider;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
-
-import java.sql.SQLException;
+import io.github.clamentos.blackhole.persistence.PersistenceException;
 
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -17,6 +16,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 */
 public class ConnectionPool {
     
+    ///
     private static final ConnectionPool INSTANCE = new ConnectionPool();
     
     private final int NUM_DB_CONNECTIONS;
@@ -50,11 +50,11 @@ public class ConnectionPool {
             logger.log("ConnectionPool.new > Instantiation successfull", LogLevel.SUCCESS);
         }
 
-        catch(SQLException exc) {
+        catch(PersistenceException exc) {
 
             logger.log(
-                
-                "ConnectionPool.new > Could not instantiate, SQLException: " + exc.getMessage() +
+
+                "ConnectionPool.new > Could not instantiate, PersistenceException: " + exc.getMessage() +
                 " Aborting",
                 LogLevel.ERROR
             );
@@ -82,7 +82,7 @@ public class ConnectionPool {
 
             try {
 
-                return(pool.take());
+                return(pool.take());    // TODO: make it adaptive just like the logger
             }
 
             catch(InterruptedException exc) {
@@ -100,6 +100,11 @@ public class ConnectionPool {
     public void releaseConnection(PooledConnection connection) throws IllegalStateException {
 
         pool.add(connection);
+    }
+
+    public PooledConnection refreshConnection(PooledConnection db_connection) throws PersistenceException {
+
+        return(ConnectionUtility.refresh(db_connection, DB_ADDRESS, DB_USERNAME, DB_PASSWORD));
     }
 
     ///

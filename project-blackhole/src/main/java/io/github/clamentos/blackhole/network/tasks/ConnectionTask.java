@@ -144,9 +144,9 @@ public final class ConnectionTask extends ContinuousTask {
 
                 if(data_length > 0) {
 
-                    data = in.readNBytes(data_length);
+                    data = in.readNBytes(data_length - 4);
 
-                    if(data.length != data_length) {
+                    if(data.length != data_length - 4) {
 
                         /* The readNBytes() wasn't able to fetch the specified number of bytes,
                         send a "bad request" response. */
@@ -159,6 +159,7 @@ public final class ConnectionTask extends ContinuousTask {
                             " doesn't match with the specified message length: " + data_length
 
                         ).stream());
+                        out.flush();
                     }
 
                     else {
@@ -314,6 +315,7 @@ public final class ConnectionTask extends ContinuousTask {
                 "End of stream detected, closing the connection"
             
             ).stream());
+            out.flush();
 
             throw new NoSuchElementException();
         }

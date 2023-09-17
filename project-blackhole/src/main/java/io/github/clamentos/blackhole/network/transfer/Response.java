@@ -82,6 +82,11 @@ public final record Response(
             accumulator += raw_data[i].length;
         }
 
+        for(int i = 0; i < bytes.length; i++) {
+
+            System.out.println("DBG: " + bytes[i]);
+        }
+
         return(bytes);
     }
 

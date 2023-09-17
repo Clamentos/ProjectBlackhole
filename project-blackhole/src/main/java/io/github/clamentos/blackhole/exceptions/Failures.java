@@ -60,6 +60,9 @@ public enum Failures {
     TOO_MANY_SESSIONS,
 
     ///
+    DB_RETRIES_EXHAUSTED,
+
+    ///
     ERROR;
 
     ///

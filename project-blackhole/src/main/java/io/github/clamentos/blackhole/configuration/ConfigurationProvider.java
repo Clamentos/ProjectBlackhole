@@ -75,7 +75,7 @@ import java.util.Properties;
  *         allowed to wait on each read, above which the socket will be closed.</li>
  *     <li>{@code MAX_USER_SESSIONS}: Specifies the maximum number of sessions that a user can have.</li>
  *     <li>{@code SESSION_DURATION}: Specifies the duration (in milliseconds) of user sessions.</li>
- *     <li>{@code GEN_BD_SCHEMA}: Specifies if it's necessary to export the schema to the database or not
+ *     <li>{@code GEN_DB_SCHEMA}: Specifies if it's necessary to export the schema to the database or not
  *         during application startup.</li>
  *     <li>{@code INIT_DB_DATA}: Specifies if it's necessary to export the data to the database or not
  *         during application startup.</li>
@@ -86,8 +86,12 @@ import java.util.Properties;
  *         </li>
  *     <li>{@code DB_CONNECTION_TIMEOUT}: Specifies the timeout (in milliseconds) of a single database
  *         connection.</li>
- *     <li>{@code POOL_TASK_SCHEDULE_TIME}: Specifies the DB connection pool refreshing task
- *         scheduling interval (in milliseconds).</li>
+ *     <li>{@code MAX_DB_ATTEMPTS}: Specifies the maximum number of database connection attempts,
+ *         after which, the query will fail.</li>
+ *     <li>{@code CACHE_CAPACITY}: Specifies the maximum number of objects that the cache can hold.
+ *         Powers of two are preferred but not required.</li>
+ *     <li>{@code CACHE_ENTRY_DURATION}: Specifies the duration (in milliseconds) of all cache entries.
+ *         After this, the entry will be considered as expired and, thus, will cause a miss.</li>
  * </ul>
  * 
  * @see {@link LogTask}
@@ -140,7 +144,7 @@ public final class ConfigurationProvider {
     public final long SESSION_DURATION;
 
     ///
-    public final boolean GEN_BD_SCHEMA;
+    public final boolean GEN_DB_SCHEMA;
     public final boolean INIT_DB_DATA;
 
     public final String DB_ADDRESS;
@@ -150,7 +154,11 @@ public final class ConfigurationProvider {
     public final int NUM_DB_CONNECTIONS;
     public final int DB_CONNECTION_TIMEOUT;
 
-    public final int POOL_TASK_SCHEDULE_TIME;
+    public final int MAX_DB_ATTEMPTS;
+
+    ///
+    public final int CACHE_CAPACITY;
+    public final long CACHE_ENTRY_DURATION;
 
     ///
     /*
@@ -204,14 +212,17 @@ public final class ConfigurationProvider {
         MAX_USER_SESSIONS = checkInt(props, "MAX_USER_SESSIONS", "1", 1, int_max);
         SESSION_DURATION = checkLong(props, "SESSION_DURATION", "3600000", 60000, long_max);
 
-        GEN_BD_SCHEMA = checkBoolean(props, "GEN_BD_SCHEMA", "false");
+        GEN_DB_SCHEMA = checkBoolean(props, "GEN_DB_SCHEMA", "false");
         INIT_DB_DATA = checkBoolean(props, "INIT_DB_DATA", "false");
         DB_ADDRESS = checkString(props, "DB_ADDRESS", "jdbc:postgresql://127.0.0.1:5432/mock");
         DB_USERNAME = checkString(props, "DB_USERNAME", "admin");
         DB_PASSWORD = checkString(props, "DB_PASSWORD", "admin");
         NUM_DB_CONNECTIONS = checkInt(props, "NUM_DB_CONNECTIONS", "5", 1, int_max);
         DB_CONNECTION_TIMEOUT = checkInt(props, "DB_CONNECTION_TIMEOUT", "10000", 1, int_max);
-        POOL_TASK_SCHEDULE_TIME = checkInt(props, "POOL_TASK_SCHEDULE_TIME", "200", 10, int_max);
+        MAX_DB_ATTEMPTS = checkInt(props, "MAX_DB_ATTEMPTS", "2", 1, int_max);
+
+        CACHE_CAPACITY = checkInt(props, "CACHE_CAPACITY", "10000", 0, int_max);
+        CACHE_ENTRY_DURATION = checkLong(props, "CACHE_ENTRY_DURATION", "5000", 100, long_max);
 
         printFields();
     }
@@ -325,7 +336,7 @@ public final class ConfigurationProvider {
         }
 
         problems.put(
-            
+
             name,
             "Property " + name + " must be either true or false. The default value of: " +
             def + " will be used"

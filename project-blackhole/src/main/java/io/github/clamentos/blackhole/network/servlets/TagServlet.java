@@ -10,8 +10,6 @@ import io.github.clamentos.blackhole.network.transfer.Response;
 import io.github.clamentos.blackhole.network.transfer.components.DataEntry;
 import io.github.clamentos.blackhole.network.transfer.components.Resources;
 import io.github.clamentos.blackhole.network.transfer.components.ResponseStatuses;
-import io.github.clamentos.blackhole.network.transfer.components.Types;
-import io.github.clamentos.blackhole.network.transfer.dtos.TagReadQuery;
 import io.github.clamentos.blackhole.persistence.PersistenceException;
 import io.github.clamentos.blackhole.persistence.models.TagEntity;
 import io.github.clamentos.blackhole.persistence.repositories.TagRepository;
@@ -57,7 +55,7 @@ public class TagServlet implements Servlet {
         switch(request.method()) {
 
             case CREATE: return(handleCreate(request, request_counter));
-            case READ: return(handleRead(request, request_counter));
+            case READ: return(null);
             case UPDATE: return(null);
             case DELETE: return(null);
 
@@ -74,32 +72,25 @@ public class TagServlet implements Servlet {
     ///
     private Response handleCreate(Request request, int request_counter) {
 
+        List<TagEntity> tags;
+
         try {
 
             session_service.checkPermissions(request.session_id(), 0x00000001);
+            tags = new ArrayList<>();
+            int now = (int)(System.currentTimeMillis() / 60_000);
 
             for(DataEntry entry : request.data()) {
 
-                List<QueryParameter> temp = new ArrayList<>();
-
-                // The regex matches any combination of: a-z, A-Z, 0-9, -, _
-                // and must be between 3 and 32 long.
-                temp.add(new QueryParameter(
-
+                tags.add(new TagEntity(
+                    
+                    null,
                     entry.entryAsString("^[a-zA-Z0-9_-]{3,31}$", false),
-                    SqlTypes.STRING
+                    now
                 ));
-
-                temp.add(new QueryParameter((int)System.currentTimeMillis(), SqlTypes.INT));
-                query_parameters.add(temp);
             }
 
-            repository.insert(
-
-                "INSERT INTO tags(name, creation_date) VALUES(?, ?)",
-                query_parameters
-            );
-
+            repository.insert(tags);
             return(new Response(ResponseStatuses.OK, request_counter, null));
         }
 
@@ -129,142 +120,16 @@ public class TagServlet implements Servlet {
                     return(new Response(exc1.getCause(), request_counter, exc1.getMessage()));
                 }
 
-                default -> {return(new Response(new FailuresWrapper(Failures.ERROR), request_counter, "Unexpected error"));}
-            }
-        }
-    }
-
-    private Response handleRead(Request request, int request_counter) {
-
-        List<QueryParameter> query_parameters;
-        TagReadQuery query_dto;
-        List<TagEntity> tags;
-        String query;
-        boolean flag;
-
-        try {
-
-            session_service.checkPermissions(request.session_id(), 0x00000002);
-            query_dto = TagReadQuery.newInstance(request);
-            query_parameters = new ArrayList<>();
-            flag = false;
-
-            switch(query_dto.mode()) {
-
-                case 0:
+                default -> {
                     
-                    query = "SELECT " + TagEntity.getColumnNames(query_dto.fields()) +
-                    " FROM tags WHERE id IN" + repository.getPlaceholders(query_dto.by_ids().size());
-
-                    for(Integer val : query_dto.by_ids()) {
-
-                        query_parameters.add(new QueryParameter(val, SqlTypes.INT));
-                    }
-                
-                break;
-
-                case 1:
-                    
-                    query = "SELECT " + TagEntity.getColumnNames(query_dto.fields()) +
-                    " FROM tags WHERE name IN" + repository.getPlaceholders(query_dto.by_names().size());
-
-                    for(String val : query_dto.by_names()) {
-
-                        query_parameters.add(new QueryParameter(val, SqlTypes.STRING));
-                    }
-                
-                break;
-
-                case 2:
-
-                    query = "SELECT " + TagEntity.getColumnNames(query_dto.fields()) + " FROM tags WHERE ";
-
-                    if(query_dto.by_name_like() != null && query_dto.by_name_like() != "") {
-
-                        query += "name LIKE ? ";
-                        query_parameters.add(new QueryParameter(
-                            
-                            "%" + query_dto.by_name_like() + "%",
-                            SqlTypes.STRING
-                        ));
-
-                        flag = true;
-                    }
-
-                    if(query_dto.creation_date_start() != null) {
-
-                        if(flag == true) query += "AND ";
-                        query = "creation_date BETWEEN ? AND ? ";
-                        query_parameters.add(new QueryParameter(
-                            
-                            query_dto.creation_date_start(),
-                            SqlTypes.INT
-                        ));
-
-                        query_parameters.add(new QueryParameter(
-                            
-                            query_dto.creation_date_end(),
-                            SqlTypes.INT
-                        ));
-                    }
-
-                    query += "AND id > ?";
-                    query_parameters.add(new QueryParameter(query_dto.start(), SqlTypes.INT));
-
-                    if(query_dto.limit() != null) {
-
-                        query += "AND LIMIT ?";
-                        query_parameters.add(new QueryParameter(query_dto.limit(), SqlTypes.INT));
-                    }
-
-                break;
-
-                case 3:
-                
-                    query = "SELECT " + TagEntity.getColumnNames(query_dto.fields()) +
-                    " FROM tags WHERE id > ? LIMIT ?";
-                
-                break;
-
-                case 4: query = "COUNT(id) FROM tags"; break;
-
-                default: throw new IllegalArgumentException("Unknown query mode: " + query_dto.mode());
-            }
-
-            tags = TagEntity.newInstances(repository.select(query, query_parameters));
-
-            return(new Response(
-
-                ResponseStatuses.OK,
-                request_counter,
-                () -> {
-
-                    List<DataEntry> entries = new ArrayList<>();
-
-                    entries.add(new DataEntry(Types.BEGIN, null));
-                    
-                    for(TagEntity tag : tags) {
-
-                        entries.addAll(tag.reduce());
-                    }
-
-                    entries.add(new DataEntry(Types.END, null));
-
-                    return(entries);                    
+                    return(new Response(
+                        
+                        new FailuresWrapper(Failures.ERROR),
+                        request_counter,
+                        "Unexpected error"
+                    ));
                 }
-            ));
-        }
-
-        catch(Exception exc) {
-
-            logger.log(
-                
-                "TagServlet.handleRead > Could not complete the request, " +
-                exc.getClass().getSimpleName() + ": " + exc.getMessage(),
-                LogLevel.ERROR
-            );
-
-            return(new Response(exc.getCause(), request_counter, exc.getMessage()));
+            }
         }
     }
 

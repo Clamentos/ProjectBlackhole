@@ -59,7 +59,7 @@ public class App {
 
         try { // Initialize db schema (if required).
 
-            if(configuration_provider.GEN_BD_SCHEMA == true) {
+            if(configuration_provider.GEN_DB_SCHEMA == true) {
 
                 log_printer.log("App.main > Applying database schema...", LogLevel.INFO);
                 directQuery("resources/Schema.sql");

@@ -56,7 +56,7 @@ public class Logger {
     }
 
     ///
-    /** @return The {@link ConfigurationProvider} instance created during class loading. */
+    /** @return The {@link Logger} instance created during class loading. */
     public static Logger getInstance() {
 
         return(INSTANCE);

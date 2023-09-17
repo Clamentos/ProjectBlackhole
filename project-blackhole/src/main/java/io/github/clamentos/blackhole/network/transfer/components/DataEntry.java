@@ -318,7 +318,7 @@ public final record DataEntry(
         return(result);
     }
 
-    // Converts raw bytes into a number.
+    // Converts raw bytes into a number. ex: [4][0][0][0] = 0x4000
     private static long bytesToNum(byte[] data, int offset, int len) {
 
         long result = 0;
