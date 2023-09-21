@@ -1,21 +1,19 @@
 package io.github.clamentos.blackhole.persistence.repositories;
 
-
+///
 import io.github.clamentos.blackhole.configuration.ConfigurationProvider;
-import io.github.clamentos.blackhole.exceptions.Failures;///
+import io.github.clamentos.blackhole.exceptions.Failures;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
+import io.github.clamentos.blackhole.network.transfer.dtos.TagFilter;
 import io.github.clamentos.blackhole.persistence.PersistenceException;
-import io.github.clamentos.blackhole.persistence.Queries;
 import io.github.clamentos.blackhole.persistence.models.TagEntity;
 import io.github.clamentos.blackhole.persistence.pool.ConnectionPool;
 import io.github.clamentos.blackhole.persistence.pool.PooledConnection;
 
-import java.sql.Array;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-import java.util.Arrays;
 import java.util.List;
 
 ///
@@ -49,14 +47,17 @@ public class TagRepository {
     ///
     public void insert(List<TagEntity> tags) throws PersistenceException {
 
-        PooledConnection db_connection = connection_pool.aquireConnection();
+        PooledConnection connection = connection_pool.aquireConnection();
 
         for(int i = 0; i < MAX_DB_ATTEMPTS; i++) {
 
             try {
 
                 int idx = 1;
-                PreparedStatement statement = db_connection.getAssociatedStatement(Queries.INSERT_TAGS);
+                PreparedStatement statement = connection.connection().prepareStatement(
+                    
+                    "INSERT INTO \"Tags\"(\"name\", \"creation_date\") VALUES(?, ?)"
+                );
 
                 for(TagEntity tag : tags) {
 
@@ -68,6 +69,8 @@ public class TagRepository {
                 }
 
                 statement.executeBatch();
+                statement.close();
+                connection_pool.releaseConnection(connection);
 
                 return;
             }
@@ -76,103 +79,122 @@ public class TagRepository {
 
                 if(exc.getSQLState().substring(0, 2).equals("08")) {
 
-                    db_connection = connection_pool.refreshConnection(db_connection);
+                    connection = connection_pool.refreshConnection(connection);
                 }
 
                 else {
 
+                    connection_pool.releaseConnection(connection);
                     throw new PersistenceException(exc);
                 }
             }
         }
 
-        connection_pool.releaseConnection(db_connection);
+        connection_pool.releaseConnection(connection);
         throw new PersistenceException(Failures.DB_RETRIES_EXHAUSTED);
     }
 
-    public List<TagEntity> selectByIds(int[] ids) throws PersistenceException {
+    public List<TagEntity> read(TagFilter query) throws PersistenceException {
 
-        List<TagEntity> tags;
-        PooledConnection db_connection = connection_pool.aquireConnection();
+        return(null);
+    }
+    
+    public void update(List<TagEntity> tags) throws PersistenceException {
+
+        PooledConnection connection = connection_pool.aquireConnection();
 
         for(int i = 0; i < MAX_DB_ATTEMPTS; i++) {
 
             try {
 
-                PreparedStatement statement = db_connection.getAssociatedStatement(Queries.SELECT_TAGS_BY_IDS);
-
-                Array id_params = db_connection.getDbConnection().createArrayOf(
-
-                    "INTEGER", 
-                    Arrays.stream(ids).boxed().toArray(Integer[]::new)
+                int idx = 1;
+                PreparedStatement statement = connection.connection().prepareStatement(
+                    
+                    "UPDATE \"Tags\" SET \"name\" = ? WHERE \"id\" = ?"
                 );
 
-                statement.setArray(1, id_params);
-                tags = TagEntity.newInstances(statement.executeQuery());
-                connection_pool.releaseConnection(db_connection);
+                for(TagEntity tag : tags) {
 
-                return(tags);
+                    statement.setString(idx, tag.name());
+                    statement.setInt(idx + 1, tag.id());
+                    statement.addBatch();
+
+                    idx += 2;
+                }
+
+                statement.executeBatch();
+                statement.close();
+                connection_pool.releaseConnection(connection);
+
+                return;
             }
 
             catch(SQLException exc) {
 
                 if(exc.getSQLState().substring(0, 2).equals("08")) {
 
-                    db_connection = connection_pool.refreshConnection(db_connection);
+                    connection = connection_pool.refreshConnection(connection);
                 }
 
                 else {
 
+                    connection_pool.releaseConnection(connection);
                     throw new PersistenceException(exc);
                 }
             }
         }
 
-        connection_pool.releaseConnection(db_connection);
+        connection_pool.releaseConnection(connection);
         throw new PersistenceException(Failures.DB_RETRIES_EXHAUSTED);
     }
 
-    public List<TagEntity> selectByDate(int start, int end) throws PersistenceException {
+    public void delete(List<Integer> ids) throws PersistenceException {
 
-        List<TagEntity> tags;
-        PooledConnection db_connection = connection_pool.aquireConnection();
+        PooledConnection connection = connection_pool.aquireConnection();
 
         for(int i = 0; i < MAX_DB_ATTEMPTS; i++) {
 
             try {
 
-                PreparedStatement statement = db_connection.getAssociatedStatement(Queries.SELECT_TAGS_BY_DATE);
+                int idx = 1;
+                PreparedStatement statement = connection.connection().prepareStatement(
+                    
+                    "DELETE FROM \"Tags\" WHERE \"id\" = ?"
+                );
 
-                statement.setInt(1, start);
-                statement.setInt(2, end);
-                tags = TagEntity.newInstances(statement.executeQuery());
-                connection_pool.releaseConnection(db_connection);
+                for(Integer id : ids) {
 
-                return(tags);
+                    statement.setInt(idx, id);
+                    statement.addBatch();
+
+                    idx++;
+                }
+
+                statement.executeBatch();
+                statement.close();
+                connection_pool.releaseConnection(connection);
+
+                return;
             }
 
             catch(SQLException exc) {
 
                 if(exc.getSQLState().substring(0, 2).equals("08")) {
 
-                    db_connection = connection_pool.refreshConnection(db_connection);
+                    connection = connection_pool.refreshConnection(connection);
                 }
 
                 else {
 
+                    connection_pool.releaseConnection(connection);
                     throw new PersistenceException(exc);
                 }
             }
         }
 
-        connection_pool.releaseConnection(db_connection);
+        connection_pool.releaseConnection(connection);
         throw new PersistenceException(Failures.DB_RETRIES_EXHAUSTED);
     }
-
-    // select by name
-    // select by name and date
-    // update
-    // delete
 
     ///
 }

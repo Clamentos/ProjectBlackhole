@@ -3,7 +3,7 @@ package io.github.clamentos.blackhole.persistence.models;
 ///
 import io.github.clamentos.blackhole.network.transfer.components.DataEntry;
 import io.github.clamentos.blackhole.network.transfer.components.Types;
-import io.github.clamentos.blackhole.scaffolding.Reducible;
+import io.github.clamentos.blackhole.scaffolding.Projectable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,21 +17,28 @@ import java.util.List;
 */
 public record TypeEntity(
 
-    Short id,
+    ///
+    short id,
     String name,
-    Boolean is_complex
+    boolean is_complex
 
     ///
-) implements Reducible {
+) implements Projectable {
 
     @Override
     public List<DataEntry> reduce() {
 
+        return(project(0b0111));
+    }
+
+    @Override
+    public List<DataEntry> project(long fields) {
+
         List<DataEntry> entries = new ArrayList<>();
 
-        if(id != null) entries.add(new DataEntry(Types.SHORT, id));
-        if(name != null) entries.add(new DataEntry(Types.STRING, name));
-        if(is_complex != null) entries.add(new DataEntry(Types.BYTE, is_complex == true ? (byte)1 : (byte)0));
+        entries.add((fields & 0b0001) > 0 ? new DataEntry(Types.INT, id) : null);
+        entries.add((fields & 0b0010) > 0 ? new DataEntry(Types.STRING, name) : null);
+        entries.add((fields & 0b0100) > 0 ? new DataEntry(Types.BYTE, is_complex == true ? (byte)1 : (byte)0) : null);
 
         return(entries);
     }

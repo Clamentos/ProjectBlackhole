@@ -16,6 +16,9 @@ import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
 
 ///
+
+// TODO: must get the instance of the connection pool, so that when the app quits, the connections can be released
+
 /**
  * <h3>Global task manager</h3>
  * Utility class to launch and manage tasks with virtual threads. All tasks must be launched via this class.

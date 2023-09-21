@@ -6,6 +6,10 @@ import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.Logger;
 import io.github.clamentos.blackhole.persistence.PersistenceException;
 
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+import java.util.Properties;
 import java.util.concurrent.LinkedBlockingQueue;
 
 ///
@@ -21,10 +25,9 @@ public class ConnectionPool {
     
     private final int NUM_DB_CONNECTIONS;
     private final String DB_ADDRESS;
-    private final String DB_USERNAME;
-    private final String DB_PASSWORD;
 
     private Logger logger;
+    private Properties driver_properties;
     private LinkedBlockingQueue<PooledConnection> pool;   // TODO: multiple queues to spread lock contention
 
     ///
@@ -32,11 +35,14 @@ public class ConnectionPool {
     private ConnectionPool() {
 
         logger = Logger.getInstance();
+        driver_properties = new Properties();
 
         NUM_DB_CONNECTIONS = ConfigurationProvider.getInstance().NUM_DB_CONNECTIONS;
         DB_ADDRESS = ConfigurationProvider.getInstance().DB_ADDRESS;
-        DB_USERNAME = ConfigurationProvider.getInstance().DB_USERNAME;
-        DB_PASSWORD = ConfigurationProvider.getInstance().DB_PASSWORD;
+
+        driver_properties.setProperty("user", ConfigurationProvider.getInstance().DB_USERNAME);
+        driver_properties.setProperty("password", ConfigurationProvider.getInstance().DB_PASSWORD);
+        //...
 
         pool = new LinkedBlockingQueue<>(NUM_DB_CONNECTIONS);
 
@@ -44,13 +50,13 @@ public class ConnectionPool {
 
             for(int i = 0; i < NUM_DB_CONNECTIONS; i++) {
 
-                pool.add(ConnectionUtility.create(DB_ADDRESS, DB_USERNAME, DB_PASSWORD));
+                pool.add(new PooledConnection(DriverManager.getConnection(DB_ADDRESS, driver_properties)));
             }
 
             logger.log("ConnectionPool.new > Instantiation successfull", LogLevel.SUCCESS);
         }
 
-        catch(PersistenceException exc) {
+        catch(SQLException exc) {
 
             logger.log(
 
@@ -95,16 +101,35 @@ public class ConnectionPool {
     /**
      * Releases the specified {@link PooledConnection} back into the pool.
      * @param connection : The connection.
-     * @throws IllegalStateException If the pool capacity is somehow exceeded.
+     * @throws IllegalStateException If the pool capacity is exceeded.
     */
     public void releaseConnection(PooledConnection connection) throws IllegalStateException {
 
         pool.add(connection);
     }
 
-    public PooledConnection refreshConnection(PooledConnection db_connection) throws PersistenceException {
+    public PooledConnection refreshConnection(PooledConnection connection) throws PersistenceException {
 
-        return(ConnectionUtility.refresh(db_connection, DB_ADDRESS, DB_USERNAME, DB_PASSWORD));
+        try {
+
+            if(connection.isInvalid(5)) {
+
+                connection.connection().close();
+                return(new PooledConnection(DriverManager.getConnection(DB_ADDRESS, driver_properties)));
+            }
+
+            return(connection);
+        }
+
+        catch(SQLException exc) {
+
+            throw new PersistenceException(exc);
+        }
+    }
+
+    public void closePool() {
+
+        // TODO
     }
 
     ///

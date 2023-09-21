@@ -16,21 +16,21 @@ public class ArrayUtils {
         }
     }
     
-    /** true if null, false if empty, exception otherwise */
-    public static boolean checkIfNullOrEmpty(List<DataEntry> data_entries, int start) throws IllegalStateException {
+    /** 0 if null, 1 if empty, .1 otherwise */
+    public static int checkIfNullOrEmpty(List<DataEntry> data_entries, int start) {
 
         if(data_entries.get(start).data_type().equals(Types.NULL)) {
 
-            return(true);
+            return(0);
         }
 
         if(data_entries.get(start).data_type().equals(Types.BEGIN) &&
            data_entries.get(start + 1).data_type().equals(Types.END)) {
 
-            return(false);
+            return(1);
         }
 
-        throw new IllegalStateException();
+        return(-1);
     }
 
     @SuppressWarnings("unchecked")

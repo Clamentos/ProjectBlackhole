@@ -4,7 +4,7 @@ package io.github.clamentos.blackhole.network.transfer.components;
 // Some imports are only used for JavaDocs.
 
 import io.github.clamentos.blackhole.persistence.models.ResourceEntity;
-import io.github.clamentos.blackhole.persistence.models.SystemEntity;
+import io.github.clamentos.blackhole.persistence.models.SystemDiagnosticsEntity;
 import io.github.clamentos.blackhole.persistence.models.TagEntity;
 import io.github.clamentos.blackhole.persistence.models.TypeEntity;
 import io.github.clamentos.blackhole.persistence.models.UserEntity;
@@ -24,7 +24,7 @@ import io.github.clamentos.blackhole.persistence.models.UserEntity;
  *     <li>{@code TYPE}: Targets the Type entity.</li>
  * </ul>
  * 
- * @see {@link SystemEntity}
+ * @see {@link SystemDiagnosticsEntity}
  * @see {@link UserEntity}
  * @see {@link TagEntity}
  * @see {@link ResourceEntity}

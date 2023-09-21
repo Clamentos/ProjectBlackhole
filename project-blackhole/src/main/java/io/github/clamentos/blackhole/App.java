@@ -66,11 +66,14 @@ public class App {
                 log_printer.log("App.main > Database schema Applied", LogLevel.SUCCESS);
             }
 
-            log_printer.log(
+            else {
+
+                log_printer.log(
                 
-                "App.main > Skipping database schema application. Property is set to false",
-                LogLevel.INFO
-            );
+                    "App.main > Skipping database schema application. Property is set to false",
+                    LogLevel.INFO
+                );
+            }
         }
 
         catch(IOException | SQLException exc) {
@@ -93,7 +96,14 @@ public class App {
                 log_printer.log("App.main > Data imported", LogLevel.SUCCESS);
             }
 
-            log_printer.log("App.main > Skipping data import. Property is set to false", LogLevel.INFO);
+            else {
+
+                log_printer.log(
+                
+                    "App.main > Skipping data import. Property is set to false",
+                    LogLevel.INFO
+                );
+            }
         }
 
         catch(IOException | SQLException exc) {
