@@ -53,7 +53,7 @@ public class TagServlet implements Servlet {
 
     @Override
     public Response handle(Request request, int request_counter) {
-        
+
         switch(request.method()) {
 
             case CREATE: return(handleCreate(request, request_counter));
@@ -100,26 +100,27 @@ public class TagServlet implements Servlet {
     public Response handleRead(Request request, int request_counter) {
 
         List<TagEntity> tags;
+        TagFilter filter;
 
         try {
 
             session_service.checkPermissions(request.session_id(), 0x00000010);
-            tags = repository.read(TagFilter.newInstance(request.data()));
+            filter = TagFilter.newInstance(request.data());
+            tags = repository.read(filter);
 
             return(new Response(
-                
+
                 ResponseStatuses.OK,
                 request_counter,
-                
+
                 () -> {
 
                     List<DataEntry> entries = new ArrayList<>();
-
                     entries.add(new DataEntry(Types.BEGIN, null));
 
                     for(TagEntity tag : tags) {
 
-                        
+                        entries.addAll(tag.project(filter.fields()));
                     }
 
                     entries.add(new DataEntry(Types.END, null));

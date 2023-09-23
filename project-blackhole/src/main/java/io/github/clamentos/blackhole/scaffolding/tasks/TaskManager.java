@@ -8,6 +8,7 @@ import io.github.clamentos.blackhole.logging.LogTask;
 import io.github.clamentos.blackhole.network.tasks.ConnectionTask;
 import io.github.clamentos.blackhole.network.tasks.RequestTask;
 import io.github.clamentos.blackhole.network.tasks.ServerTask;
+import io.github.clamentos.blackhole.persistence.pool.ConnectionPool;
 
 import java.io.BufferedOutputStream;
 
@@ -29,6 +30,7 @@ public final class TaskManager {
     private static final TaskManager INSTANCE = new TaskManager();
 
     private LogPrinter log_printer;
+    private ConnectionPool pool_reference;
 
     private TaskBuffer<ServerTask> server_tasks_buffer;
     private TaskBuffer<ConnectionTask> connection_tasks_buffer;
@@ -39,6 +41,7 @@ public final class TaskManager {
     private TaskManager() {
 
         log_printer = LogPrinter.getInstance();
+        pool_reference = ConnectionPool.getInstance();
 
         server_tasks_buffer = new TaskBuffer<>();
         connection_tasks_buffer = new TaskBuffer<>();
@@ -169,6 +172,8 @@ public final class TaskManager {
 
         waitForEmptyness(connection_tasks_buffer);
         waitForEmptyness(request_tasks_buffer);
+
+        pool_reference.closePool();
 
         for(LogTask t : log_tasks_buffer.getBufferedValues()) {
 

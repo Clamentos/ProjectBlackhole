@@ -5,7 +5,7 @@ import io.github.clamentos.blackhole.configuration.ConfigurationProvider;
 import java.util.List;
 
 ///
-// TODO: make it thread safe
+// TODO: needs to be completely redone
 public class Cache {
     
     ///

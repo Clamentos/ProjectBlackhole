@@ -31,22 +31,8 @@ public class App {
     ///
     public static void main(String[] args) {
 
-        try { // Print the very cool banner.
-
-            System.out.print(Files.readString(Paths.get("resources/Banner.txt")));
-        }
-
-        catch(IOException exc) { // If it fails, simply log it. It's not a big deal.
-
-            LogPrinter log_printer = LogPrinter.getInstance();
-
-            log_printer.log(
-                
-                "App.main > Failed to print the banner",
-                LogLevel.NOTE
-            );
-        }
-
+        printBanner();
+        
         ConfigurationProvider configuration_provider = ConfigurationProvider.getInstance();
         LogPrinter log_printer = LogPrinter.getInstance();
 
@@ -148,7 +134,6 @@ public class App {
     }
 
     ///
-    // Thread safe.
     private static void directQuery(String file_path) throws IOException, SQLException {
 
         Connection db_connection = DriverManager.getConnection(
@@ -162,6 +147,35 @@ public class App {
 
         sql.execute(Files.readString(Paths.get(file_path)));
         db_connection.close();
+    }
+
+    private static void printBanner() {
+
+        System.out.println("\r\n" + //
+                
+            "                               ................                          \r\n" +
+            "                             ...',,;::ccc:;;,'.................          \r\n" +
+            "                        .....,:loooooooddodddolcc:,''''',;;;;,,''..'',,,'\r\n" +
+            "                       ...,;:lodlc:;,''',,;:loxkkkxolc:;::cooollllllcc;,.\r\n" +
+            "                    ....,;cool;,....      ...':ok0KKOxddoodxkkkxdol:,..  \r\n" +
+            "                 .....,:ldxd:'..              .,cd0XX0OOkkkkkxdl:,..     \r\n" +
+            "               .....';lxO0xc'.                ..,cx0KK00Okxdl:,..        \r\n" +
+            "              .....';cx0X0o;.              ...';ldO0000Okdc;'..          \r\n" +
+            "             .',,'',:dOKKk:'.         ....';codxkxkkOKKOdc,..            \r\n" +
+            "            ..;::;,;lx0K0xc'.     ....,:codxxxdl:;:lkKKkl,..             \r\n" +
+            "           ..,:cc:::ok0XKkl,.....',:lodxkxdl:,'...':dkxo;..              \r\n" +
+            "           ..;cllllloxOKK0xl::cldxxxxdoc:,'...   ..;lo:,..               \r\n" +
+            "           .':lddddddxO0K00kkkkxool:;'....        .;:;'..                \r\n" +
+            "          ..,:odxxxxkkOO00000ko:,'...           ..','...                 \r\n" +
+            "         ..';coxkkkkkkkkkkO00Odc;'....       ..',,,....                  \r\n" +
+            "       ...';codxxxdollc::cldxkxdlc:,,,''','',;;;,'...                    \r\n" +
+            "     ...,;clllc:;,'.......',;;::::::cclllcc:,,'.....                     \r\n" +
+            "   ..',;;;,,....            .......'',,,,''......                        \r\n" +
+            " .........                         ... ......                            \r\n" +
+            "..                                                                       \r\n" +
+            "\r\n" +
+            ""
+        );
     }
 
     ///

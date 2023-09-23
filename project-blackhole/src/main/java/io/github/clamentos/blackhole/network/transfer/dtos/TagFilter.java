@@ -1,6 +1,10 @@
 package io.github.clamentos.blackhole.network.transfer.dtos;
 
 import io.github.clamentos.blackhole.network.transfer.components.DataEntry;
+import io.github.clamentos.blackhole.persistence.models.TagEntity;
+import io.github.clamentos.blackhole.scaffolding.Entity;
+import io.github.clamentos.blackhole.scaffolding.Filter;
+import io.github.clamentos.blackhole.utility.ArrayUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +22,50 @@ public record TagFilter(
     int creation_date_start,
     int creation_date_end
 
-) {
+) implements Filter {
+
+    @Override
+    public boolean isFiltered(Entity entity) {
+
+        boolean name_like_match = true;
+        boolean date_start_match = true;
+        boolean date_end_match = true;
+
+        if(entity instanceof TagEntity == false) {
+
+            return(false);
+        }
+
+        TagEntity tag = (TagEntity)entity;
+
+        if(by_ids != null && by_ids.size() > 0) {
+
+            return(false);
+        }
+
+        if(by_names != null && by_names.size() > 0) {
+
+            return(false);
+        }
+
+        if(name_like != null && !name_like.equals("")) {
+
+            String cleaned_like = name_like.substring(0, name_like.length() - 1);
+            name_like_match = (tag.name().substring(0, cleaned_like.length()).equals(cleaned_like));
+        }
+
+        if(creation_date_start > 0) {
+         
+            date_start_match = (tag.creation_date() >= creation_date_start);
+        }
+
+        if(creation_date_end > 0) {
+         
+            date_end_match = (tag.creation_date() <= creation_date_end);
+        }
+
+        return(name_like_match && date_start_match && date_end_match);
+    }
 
     public static TagFilter newInstance(List<DataEntry> request_data) throws IllegalArgumentException {
 
@@ -46,7 +93,7 @@ public record TagFilter(
         int creation_date_start;
         int creation_date_end;
 
-        by_ids = parseIntegerArray(request_data, idx);
+        by_ids = ArrayUtils.parseIntegerArray(request_data, idx, false);
 
         if(by_ids.size() > 0) {
 
@@ -63,7 +110,7 @@ public record TagFilter(
             ));
         }
 
-        by_names = parseStringsArray(request_data, idx);
+        by_names = ArrayUtils.parseStringArray(request_data, idx, false,"^[a-zA-Z0-9_-]{3,31}$");
 
         if(by_names.size() > 0) {
 
@@ -95,17 +142,5 @@ public record TagFilter(
             creation_date_start,
             creation_date_end
         ));
-    }
-
-    // Updates the index too!
-    private static List<Integer> parseIntegerArray(List<DataEntry> request_data, int[] start) throws IllegalArgumentException {
-
-        return(null);
-    }
-
-    // Updates the index too!
-    private static List<String> parseStringsArray(List<DataEntry> request_data, int[] start) throws IllegalArgumentException {
-
-        return(null);
     }
 }

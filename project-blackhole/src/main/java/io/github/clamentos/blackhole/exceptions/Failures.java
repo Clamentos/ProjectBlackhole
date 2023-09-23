@@ -61,6 +61,7 @@ public enum Failures {
 
     ///
     DB_RETRIES_EXHAUSTED,
+    NULL_DB_RESULT_SET,
 
     ///
     ERROR;

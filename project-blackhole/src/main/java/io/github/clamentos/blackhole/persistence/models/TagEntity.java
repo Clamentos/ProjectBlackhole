@@ -1,9 +1,11 @@
 package io.github.clamentos.blackhole.persistence.models;
 
+import io.github.clamentos.blackhole.exceptions.Failures;
 ///
 import io.github.clamentos.blackhole.network.transfer.components.DataEntry;
 import io.github.clamentos.blackhole.network.transfer.components.Types;
 import io.github.clamentos.blackhole.persistence.PersistenceException;
+import io.github.clamentos.blackhole.scaffolding.Entity;
 import io.github.clamentos.blackhole.scaffolding.Projectable;
 
 import java.sql.ResultSet;
@@ -26,7 +28,7 @@ public final record TagEntity(
     int creation_date
 
     ///
-) implements Projectable {
+) implements Projectable, Entity {
 
     @Override
     public List<DataEntry> reduce() {
@@ -50,6 +52,11 @@ public final record TagEntity(
     public static List<TagEntity> newInstances(ResultSet result_set) throws PersistenceException {
 
         List<TagEntity> tags = new ArrayList<>();
+        
+        if(result_set == null) {
+
+            throw new PersistenceException(Failures.NULL_DB_RESULT_SET);
+        }
 
         try {
 

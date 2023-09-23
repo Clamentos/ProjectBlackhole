@@ -15,79 +15,61 @@ public class ArrayUtils {
             destination[i + start] = (byte)(source & (0xFF000000 >> i));
         }
     }
-    
-    /** 0 if null, 1 if empty, .1 otherwise */
-    public static int checkIfNullOrEmpty(List<DataEntry> data_entries, int start) {
 
-        if(data_entries.get(start).data_type().equals(Types.NULL)) {
+    @SuppressWarnings("unchecked")
+    public static List<Integer> parseIntegerArray(List<DataEntry> data, int[] start, boolean nullable) throws IllegalArgumentException {
 
-            return(0);
-        }
-
-        if(data_entries.get(start).data_type().equals(Types.BEGIN) &&
-           data_entries.get(start + 1).data_type().equals(Types.END)) {
-
-            return(1);
-        }
-
-        return(-1);
+        return((List<Integer>)parseArray(data, start, nullable, null, Types.INT));
     }
 
     @SuppressWarnings("unchecked")
-    public static List<Integer> makeIntegerArray(List<DataEntry> data_entries, int start, int end, boolean nullable) throws IllegalStateException {
+    public static List<String> parseStringArray(List<DataEntry> data, int[] start, boolean nullable, String pattern) throws IllegalArgumentException {
 
-        return((List<Integer>)(List<?>)makeArray(data_entries, start, end, nullable, Types.INT, null));
+        return((List<String>)parseArray(data, start, nullable, pattern, Types.STRING));
     }
 
-    @SuppressWarnings("unchecked")
-    public static List<String> makeStringArray(List<DataEntry> data_entries, int start, int end, boolean nullable, String regex) throws IllegalStateException {
+    // If successfull, the List<?> is safe to cast to a list of:
+    // Byte, Short, Integer, Long, Float, Double, String or Byte[]
+    // depending on the given desired type
 
-        return((List<String>)(List<?>)makeArray(data_entries, start, end, nullable, Types.INT, regex));
-    }
+    // also updates the index to point to the END DataEntry of the list
+    public static List<?> parseArray(List<DataEntry> data, int[] start, boolean nullable, String pattern, Types desired_type) throws IllegalArgumentException {
 
-    //...
+        List<Object> result;
+        int idx = start[0];
 
-    private static List<Object> makeArray(List<DataEntry> data_entries, int start, int end, boolean nullable, Types types, String regex) throws IllegalStateException {
+        if(data.get(idx).data_type().equals(Types.NULL)) {
 
-        int i;
-        boolean early_stop = false;
-        List<Object> result = new ArrayList<>();
-
-        if(data_entries.get(start).data_type().equals(Types.BEGIN) == false) {
-
-            throw new IllegalStateException();
+            return(null);
         }
 
-        for(i = start + 1; i < end - 1; i++) {
+        if(data.get(idx).data_type().equals(Types.BEGIN)) {
 
-            if(data_entries.get(i).data_type().equals(Types.END)) {
+            result = new ArrayList<>();
+            idx++;
 
-                early_stop = true;
-                break;
+            while(!data.get(idx).data_type().equals(Types.END)) {
+                
+                switch(desired_type) {
+
+                    case BYTE: result.add(data.get(idx).entryAsByte(nullable)); break;
+                    case SHORT: result.add(data.get(idx).entryAsShort(nullable)); break;
+                    case INT: result.add(data.get(idx).entryAsInteger(nullable)); break;
+                    case LONG: result.add(data.get(idx).entryAsLong(nullable)); break;
+                    case FLOAT: result.add(data.get(idx).entryAsFloat(nullable)); break;
+                    case DOUBLE: result.add(data.get(idx).entryAsDouble(nullable)); break;
+                    case STRING: result.add(data.get(idx).entryAsString(pattern, nullable)); break;
+                    case RAW: result.add(data.get(idx).entryAsRaw(nullable)); break;
+                    
+                    default: throw new IllegalArgumentException("The desired_type argument must be one of the following: BYTE, SHORT, INT, LONG, FLOAT, DOUBLE, STRING or RAW");
+                }
+
+                idx++;
             }
 
-            switch(types) {
-
-                case BYTE: result.add(data_entries.get(i).entryAsByte(nullable));
-                case SHORT: result.add(data_entries.get(i).entryAsShort(nullable));
-                case INT: result.add(data_entries.get(i).entryAsInteger(nullable));
-                case LONG: result.add(data_entries.get(i).entryAsLong(nullable));
-                case FLOAT: result.add(data_entries.get(i).entryAsFloat(nullable));
-                case DOUBLE: result.add(data_entries.get(i).entryAsDouble(nullable));
-                case STRING: result.add(data_entries.get(i).entryAsString(regex, nullable));
-
-                default: // TODO: this
-            }
+            return(result);
         }
 
-        if(early_stop == false) { // Loop exited without finding END
-
-            if(data_entries.get(i).data_type().equals(Types.END) == false) {
-
-                throw new IllegalStateException();
-            }
-        }
-
-        return(result);
+        throw new IllegalArgumentException("Expected NULL or BEGIN entry type, got: " + data.get(idx).data_type().name());
     }
 }
