@@ -15,13 +15,13 @@ import io.github.clamentos.blackhole.configuration.ConfigurationProvider;
  *     <li>{@code INFO}: Used to give harmless but useful information.</li>
  *     <li>{@code SUCCESS}: Used to indicate the positive outcome of a critical process.</li>
  *     <li>{@code NOTE}: Used to indicate failures on non critical processes.</li>
+ * 
  *     <li>{@code WARNING}: Used to indicate that a critical process encountered an unusual situation but
  *         was able to recover without service interruptions.</li>
+ * 
  *     <li>{@code ERROR}: Used to indicate that a critical process encountered an unusual or unexpected
  *         situation that was not able to recover without service interruptions.</li>
  * </ol>
- * 
- * @apiNote This class is an <b>enumeration</b>.
 */
 public enum LogLevel {
 

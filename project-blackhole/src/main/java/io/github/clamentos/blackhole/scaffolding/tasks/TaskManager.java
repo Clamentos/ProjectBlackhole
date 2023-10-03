@@ -17,20 +17,15 @@ import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
 
 ///
-
-// TODO: must get the instance of the connection pool, so that when the app quits, the connections can be released
-
 /**
  * <h3>Global task manager</h3>
  * Utility class to launch and manage tasks with virtual threads. All tasks must be launched via this class.
- * @apiNote This class is an <b>eager-loaded singleton</b>.
 */
 public final class TaskManager {
 
     private static final TaskManager INSTANCE = new TaskManager();
 
     private LogPrinter log_printer;
-    private ConnectionPool pool_reference;
 
     private TaskBuffer<ServerTask> server_tasks_buffer;
     private TaskBuffer<ConnectionTask> connection_tasks_buffer;
@@ -41,7 +36,6 @@ public final class TaskManager {
     private TaskManager() {
 
         log_printer = LogPrinter.getInstance();
-        pool_reference = ConnectionPool.getInstance();
 
         server_tasks_buffer = new TaskBuffer<>();
         connection_tasks_buffer = new TaskBuffer<>();
@@ -67,6 +61,7 @@ public final class TaskManager {
 
         long id = server_tasks_buffer.getNextId();
         ServerTask task = new ServerTask(id);
+
         server_tasks_buffer.put(id, task);
         Thread.ofVirtual().start(task);
     }
@@ -74,6 +69,7 @@ public final class TaskManager {
     /**
      * Creates a new {@link ConnectionTask} and places it into the managing buffer.
      * This method will also start a new virtual thread on the created task.
+     * 
      * @param socket : The {@link Socket} used by the connection task.
     */
     public void launchNewConnectionTask(Socket socket) {
@@ -85,6 +81,7 @@ public final class TaskManager {
 
             id = connection_tasks_buffer.getNextId();
             task = new ConnectionTask(socket, id);
+
             connection_tasks_buffer.put(id, task);
             Thread.ofVirtual().start(task);
         }
@@ -103,6 +100,7 @@ public final class TaskManager {
     /**
      * Creates a new {@link RequestTask} and places it into the managing buffer.
      * This method will also starts a new virtual thread on the created task.
+     * 
      * @param raw_request : The request needed by the request task.
      * @param out : The output stream needed by the request task.
     */
@@ -110,6 +108,7 @@ public final class TaskManager {
 
         long id = request_tasks_buffer.getNextId();
         RequestTask task = new RequestTask(raw_request, out, id, request_counter);
+
         request_tasks_buffer.put(id, task);
         Thread.ofVirtual().start(task);
     }
@@ -117,18 +116,21 @@ public final class TaskManager {
     /**
      * Creates a new {@link LogTask} and places it into the managing buffer.
      * This method will also launch a new virtual thread on the created task.
+     * 
      * @param queue : The log queue used by the log task.
     */
     public void launchNewLogTask(BlockingQueue<Log> queue) {
 
         long id = log_tasks_buffer.getNextId();
         LogTask task = new LogTask(queue, id);
+
         log_tasks_buffer.put(id, task);
         Thread.ofVirtual().start(task);
     }
 
     /**
      * Removes a task from the managing buffer.
+     * 
      * @param id : The id of the task to be removed.
      * @throw IllegalArgumentException If {@code task} is not {@link ServerTask},
      *        {@link ConnectionTask}, {@link RequestTask} or {@link LogTask}.
@@ -142,7 +144,7 @@ public final class TaskManager {
             case RequestTask t -> request_tasks_buffer.remove(id);
             case LogTask t -> log_tasks_buffer.remove(id);
 
-            default -> throw new IllegalArgumentException();
+            default -> throw new IllegalArgumentException("Illegal task class: " + task.getClass().getSimpleName());
         }
     }
 
@@ -152,32 +154,31 @@ public final class TaskManager {
      *     <li>{@link ServerTask}</li>
      *     <li>{@link ConnectionTask}</li>
      *     <li>{@link RequestTask}</li>
-     *     <li>{@link ConnectionCheckingTask}</li>
      *     <li>{@link LogTask}</li>
      * </ol>
+     * This method will also stop the connection pool.
     */
-    public synchronized void shutdown() {
+    public synchronized void shutdown(ConnectionPool connection_pool) {
 
         for(ServerTask t : server_tasks_buffer.getBufferedValues()) {
 
-            t.stop();
+            if(t != null) t.stop();
         }
 
         waitForEmptyness(server_tasks_buffer);
 
         for(ConnectionTask t : connection_tasks_buffer.getBufferedValues()) {
 
-            t.stop();
+            if(t != null) t.stop();
         }
 
         waitForEmptyness(connection_tasks_buffer);
         waitForEmptyness(request_tasks_buffer);
-
-        pool_reference.closePool();
+        connection_pool.closePool();
 
         for(LogTask t : log_tasks_buffer.getBufferedValues()) {
 
-            t.stop();
+            if(t != null) t.stop();
         }
 
         waitForEmptyness(log_tasks_buffer);

@@ -10,8 +10,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * 
  * This class implements the {@link Stoppable} interface and enforces common behaviour
  * for any {@link Runnable} that executes for a very long (potentially infinite) time.
- * 
- * @apiNote This class is an <b>Abstract behavioural class</b>.
 */
 public abstract class ContinuousTask implements Stoppable {
     

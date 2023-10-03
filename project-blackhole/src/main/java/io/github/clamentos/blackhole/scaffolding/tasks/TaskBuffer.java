@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * <h3>Task buffer</h3>
  * This class is responsible for holding the currently assigned alive tasks.
  * @param <T> The type of the task to hold.
- * @apiNote This class is a <b>Generic holder</b>.
 */
 public class TaskBuffer<T extends Runnable> {
 
@@ -34,6 +33,7 @@ public class TaskBuffer<T extends Runnable> {
 
     /**
      * Puts the specified task in the buffer.
+     * 
      * @param id : The task id.
      * @param task : The task itself.
      * @throws NullPointerException If {@code task} is null.

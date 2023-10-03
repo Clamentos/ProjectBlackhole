@@ -2,8 +2,8 @@ package io.github.clamentos.blackhole.scaffolding;
 
 ///
 /**
- * <p><b>Interface.</b></p>
- * <p>Streamable object.</p>
+ * <h3>Streamable interface</h3>
+ * 
  * Used to indicate that the implementing classes can be transformed into an array of bytes
  * in order to be sent through a stream directly.
 */

@@ -18,10 +18,13 @@ public interface Servlet {
 
     /**
      * Handles the {@link Request}.
+     * 
      * @param request : The input request.
+     * @param request_counter : The current request counter value.
+     * @param task_id : The id of the calling task.
      * @return The {@link Response} to be sent.
     */
-    Response handle(Request request, int request_counter);
+    Response handle(Request request, int request_counter, long task_id);
 
     ///
 }

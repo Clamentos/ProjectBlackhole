@@ -11,6 +11,12 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 ///
+/**
+ * <h3>Session managing service</h3>
+ * 
+ * This class manages the sessions for each logged user. The class offers methods
+ * to create, destroy and perform permission checks on sessions.
+*/
 public class SessionService {
     
     private static final SessionService INSTANCE = new SessionService();
@@ -43,9 +49,10 @@ public class SessionService {
     ///
     /**
      * Checks the permissions of a given session against the provided flags.
+     * 
      * @param session_id : The session identifier.
      * @param flags : The flags to check against.
-     * @throws SecurityException If no session is found, is expired or the check fails.
+     * @throws SecurityException If no session is found, is expired or the permissions check fails.
     */
     public void checkPermissions(byte[] session_id, int flags) throws SecurityException {
 
@@ -83,11 +90,11 @@ public class SessionService {
 
     /**
      * Creates a new session and inserts it into the buffers.
+     * 
      * @param user_id : The user identifier for the new session.
      * @param flags : The user permission flags.
      * @return The new session object.
      * @throws IllegalStateException If the maximum number of user sessions is exceeded.
-     * @see {@link MAX_USER_SESSIONS#MAX_USER_SESSIONS}
     */
     public byte[] createSession(int user_id, byte flags) throws IllegalStateException {
 

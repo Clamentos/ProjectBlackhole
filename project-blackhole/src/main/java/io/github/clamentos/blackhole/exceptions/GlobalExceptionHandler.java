@@ -15,8 +15,6 @@ import java.lang.Thread.UncaughtExceptionHandler;
  * 
  * Every thread should specify this class as its default exception handler, in order to handle unexpected
  * exceptions that would otherwise cause the thread to terminate.
- * 
- * @apiNote This class is an <b>eager-loaded singleton</b>.
 */
 public final class GlobalExceptionHandler implements UncaughtExceptionHandler {
 

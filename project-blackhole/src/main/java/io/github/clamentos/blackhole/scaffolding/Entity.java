@@ -1,4 +1,7 @@
 package io.github.clamentos.blackhole.scaffolding;
 
-// Marker interface
+/**
+ * <h3>Entity trait</h3>
+ * This is a simple type "marker" interface.
+*/
 public interface Entity {}

@@ -6,8 +6,6 @@ package io.github.clamentos.blackhole.scaffolding.tasks;
  * 
  * This class implements the {@link Runnable} interface and enforces common behaviour
  * for any {@link Runnable} that executes for a relatively brief amount of time.
- * 
- * @apiNote This class is an <b>Abstract behavioural class</b>.
 */
 public abstract class Task implements Runnable {
 
@@ -15,9 +13,8 @@ public abstract class Task implements Runnable {
 
     ///
     /**
-     * <p><b>This method is thread safe.</p></b>
-     * @param id : The task id.
      * Instantiates a new {@link Task} object.
+     * @param id : The task id.
     */
     public Task(long id) {
 
@@ -30,8 +27,8 @@ public abstract class Task implements Runnable {
 
     ///
     /**
-     * <p><b>This method is thread safe. However, the called abstract methods might not.</p></b>
      * <p>Main execution method.</p>
+     * 
      * This method will perform the following:
      * <blockquote><pre>
      *work();
@@ -43,6 +40,13 @@ public abstract class Task implements Runnable {
 
         work();
         TaskManager.getInstance().removeTask(ID, this);
+    }
+
+    ///
+    /** @return The task id. */
+    public long getId() {
+
+        return(ID);
     }
 
     ///

@@ -1,144 +1,239 @@
 BEGIN TRANSACTION;
 
 ---
-DROP TABLE IF EXISTS "SystemDiagnostics";
-DROP TABLE IF EXISTS "IsCategorized";     -- Depends on: tags, resources
-DROP TABLE IF EXISTS "IsAllowed";         -- Depends on: users, resources
-DROP TABLE IF EXISTS "IsBookmarked";      -- Depends on: users, resources
-DROP TABLE IF EXISTS "IsRelated";         -- Depends on: resources
-DROP TABLE IF EXISTS "Resources";         -- Depends on: types, users
-DROP TABLE IF EXISTS "Types";
-DROP TABLE IF EXISTS "Tags";
-DROP TABLE IF EXISTS "Users";             -- Depends on: roles
-DROP TABLE IF EXISTS "Roles";
+DROP SCHEMA IF EXISTS "public" CASCADE;
+CREATE SCHEMA IF NOT EXISTS "public";
 
 ---
-CREATE TABLE IF NOT EXISTS "Roles" (
+CREATE TABLE IF NOT EXISTS "Roles"(
 
-    "id" SMALLSERIAL PRIMARY KEY,
-    "name" VARCHAR(32) NOT NULL UNIQUE,
-    "permission_flags" SMALLINT NOT NULL
+    "id"                        SMALLSERIAL PRIMARY KEY,
+    "creation_date"             INT NOT NULL,
+    "last_modified"             INT NOT NULL,
+    "name"                      VARCHAR(32) NOT NULL,
+    "flags"                     INT NOT NULL
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "Users" (
+CREATE TABLE IF NOT EXISTS "Avatars"(
 
-    "id" SERIAL PRIMARY KEY,
-    "username" VARCHAR(32) NOT NULL UNIQUE,
-    "email" VARCHAR(64) UNIQUE,
-    "password_hash" VARCHAR(64) NOT NULL,
-    "creation_date" INT NOT NULL,
-    "last_modified" INT NOT NULL,
-    "about" VARCHAR(256) NOT NULL,
-    "role_id" SMALLINT NOT NULL,
-    
-    CONSTRAINT "user_role_fk" FOREIGN KEY("role_id") REFERENCES "Roles"("id") ON DELETE NO ACTION
+    "id"                        SMALLSERIAL PRIMARY KEY,
+    "creation_date"             INT NOT NULL,
+    "last_modified"             INT NOT NULL,
+    "data"                      BYTEA NOT NULL
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "Tags" (
+CREATE TABLE IF NOT EXISTS "Users"(
 
-    "id" SERIAL PRIMARY KEY,
-    "name" VARCHAR(32) NOT NULL UNIQUE,
-    "creation_date" INT NOT NULL
+    "id"                        SERIAL PRIMARY KEY,
+    "flags"                     SMALLINT NOT NULL,
+    "report_count"              SMALLINT NOT NULL,
+    "login_failure_count"       SMALLINT NOT NULL,
+    "username"                  VARCHAR(32) NOT NULL,
+    "email"                     VARCHAR(64) NOT NULL,
+    "password_hash"             VARCHAR(128) NOT NULL,
+    "creation_date"             INT NOT NULL,
+    "last_modified"             INT NOT NULL,
+    "about"                     VARCHAR(256) NOT NULL,
+
+    "role"                      SMALLINT NOT NULL,
+    "avatar"                    SMALLINT NOT NULL,
+
+    CONSTRAINT "role_fk" FOREIGN KEY("role") REFERENCES "Roles"("id") ON DELETE NO ACTION,
+    CONSTRAINT "avatar_fk" FOREIGN KEY("avatar") REFERENCES "Avatars"("id") ON DELETE NO ACTION
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "Types" (
+CREATE TABLE IF NOT EXISTS "Types"(
 
-    "id" SMALLSERIAL PRIMARY KEY,
-    "name" VARCHAR(32) NOT NULL UNIQUE,
-    "creation_date" INT NOT NULL,
-    "is_complex" BOOLEAN NOT NULL
+    "id"                        SMALLSERIAL PRIMARY KEY,
+    "creation_date"             INT NOT NULL,
+    "last_modified"             INT NOT NULL,
+    "name"                      VARCHAR(32) NOT NULL,
+    "domain"                    BOOLEAN NOT NULL
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "Resources" (
+CREATE TABLE IF NOT EXISTS "Tags"(
 
-    "id" BIGSERIAL PRIMARY KEY,
-    "name" VARCHAR(64) NOT NULL UNIQUE,
-    "creation_date" INT NOT NULL,
-    "last_modified" INT NOT NULL,
-    "is_private" BOOLEAN NOT NULL,
-    "upvotes" INT NOT NULL,
-    "downvotes" INT NOT NULL,
-    "data_hash" VARCHAR(32) NOT NULL,
-    "data" OID,
-    "type_id" SMALLINT NOT NULL,
-    "owner_id" INT NOT NULL,
-    "updated_by_id" INT NOT NULL,
-
-    CONSTRAINT "type_id_fk" FOREIGN KEY("type_id") REFERENCES "Types"("id") ON DELETE NO ACTION,
-    CONSTRAINT "owner_id_fk" FOREIGN KEY("owner_id") REFERENCES "Users"("id") ON DELETE NO ACTION,
-    CONSTRAINT "updated_by_id_fk" FOREIGN KEY("updated_by_id") REFERENCES "Users"("id") ON DELETE NO ACTION
+    "id"                        SERIAL PRIMARY KEY,
+    "creation_date"             INT NOT NULL,
+    "last_modified"             INT NOT NULL,
+    "name"                      VARCHAR(32) NOT NULL,
+    "domain"                    BOOLEAN NOT NULL
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "IsRelated" (
+CREATE TABLE IF NOT EXISTS "Medias"(
 
-    "resource_a_id" BIGINT,
-    "resource_b_id" BIGINT,
+    "id"                        BIGSERIAL PRIMARY KEY,
+    "creation_date"             INT NOT NULL,
+    "last_modified"             INT NOT NULL,
+    "version"                   SMALLINT NOT NULL,
+    "report_count"              SMALLINT NOT NULL,
+    "status"                    SMALLINT NOT NULL,
+    "name"                      VARCHAR(64) NOT NULL,
+    "upvotes"                   INT NOT NULL,
+    "downvotes"                 INT NOT NULL,
+    "data"                      OID NULL,
 
-    PRIMARY KEY("resource_a_id", "resource_b_id"),
-    CONSTRAINT "resource_a_id_fk" FOREIGN KEY("resource_a_id") REFERENCES "Resources"("id") ON DELETE CASCADE,
-    CONSTRAINT "resource_b_id_fk" FOREIGN KEY("resource_b_id") REFERENCES "Resources"("id") ON DELETE CASCADE
+    "type"                      SMALLINT NOT NULL,
+    "owner"                     INT NOT NULL,
+
+    CONSTRAINT "type_fk" FOREIGN KEY("type") REFERENCES "Types"("id") ON DELETE NO ACTION,
+    CONSTRAINT "owner_fk" FOREIGN KEY("owner") REFERENCES "Users"("id") ON DELETE SET NULL
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "IsCategorized" (
+CREATE TABLE IF NOT EXISTS "Resources"(
 
-    "tag_id" INT,
-    "resource_id" BIGINT,
+    "id"                        BIGSERIAL PRIMARY KEY,
+    "creation_date"             INT NOT NULL,
+    "last_modified"             INT NOT NULL,
+    "version"                   SMALLINT NOT NULL,
+    "report_count"              SMALLINT NOT NULL,
+    "status"                    SMALLINT NOT NULL,
+    "name"                      VARCHAR(64) NOT NULL,
+    "upvotes"                   INT NOT NULL,
+    "downvotes"                 INT NOT NULL,
+    "preview"                   BYTEA NULL,
+    "markup"                    TEXT NOT NULL,
 
-    PRIMARY KEY("tag_id", "resource_id"),
-    CONSTRAINT "tag_id_fk" FOREIGN KEY("tag_id") REFERENCES "Tags"("id") ON DELETE CASCADE,
-    CONSTRAINT "resource_id_fk" FOREIGN KEY("resource_id") REFERENCES "Resources"("id") ON DELETE CASCADE
+    "type"                      SMALLINT NOT NULL,
+    "owner"                     INT NOT NULL,
+
+    CONSTRAINT "type_fk" FOREIGN KEY("type") REFERENCES "Types"("id") ON DELETE NO ACTION,
+    CONSTRAINT "owner_fk" FOREIGN KEY("owner") REFERENCES "Users"("id") ON DELETE SET NULL
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "IsAllowed" (
+CREATE TABLE IF NOT EXISTS "Links"(
 
-    "user_id" INT,
-    "resource_id" BIGINT,
-    "permission_flags" SMALLINT NOT NULL,
+    "resource_a"                BIGINT NOT NULL,
+    "resource_b"                BIGINT NOT NULL,
+    "direction"                 SMALLINT NOT NULL,
 
-    PRIMARY KEY("user_id", "resource_id"),
-    CONSTRAINT "user_id_fk" FOREIGN KEY("user_id") REFERENCES "Users"("id") ON DELETE CASCADE,
-    CONSTRAINT "resource_id_fk" FOREIGN KEY("resource_id") REFERENCES "Resources"("id") ON DELETE CASCADE
+    PRIMARY KEY("resource_a", "resource_b"),
+    CONSTRAINT "resource_a_fk" FOREIGN KEY("resource_a") REFERENCES "Resources"("id") ON DELETE CASCADE,
+    CONSTRAINT "resource_b_fk" FOREIGN KEY("resource_b") REFERENCES "Resources"("id") ON DELETE CASCADE
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "IsBookmarked" (
+CREATE TABLE IF NOT EXISTS "CategorizeResource"(
 
-    "user_id" INT,
-    "resource_id" BIGINT,
+    "tag"                       INT NOT NULL,
+    "resource"                  BIGINT NOT NULL,
 
-    PRIMARY KEY("user_id", "resource_id"),
-    CONSTRAINT "user_id_fk" FOREIGN KEY("user_id") REFERENCES "Users"("id") ON DELETE CASCADE,
-    CONSTRAINT "resource_id_fk" FOREIGN KEY("resource_id") REFERENCES "Resources"("id") ON DELETE CASCADE
+    PRIMARY KEY("tag", "resource"),
+    CONSTRAINT "tag_fk" FOREIGN KEY("tag") REFERENCES "Tags" ON DELETE CASCADE,
+    CONSTRAINT "resource_fk" FOREIGN KEY("resource") REFERENCES "Resources" ON DELETE CASCADE
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "SystemDiagnostics" (
+CREATE TABLE IF NOT EXISTS "CategorizeMedia"(
 
-    "id" BIGSERIAL PRIMARY KEY,
-    "creation_date" BIGINT NOT NULL,
-    "logs" TEXT NOT NULL,
-    "threads" INT NOT NULL,
-    "memory_used" INT NOT NULL,
-    "memory_free" INT NOT NULL,
-    "cache_misses" INT NOT NULL,
-    "database_queries" INT NOT NULL,
-    "sessions_created" INT NOT NULL,
-    "sessions_destroyed" INT NOT NULL,
-    "logged_users" INT NOT NULL,
-    "create_requests" INT NOT NULL,
-    "read_requests" INT NOT NULL,
-    "update_requests" INT NOT NULL,
-    "delete_requests" INT NOT NULL,
-    "responses_sent" INT NOT NULL,
-    "sockets_accepted" INT NOT NULL,
-    "sockets_closed" INT NOT NULL
+    "tag"                       INT NOT NULL,
+    "media"                     BIGINT NOT NULL,
+
+    PRIMARY KEY("tag", "media"),
+    CONSTRAINT "tag_fk" FOREIGN KEY("tag") REFERENCES "Tags" ON DELETE CASCADE,
+    CONSTRAINT "media_fk" FOREIGN KEY("media") REFERENCES "Medias" ON DELETE CASCADE
+);
+
+---
+CREATE TABLE IF NOT EXISTS "Composed"(
+
+    "resource"                  INT NOT NULL,
+    "media"                     BIGINT NOT NULL,
+
+    PRIMARY KEY("resource", "media"),
+    CONSTRAINT "resource_fk" FOREIGN KEY("resource") REFERENCES "Resources" ON DELETE CASCADE,
+    CONSTRAINT "media_fk" FOREIGN KEY("media") REFERENCES "Medias" ON DELETE NO ACTION
+);
+
+---
+CREATE TABLE IF NOT EXISTS "UpdateNotes"(
+
+    "id"                        BIGSERIAL NOT NULL PRIMARY KEY,
+    "creation_date"             INT NOT NULL,
+    "note"                      VARCHAR(256) NOT NULL,
+
+    "user"                      INT NULL,
+    "resource"                  INT NOT NULL,
+    "media"                     BIGINT NOT NULL,
+
+    CONSTRAINT "user_fk" FOREIGN KEY("user") REFERENCES "Users" ON DELETE SET NULL,
+    CONSTRAINT "resource_fk" FOREIGN KEY("resource") REFERENCES "Resources" ON DELETE CASCADE,
+    CONSTRAINT "media_fk" FOREIGN KEY("media") REFERENCES "Medias" ON DELETE NO ACTION
+);
+
+---
+CREATE TABLE IF NOT EXISTS "ReportTypes"(
+
+    "id"                        SMALLSERIAL PRIMARY KEY,
+    "creation_date"             INT NOT NULL,
+    "last_updated"              INT NOT NULL,
+    "name"                      VARCHAR(32) NOT NULL
+);
+
+---
+CREATE TABLE IF NOT EXISTS "Reports"(
+
+    "id"                        BIGSERIAL PRIMARY KEY,
+    "creation_date"             INT NOT NULL,
+    "explanation"               VARCHAR(256) NOT NULL,
+
+    "issuer"                    INT NULL,
+    "user"                      INT NULL,
+    "resource"                  BIGINT NULL,
+    "media"                     BIGINT NULL,
+    "report_type"               SMALLINT NOT NULL,
+
+    CONSTRAINT "issuer_fk" FOREIGN KEY("issuer") REFERENCES "Users"("id") ON DELETE SET NULL,
+    CONSTRAINT "user_fk" FOREIGN KEY("user") REFERENCES "Users"("id") ON DELETE CASCADE,
+    CONSTRAINT "resource_fk" FOREIGN KEY("resource") REFERENCES "Resources"("id") ON DELETE CASCADE,
+    CONSTRAINT "media_fk" FOREIGN KEY("media") REFERENCES "Medias"("id") ON DELETE CASCADE,
+    CONSTRAINT "report_type_fk" FOREIGN KEY("report_type") REFERENCES "ReportTypes"("id") ON DELETE NO ACTION
+);
+
+---
+CREATE TABLE IF NOT EXISTS "SystemDiagnostics"(
+
+    "id"                        BIGSERIAL PRIMARY KEY,
+    "creation_date"             INT NOT NULL,
+    "virtual_threads"           INT NOT NULL,
+    "carrier_threads"           INT NOT NULL,
+    "memory_used"               BIGINT NOT NULL,
+    "memory_free"               BIGINT NOT NULL,
+    "cache_misses"              INT NOT NULL,
+    "database_queries"          INT NOT NULL,
+    "sessions_created"          INT NOT NULL,
+    "sessions_destroyed"        INT NOT NULL,
+    "logged_users"              INT NOT NULL,
+    "create_requests"           INT NOT NULL,
+    "read_requests"             INT NOT NULL,
+    "update_requests"           INT NOT NULL,
+    "delete_requests"           INT NOT NULL,
+    "responses_sent"            INT NOT NULL,
+    "sockets_accepted"          INT NOT NULL,
+    "sockets_closed"            INT NOT NULL
+);
+
+---
+CREATE TABLE IF NOT EXISTS "Logs"(
+
+    "id"                        BIGSERIAL PRIMARY KEY,
+    "file_name"                 VARCHAR(32) NOT NULL,
+    "file_line"                 INT NOT NULL,
+    "log_id"                    BIGINT NOT NULL,
+    "creation_date"             BIGINT NOT NULL,
+    "log_level"                 VARCHAR(16) NOT NULL,
+    "message"                   TEXT NOT NULL,
+
+    "diagnostics"               BIGINT NULL,
+
+    CONSTRAINT "diagnostics_fk" FOREIGN KEY("diagnostics") REFERENCES "SystemDiagnostics"("id") ON DELETE SET NULL
 );
 
 ---

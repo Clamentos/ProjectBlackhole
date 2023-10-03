@@ -1,11 +1,10 @@
 package io.github.clamentos.blackhole.persistence.models;
 
-public record RoleEntity(
+public record ReportTypeEntity(
 
     short id,
     int creation_date,
     int last_modified,
-    String name,
-    int flags
+    String name
 
 ) {}

@@ -52,14 +52,14 @@ public class TagServlet implements Servlet {
     }
 
     @Override
-    public Response handle(Request request, int request_counter) {
+    public Response handle(Request request, int request_counter, long task_id) {
 
         switch(request.method()) {
 
-            case CREATE: return(handleCreate(request, request_counter));
-            case READ: return(handleRead(request, request_counter));
-            case UPDATE: return(handleUpdate(request, request_counter));
-            case DELETE: return(handleDelete(request, request_counter));
+            case CREATE: return(handleCreate(request, request_counter, task_id));
+            case READ: return(handleRead(request, request_counter, task_id));
+            case UPDATE: return(handleUpdate(request, request_counter, task_id));
+            case DELETE: return(handleDelete(request, request_counter, task_id));
 
             default: return(new Response(
                 
@@ -72,7 +72,7 @@ public class TagServlet implements Servlet {
     }
 
     ///
-    private Response handleCreate(Request request, int request_counter) {
+    private Response handleCreate(Request request, int request_counter, long task_id) {
 
         List<TagEntity> tags;
 
@@ -84,10 +84,17 @@ public class TagServlet implements Servlet {
 
             for(DataEntry entry : request.data()) {
 
-                tags.add(new TagEntity(0, entry.entryAsString("^[a-zA-Z0-9_-]{3,31}$", false), now));
+                tags.add(new TagEntity(
+                    
+                    0,
+                    now,
+                    now,
+                    entry.entryAsString("^[a-zA-Z0-9_-]{3,31}$", false),
+                    entry.entryAsByte(false)
+                ));
             }
 
-            repository.insert(tags);
+            repository.insert(tags, task_id);
             return(new Response(ResponseStatuses.OK, request_counter, null));
         }
 
@@ -97,7 +104,7 @@ public class TagServlet implements Servlet {
         }
     }
 
-    public Response handleRead(Request request, int request_counter) {
+    public Response handleRead(Request request, int request_counter, long task_id) {
 
         List<TagEntity> tags;
         TagFilter filter;
@@ -106,7 +113,7 @@ public class TagServlet implements Servlet {
 
             session_service.checkPermissions(request.session_id(), 0x00000010);
             filter = TagFilter.newInstance(request.data());
-            tags = repository.read(filter);
+            tags = repository.read(filter, task_id);
 
             return(new Response(
 
@@ -135,7 +142,7 @@ public class TagServlet implements Servlet {
         }
     }
 
-    public Response handleUpdate(Request request, int request_counter) {
+    public Response handleUpdate(Request request, int request_counter, long task_id) {
 
         List<TagEntity> tags;
 
@@ -149,12 +156,14 @@ public class TagServlet implements Servlet {
                 tags.add(new TagEntity(
                     
                     entry.entryAsInteger(false),
+                    0,
+                    (int)(System.currentTimeMillis() / 60_000),
                     entry.entryAsString("^[a-zA-Z0-9_-]{3,31}$", false),
-                    0
+                    entry.entryAsByte(false)
                 ));
             }
 
-            repository.update(tags);
+            repository.update(tags, task_id);
             return(new Response(ResponseStatuses.OK, request_counter, null));
         }
 
@@ -164,7 +173,7 @@ public class TagServlet implements Servlet {
         }
     }
 
-    public Response handleDelete(Request request, int request_counter) {
+    public Response handleDelete(Request request, int request_counter, long task_id) {
 
         List<Integer> ids;
 
@@ -178,7 +187,7 @@ public class TagServlet implements Servlet {
                 ids.add(entry.entryAsInteger(false));
             }
 
-            repository.delete(ids);
+            repository.delete(ids, task_id);
             return(new Response(ResponseStatuses.OK, request_counter, null));
         }
 

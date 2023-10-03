@@ -1,13 +1,11 @@
-package io.github.clamentos.blackhole.persistence.models;
+package io.github.clamentos.blackhole.metrics;
 
-public record SystemDiagnosticsEntity(
+public record MetricsSnapshot(
 
-    long id,
-    int creation_date,
-    String logs,
-    int threads,
-    int memory_used,
-    int memory_free,
+    int vritual_threads,
+    int carrier_threads,
+    long memory_used,
+    long memory_free,
     int cache_misses,
     int database_queries,
     int sessions_created,

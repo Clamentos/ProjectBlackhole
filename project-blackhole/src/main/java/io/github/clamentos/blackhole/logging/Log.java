@@ -3,8 +3,7 @@ package io.github.clamentos.blackhole.logging;
 ///
 /**
  * <h3>Log object</h3>
- * This simple record class is used as a template for generating the actual print.
- * @apiNote This class is <b>immutable data</b>.
+ * This simple record class is used as a template for generating the actual log print.
 */
 public final record Log(
 

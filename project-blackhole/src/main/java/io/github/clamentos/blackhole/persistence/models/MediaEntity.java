@@ -1,8 +1,9 @@
 package io.github.clamentos.blackhole.persistence.models;
 
 import java.util.List;
+import org.postgresql.core.Oid;
 
-public record ResourceEntity(
+public record MediaEntity(
 
     long id,
     int creation_date,
@@ -13,14 +14,11 @@ public record ResourceEntity(
     String name,
     int upvotes,
     int downvotes,
-    byte[] preview,
-    String markup,
+    Oid data,
 
     TypeEntity type,
     UserEntity owner,
 
-    List<MediaEntity> medias,
-    List<ResourceEntity> references,
     List<TagEntity> tags,
     List<UpdateNoteEntity> update_notes,
     List<ReportEntity> reports

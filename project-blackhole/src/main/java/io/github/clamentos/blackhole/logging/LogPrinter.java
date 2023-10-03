@@ -21,15 +21,13 @@ import java.util.concurrent.atomic.AtomicLong;
  * 
  * <p>The logs will have the following format:</p>
  * {@code [ERROR]-[20/10/2023 14:10:34.123]-[1234567890]-[...]}
+ * 
  * <ol>
  *     <li>{@code [ERROR]}: The log level.</li>
  *     <li>{@code [20/10/2023 14:34:22.019]}: The log event creation date and time.</li>
  *     <li>{@code [1234567890]}: The unique log id.</li>
  *     <li>{@code [...]}: The actual log message.</li>
  * </ol>
- * 
- * @see {@link Logger}
- * @apiNote This class is an <b>eager-loaded singleton.</b>
 */
 public final class LogPrinter {
 
@@ -40,8 +38,8 @@ public final class LogPrinter {
     private final int MAX_LOG_FILE_SIZE;
 
     private AtomicLong current_id;
-    private BufferedWriter file_writer;
-    private long file_size;
+    private AtomicLong file_size;
+    private volatile BufferedWriter file_writer;
 
     ///
     /*
@@ -71,11 +69,10 @@ public final class LogPrinter {
     /**
      * Synchronously log the given message with the specified severity to the console or file depending on
      * the configuration.
+     * 
      * @param message : The message to log.
      * @param severity : The severity of the log event.
      * @throws IllegalArgumentException If {@code severity} is {@code null}.
-     * @see {@link ConfigurationProvider}
-     * @see {@link LogLevel}
     */
     public void log(String message, LogLevel severity) throws IllegalArgumentException {
 
@@ -100,8 +97,8 @@ public final class LogPrinter {
     /**
      * Synchronously logs the given message with the specified severity to the console or file
      * depending on the configuration.
+     * 
      * @param log : The log to log.
-     * @see {@link ConfigurationProvider}
     */
     protected void printLog(Log log) {
 
@@ -174,20 +171,20 @@ public final class LogPrinter {
     }
 
     // Writes the data to the currently selected log file.
+    // If the file exceeds the maximum, then create another.
     private void write(String data) throws IOException {
 
-        if(file_size >= MAX_LOG_FILE_SIZE) {
+        if(file_size.get() >= MAX_LOG_FILE_SIZE) {
 
             findEligible();
         }
 
         file_writer.write(data);
         file_writer.flush();
-        file_size += data.length();
+        file_size.set(file_size.get() + data.length());
     }
 
-    // TODO: check if finer grained locks can be done
-    // Finds the most "recent" log file below the size limit. If there are none, create one.
+    // Finds the most "recent" log file below the size limit. If there are none, it will create one.
     private synchronized void findEligible() {
 
         File[] files;
@@ -207,9 +204,14 @@ public final class LogPrinter {
                 }
             }
 
-            if((found > 0) && (files[found - 1].length() < MAX_LOG_FILE_SIZE)) {
+            if(found > 0 && (files[found - 1].length() < MAX_LOG_FILE_SIZE)) {
 
-                file_size = files[found - 1].length();
+                if(file_writer != null) {
+
+                    file_writer.close();
+                }
+
+                file_size.set(files[found - 1].length());
                 file_writer = new BufferedWriter(new FileWriter(files[found - 1], true));
 
                 return;
@@ -220,7 +222,7 @@ public final class LogPrinter {
                 file_writer.close();
             }
 
-            file_size = 0;
+            file_size.set(0);
             file_writer = new BufferedWriter(new FileWriter("logs/log_" + System.currentTimeMillis() + ".log"));
         }
 

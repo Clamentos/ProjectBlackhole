@@ -8,6 +8,7 @@ import io.github.clamentos.blackhole.configuration.ConfigurationProvider;
 import io.github.clamentos.blackhole.exceptions.GlobalExceptionHandler;
 import io.github.clamentos.blackhole.logging.LogLevel;
 import io.github.clamentos.blackhole.logging.LogPrinter;
+import io.github.clamentos.blackhole.persistence.pool.ConnectionPool;
 import io.github.clamentos.blackhole.scaffolding.tasks.TaskManager;
 
 import java.io.IOException;
@@ -35,6 +36,7 @@ public class App {
         
         ConfigurationProvider configuration_provider = ConfigurationProvider.getInstance();
         LogPrinter log_printer = LogPrinter.getInstance();
+        ConnectionPool connection_pool = ConnectionPool.getInstance();
 
         Thread.currentThread().setUncaughtExceptionHandler(GlobalExceptionHandler.getInstance());
         log_printer.log(
@@ -105,8 +107,7 @@ public class App {
 
         TaskManager.getInstance().launchServerTask();    // Start the server.
 
-        // Wait for the user to quit.
-
+        // Wait for the user to type quit.
         String s;
         Scanner scanner = new Scanner(System.in);
 
@@ -118,7 +119,7 @@ public class App {
             if(s.equalsIgnoreCase("quit") == true) {
 
                 log_printer.log("App.main > Shuting down...", LogLevel.INFO);
-                TaskManager.getInstance().shutdown();
+                TaskManager.getInstance().shutdown(connection_pool);
 
                 break;
             }
@@ -136,6 +137,7 @@ public class App {
     ///
     private static void directQuery(String file_path) throws IOException, SQLException {
 
+        // TODO: can use the pool
         Connection db_connection = DriverManager.getConnection(
 
             ConfigurationProvider.getInstance().DB_ADDRESS,
@@ -151,7 +153,7 @@ public class App {
 
     private static void printBanner() {
 
-        System.out.println("\r\n" + //
+        System.out.println("\r\n" +
                 
             "                               ................                          \r\n" +
             "                             ...',,;::ccc:;;,'.................          \r\n" +
@@ -182,4 +184,3 @@ public class App {
 }
 
 // TODO: IMPORTANT! modify ConnectionTask for big data (use stream)
-// TODO: update the javadocs on the code

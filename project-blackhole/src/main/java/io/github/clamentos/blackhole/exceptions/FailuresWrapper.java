@@ -6,8 +6,6 @@ package io.github.clamentos.blackhole.exceptions;
  * 
  * This class is a simple wrapper for the {@link Failures} enum, in order to make it usable in standard
  * language exceptions.
- * 
- * @apiNote This class is a <b>wrapper</b>.
 */
 public class FailuresWrapper extends Throwable {
 

@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * <h3>Logging task</h3>
  * This class is responsible for fetching the logs from the log queue and printing them.
- * @apiNote This class is a <b>continuous runnable task</b>.
 */
 public final class LogTask extends ContinuousTask {
 
@@ -27,6 +26,7 @@ public final class LogTask extends ContinuousTask {
     ///
     /**
      * Instantiates a new {@link LogTask} object.
+     * 
      * @param queue : The log queue from where to fetch the logs.
      * @param id : The unique task id.
      * @throws IllegalArgumentException If {@code queue} is {@code null}.

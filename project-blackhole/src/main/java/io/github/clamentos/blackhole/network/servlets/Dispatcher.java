@@ -8,27 +8,26 @@ import io.github.clamentos.blackhole.network.transfer.Response;
 import io.github.clamentos.blackhole.network.transfer.components.Resources;
 import io.github.clamentos.blackhole.scaffolding.Servlet;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 
 ///
 /**
  * <h3>Request dispatcher</h3>
  * This class simply dispatches the incoming raw request to the appropriate mapped servlet.
- * @apiNote This class is an <b>eager-loaded singleton</b>.
 */
 public class Dispatcher {
     
     private static final Dispatcher INSTANCE = new Dispatcher();
-
     private Logger logger;
-    private HashMap<Resources, Servlet> servlet_mappings;
+
+    private EnumMap<Resources, Servlet> servlet_mappings;
 
     ///
     // Instantiate all the servlets and put them into a map depending on which resource they handle.
     private Dispatcher() {
 
         logger = Logger.getInstance();
-        servlet_mappings = new HashMap<>();
+        servlet_mappings = new EnumMap<>(Resources.class);
 
         ResourceServlet resource_servlet = ResourceServlet.getInstance();
         SystemServlet system_servlet = SystemServlet.getInstance();
@@ -53,17 +52,18 @@ public class Dispatcher {
     ///
     /**
      * Deserializes and dispatches the request to the target servlet.
+     * 
      * @param raw_request : The raw input request bytes.
      * @return The raw response bytes.
     */
-    public byte[] dispatch(byte[] raw_request, int request_counter) {
+    public byte[] dispatch(byte[] raw_request, int request_counter, long task_id) {
 
         try {
 
             Request request = Request.deserialize(raw_request);
             Servlet servlet = servlet_mappings.get(request.resource());
 
-            return(servlet.handle(request, request_counter).stream());
+            return(servlet.handle(request, request_counter, task_id).stream());
         }
 
         catch(IllegalArgumentException | IndexOutOfBoundsException exc) {

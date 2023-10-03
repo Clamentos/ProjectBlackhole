@@ -52,7 +52,7 @@ public final class RequestTask extends Task {
 
         try {
 
-            out.write(dispatcher.dispatch(raw_request, request_counter));
+            out.write(dispatcher.dispatch(raw_request, request_counter, super.getId()));
             out.flush();
         }
 

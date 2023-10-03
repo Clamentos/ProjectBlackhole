@@ -2,8 +2,8 @@ package io.github.clamentos.blackhole.scaffolding;
 
 ///
 /**
- * <p><b>Interface.</b></p>
- * <p>Stoppable runnable.</p>
+ * <h3>Stoppable interface</h3>
+ * 
  * Simple interface that extends {@link Runnable}, specifying that the implementing class
  * is a runnable that can be stopped.
 */

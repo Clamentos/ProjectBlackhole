@@ -25,10 +25,10 @@ public class TagRepository {
     
     ///
     private static final TagRepository INSTANCE = new TagRepository();
+    private Logger logger;
 
     private final int MAX_DB_ATTEMPTS;
 
-    private Logger logger;
     private ConnectionPool connection_pool;
 
     ///
@@ -49,9 +49,9 @@ public class TagRepository {
     }
 
     ///
-    public void insert(List<TagEntity> tags) throws PersistenceException {
+    public void insert(List<TagEntity> tags, long task_id) throws PersistenceException {
 
-        PooledConnection connection = connection_pool.aquireConnection();
+        PooledConnection connection = connection_pool.aquireConnection(task_id);
         PreparedStatement statement = null;
 
         for(int i = 0; i < MAX_DB_ATTEMPTS; i++) {
@@ -75,7 +75,7 @@ public class TagRepository {
 
                 statement.executeBatch();
                 statement.close();
-                connection_pool.releaseConnection(connection);
+                connection_pool.releaseConnection(connection, task_id);
 
                 return;
             }
@@ -102,21 +102,21 @@ public class TagRepository {
                         }
                     }
 
-                    connection_pool.releaseConnection(connection);
+                    connection_pool.releaseConnection(connection, task_id);
                     throw new PersistenceException(exc);
                 }
             }
         }
 
-        connection_pool.releaseConnection(connection);
+        connection_pool.releaseConnection(connection, task_id);
         throw new PersistenceException(Failures.DB_RETRIES_EXHAUSTED);
     }
 
-    public List<TagEntity> read(TagFilter filter) throws PersistenceException {
+    public List<TagEntity> read(TagFilter filter, long task_id) throws PersistenceException {
 
         List<TagEntity> tags = new ArrayList<>();
         List<QueryParameter> parameters = new ArrayList<>();
-        PooledConnection connection = connection_pool.aquireConnection();
+        PooledConnection connection = connection_pool.aquireConnection(task_id);
         
         for(int i = 0; i < MAX_DB_ATTEMPTS; i++) {
 
@@ -130,7 +130,7 @@ public class TagRepository {
                 }
 
                 ResultSet result = statement.executeQuery();
-                tags = TagEntity.newInstances(result);
+                tags = TagEntity.newInstances(result, 0);
                 
                 result.close();
                 statement.close();
@@ -148,19 +148,19 @@ public class TagRepository {
 
                 else {
 
-                    connection_pool.releaseConnection(connection);
+                    connection_pool.releaseConnection(connection, task_id);
                     throw new PersistenceException(exc);
                 }
             }
         }
 
-        connection_pool.releaseConnection(connection);
+        connection_pool.releaseConnection(connection, task_id);
         throw new PersistenceException(Failures.DB_RETRIES_EXHAUSTED);
     }
     
-    public void update(List<TagEntity> tags) throws PersistenceException {
+    public void update(List<TagEntity> tags, long task_id) throws PersistenceException {
 
-        PooledConnection connection = connection_pool.aquireConnection();
+        PooledConnection connection = connection_pool.aquireConnection(task_id);
 
         for(int i = 0; i < MAX_DB_ATTEMPTS; i++) {
 
@@ -183,7 +183,7 @@ public class TagRepository {
 
                 statement.executeBatch();
                 statement.close();
-                connection_pool.releaseConnection(connection);
+                connection_pool.releaseConnection(connection, task_id);
 
                 return;
             }
@@ -197,19 +197,19 @@ public class TagRepository {
 
                 else {
 
-                    connection_pool.releaseConnection(connection);
+                    connection_pool.releaseConnection(connection, task_id);
                     throw new PersistenceException(exc);
                 }
             }
         }
 
-        connection_pool.releaseConnection(connection);
+        connection_pool.releaseConnection(connection, task_id);
         throw new PersistenceException(Failures.DB_RETRIES_EXHAUSTED);
     }
 
-    public void delete(List<Integer> ids) throws PersistenceException {
+    public void delete(List<Integer> ids, long task_id) throws PersistenceException {
 
-        PooledConnection connection = connection_pool.aquireConnection();
+        PooledConnection connection = connection_pool.aquireConnection(task_id);
 
         for(int i = 0; i < MAX_DB_ATTEMPTS; i++) {
 
@@ -231,7 +231,7 @@ public class TagRepository {
 
                 statement.executeBatch();
                 statement.close();
-                connection_pool.releaseConnection(connection);
+                connection_pool.releaseConnection(connection, task_id);
 
                 return;
             }
@@ -245,13 +245,13 @@ public class TagRepository {
 
                 else {
 
-                    connection_pool.releaseConnection(connection);
+                    connection_pool.releaseConnection(connection, task_id);
                     throw new PersistenceException(exc);
                 }
             }
         }
 
-        connection_pool.releaseConnection(connection);
+        connection_pool.releaseConnection(connection, task_id);
         throw new PersistenceException(Failures.DB_RETRIES_EXHAUSTED);
     }
 

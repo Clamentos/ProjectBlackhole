@@ -1,13 +1,22 @@
 package io.github.clamentos.blackhole.utility;
 
+///
 import io.github.clamentos.blackhole.network.transfer.components.DataEntry;
 import io.github.clamentos.blackhole.network.transfer.components.Types;
 
 import java.util.ArrayList;
 import java.util.List;
 
+///
+/**
+ * <h3>Array utilities</h3>
+ * 
+ * This class offers static utility methods to perform a variety of operations on
+ * arrays, such as, transforming a {@code List<DataEntry>} into a list of the desired type.
+*/
 public class ArrayUtils {
-
+    
+    ///
     public static void writeInteger(byte[] destination, int source, int start) {
 
         for(int i = 0; i < 4; i++) {
@@ -72,4 +81,6 @@ public class ArrayUtils {
 
         throw new IllegalArgumentException("Expected NULL or BEGIN entry type, got: " + data.get(idx).data_type().name());
     }
+
+    ///
 }
