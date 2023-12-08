@@ -1,0 +1,15 @@
+@startuml Class diagram
+
+    ' TODO: finish
+
+    top to bottom direction
+    skinparam linetype ortho
+
+    interface "Runnable"
+    abstract class "Task"
+    abstract class "ContinuousTask"
+
+    "Task" ..|> "Runnable"
+    "ContinuousTask" ..|> "Runnable"
+
+@enduml

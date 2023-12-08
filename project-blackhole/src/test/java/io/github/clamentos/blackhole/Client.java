@@ -3,7 +3,7 @@ package io.github.clamentos.blackhole;
 import java.io.IOException;
 import java.net.Socket;
 
-import io.github.clamentos.blackhole.network.transfer.Response;
+import io.github.clamentos.blackhole.framework.implementation.network.transfer.NetworkResponse;
 
 // Simple client
 public class Client {

@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS "Roles"(
     "creation_date"             INT NOT NULL,
     "last_modified"             INT NOT NULL,
     "name"                      VARCHAR(32) NOT NULL,
-    "flags"                     INT NOT NULL
+    "flags"                     BIGINT NOT NULL,
+    "flags_others"              BIGINT NOT NULL
 );
 
 ---
@@ -200,21 +201,27 @@ CREATE TABLE IF NOT EXISTS "Reports"(
 ---
 CREATE TABLE IF NOT EXISTS "SystemDiagnostics"(
 
-    "id"                        BIGSERIAL PRIMARY KEY,
-    "creation_date"             INT NOT NULL,
+    "creation_date"             BIGINT PRIMARY KEY,
+    "uptime"                    BIGINT NOT NULL,
     "virtual_threads"           INT NOT NULL,
     "carrier_threads"           INT NOT NULL,
     "memory_used"               BIGINT NOT NULL,
     "memory_free"               BIGINT NOT NULL,
+    "cache_hits"                INT NOT NULL,
     "cache_misses"              INT NOT NULL,
-    "database_queries"          INT NOT NULL,
+    "database_queries_ok"       INT NOT NULL,
+    "database_queries_ko"       INT NOT NULL,
     "sessions_created"          INT NOT NULL,
     "sessions_destroyed"        INT NOT NULL,
     "logged_users"              INT NOT NULL,
-    "create_requests"           INT NOT NULL,
-    "read_requests"             INT NOT NULL,
-    "update_requests"           INT NOT NULL,
-    "delete_requests"           INT NOT NULL,
+    "create_requests_ok"        INT NOT NULL,
+    "create_requests_ko"        INT NOT NULL,
+    "read_requests_ok"          INT NOT NULL,
+    "read_requests_ko"          INT NOT NULL,
+    "update_requests_ok"        INT NOT NULL,
+    "update_requests_ko"        INT NOT NULL,
+    "delete_requests_ok"        INT NOT NULL,
+    "delete_requests_ko"        INT NOT NULL,
     "responses_sent"            INT NOT NULL,
     "sockets_accepted"          INT NOT NULL,
     "sockets_closed"            INT NOT NULL
@@ -224,16 +231,10 @@ CREATE TABLE IF NOT EXISTS "SystemDiagnostics"(
 CREATE TABLE IF NOT EXISTS "Logs"(
 
     "id"                        BIGSERIAL PRIMARY KEY,
-    "file_name"                 VARCHAR(32) NOT NULL,
-    "file_line"                 INT NOT NULL,
     "log_id"                    BIGINT NOT NULL,
     "creation_date"             BIGINT NOT NULL,
     "log_level"                 VARCHAR(16) NOT NULL,
-    "message"                   TEXT NOT NULL,
-
-    "diagnostics"               BIGINT NULL,
-
-    CONSTRAINT "diagnostics_fk" FOREIGN KEY("diagnostics") REFERENCES "SystemDiagnostics"("id") ON DELETE SET NULL
+    "message"                   TEXT NOT NULL
 );
 
 ---

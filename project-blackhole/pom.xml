@@ -9,75 +9,105 @@
     <name>project-blackhole</name>
 
     <properties>
-        <maven.compiler.source>20</maven.compiler.source>
-        <maven.compiler.target>20</maven.compiler.target>
+
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
     </properties>
 
     <dependencies>
 
         <!-- https://mvnrepository.com/artifact/org.postgresql/postgresql -->
         <dependency>
+
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>42.6.0</version>
+
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/at.favre.lib/bcrypt -->
         <dependency>
+
             <groupId>at.favre.lib</groupId>
             <artifactId>bcrypt</artifactId>
             <version>0.10.2</version>
+
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api -->
         <dependency>
+
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <version>5.9.3</version>
             <scope>test</scope>
+
         </dependency>
 
     </dependencies>
 
     <build>
+
         <plugins>
+
             <plugin> <!-- compilation -->
+
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.10.1</version>
                 <configuration>
-                    <release>20</release>
-                    <compilerArgs>--enable-preview</compilerArgs>
+
+                    <release>21</release>
+
                 </configuration>
+
             </plugin>
 
             <plugin> <!-- execution -->
+
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.6.0</version>
                 <configuration>
+
                     <executable>java</executable>
+
                     <arguments>
-                        <argument>--enable-preview</argument>
+
                         <argument>-Djava.library.path=${project.build.directory}/lib</argument>
                         <argument>-classpath</argument>
                         <classpath />
                         <argument>io.github.clamentos.blackhole.App</argument>
+
+                        <!-- JVM runtime flags -->
+                        <argument>-Xms268435456</argument>                  <!-- minimum heap size: 2^28 bytes (~256 MB) -->
+                        <argument>-Xmx8589934592</argument>                 <!-- maximum heap size: 2^33 bytes (~8 GB) -->
+                        <argument>-Xss262144</argument>                     <!-- maximum stack size per thread: 2^18 bytes (~256 KB) -->
+                        <argument>-XX:+UseG1GC</argument>                   <!-- use the G1 garbage collector -->
+                        <argument>-XX:+UseStringDeduplication</argument>    <!-- perform string deduplication -->
+                        <argument>-d64</argument>                           <!-- forced 64-bit mode -->
+                        <argument>-server</argument>                        <!-- enable "Java HotSpot Server VM" -->
+                        <argument>-XX:+MaxFDLimit</argument>                <!-- bump the max number of file descriptors to the OS max -->
+                        <argument>-XX:-StackTraceInThrowable</argument>     <!-- disable stack trace filling in throwables -->
+
                     </arguments>
+
                 </configuration>
+
             </plugin>
 
             <plugin> <!-- testing -->
+
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.1.2</version>
-                <configuration>
-                    <argLine>--enable-preview</argLine>
-                </configuration>
+
             </plugin>
 
         </plugins>
+
     </build>
 
 </project>
