@@ -95,7 +95,7 @@ public final class LogTask extends ContinuousTask {
 
             if(log != null) {
 
-                busy_wait_attempts = 0;
+                log_printer.printToFile(log);
                 return;
             }
 
@@ -103,22 +103,19 @@ public final class LogTask extends ContinuousTask {
         }
 
         // The busy wait expired the attempts. Fetch with blocking behaviour.
-        while(log == null) {
+        try {
 
-            try {
+            log = queue.poll(ConfigurationProvider.getInstance().LOG_QUEUE_POLL_TIMEOUT, TimeUnit.MILLISECONDS);
+        }
 
-                log = queue.poll(ConfigurationProvider.getInstance().LOG_QUEUE_POLL_TIMEOUT, TimeUnit.MILLISECONDS);
-            }
+        catch(InterruptedException exc) {
 
-            catch(InterruptedException exc) {
+            log_printer.logToFile(ExceptionFormatter.format("LogTask.iteration >> ", exc, " >> Ignoring..."), LogLevels.NOTE);
+        }
 
-                log_printer.logToFile(ExceptionFormatter.format("LogTask.iteration >> ", exc, " >> Ignoring..."), LogLevels.NOTE);
-            }
+        if(log != null) {
 
-            if(log != null) {
-
-                log_printer.printToFile(log);
-            }
+            log_printer.printToFile(log);
         }
     }
 

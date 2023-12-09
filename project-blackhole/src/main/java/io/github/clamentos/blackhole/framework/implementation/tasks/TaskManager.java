@@ -24,6 +24,10 @@ import java.util.Map;
 ///..
 import java.util.concurrent.ConcurrentHashMap;
 
+///..
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 ///
 /**
  * <h3>Task manager</h3>
@@ -43,6 +47,9 @@ public final class TaskManager {
     private final LogPrinter log_printer;
 
     ///..
+    private final Lock[] add_locks;
+    private final Lock[] remove_locks;
+
     /**
      * The buffer holding the currently active transfer tasks.
      * @see TransferTask
@@ -60,19 +67,19 @@ public final class TaskManager {
      * The currently active server task.
      * @see ServerTask
     */
-    private ServerTask server_task;
+    private volatile ServerTask server_task;
 
     /**
      * The currently active metrics task.
      * @see MetricsTask
     */
-    private MetricsTask metrics_task;
+    private volatile MetricsTask metrics_task;
 
     /**
      * The currently active log task.
      * @see LogTask
     */
-    private LogTask log_task;
+    private volatile LogTask log_task;
 
     ///
     /**
@@ -84,6 +91,15 @@ public final class TaskManager {
         log_printer = LogPrinter.getInstance();
 
         TASK_MANAGER_SLEEP_CHUNK_SIZE = ConfigurationProvider.getInstance().TASK_MANAGER_SLEEP_CHUNK_SIZE;
+
+        add_locks = new Lock[3];
+        remove_locks = new Lock[3];
+
+        for(int i = 0; i < 3; i++) {
+
+            add_locks[i] = new ReentrantLock();
+            remove_locks[i] = new ReentrantLock();
+        }
 
         transfer_tasks = new ConcurrentHashMap<>();
         request_tasks = new ConcurrentHashMap<>();
@@ -150,35 +166,38 @@ public final class TaskManager {
 
             case ServerTask st -> {
 
-                synchronized(server_task) {
+                add_locks[0].lock();
 
-                    if(server_task == null) {
+                if(server_task == null) {
 
-                        server_task = st;
-                    }
+                    server_task = st;
                 }
+
+                add_locks[0].unlock();
             }
 
             case MetricsTask mt -> {
 
-                synchronized(metrics_task) {
+                add_locks[1].lock();
 
-                    if(metrics_task == null) {
+                if(metrics_task == null) {
 
-                        metrics_task = mt;
-                    }
+                    metrics_task = mt;
                 }
+
+                add_locks[1].unlock();
             }
 
             case LogTask lt -> {
 
-                synchronized(log_task) {
+                add_locks[2].lock();
 
-                    if(log_task == null) {
+                if(log_task == null) {
 
-                        log_task = lt;
-                    }
+                    log_task = lt;
                 }
+
+                add_locks[2].unlock();
             }
 
             case TransferTask tt -> transfer_tasks.put(tt, tt);
@@ -211,26 +230,26 @@ public final class TaskManager {
 
             case ServerTask st -> {
 
-                synchronized(server_task) {
-
-                    server_task = null;
-                }
+                remove_locks[0].lock();
+                System.out.println("DBG task manager removing server task");
+                server_task = null;
+                remove_locks[0].unlock();
             }
 
             case MetricsTask mt -> {
 
-                synchronized(metrics_task) {
-
-                    metrics_task = null;
-                }
+                remove_locks[1].lock();
+                System.out.println("DBG task manager removing metrics task");
+                metrics_task = null;
+                remove_locks[1].unlock();
             }
 
             case LogTask lt -> {
 
-                synchronized(log_task) {
-
-                    log_task = null;
-                }
+                remove_locks[2].lock();
+                System.out.println("DBG task manager removing log task");
+                log_task = null;
+                remove_locks[2].unlock();
             }
 
             case TransferTask tt -> transfer_tasks.remove(tt);
@@ -256,13 +275,13 @@ public final class TaskManager {
      *     <li>{@code LogTask}.</li>
      * </ol>
     */
-    protected void shutdown() {
+    protected synchronized void shutdown() {
 
         // Server task.
         if(server_task != null) server_task.stop();
-        waitForNull(server_task);
+        waitForStopped(server_task);
 
-        // Input transfer tasks.
+        // Transfer tasks.
         terminate(transfer_tasks.values().iterator());
         waitForEmpty(transfer_tasks);
 
@@ -271,20 +290,20 @@ public final class TaskManager {
 
         // Metrics task.
         if(metrics_task != null) metrics_task.stop();
-        waitForNull(metrics_task);
+        waitForStopped(metrics_task);
 
         // Log task.
         if(log_task != null) log_task.stop();
-        waitForNull(log_task);
+        waitForStopped(log_task);
     }
 
     ///.
-    // Waits for the element to become null, waiting in 500 ms chunks.
-    private void waitForNull(Object object) {
+    // Waits for the task to be stopped.
+    private void waitForStopped(ContinuousTask task) {
 
         while(true) {
 
-            if(object == null) {
+            if(task.isStopped()) {
 
                 return;
             }
@@ -296,13 +315,13 @@ public final class TaskManager {
 
             catch(InterruptedException exc) {
 
-                log_printer.logToFile(ExceptionFormatter.format("TaskManager.waitForNull >> ", exc, " >> Ignoring..."), LogLevels.NOTE);
+                log_printer.logToFile(ExceptionFormatter.format("TaskManager.waitForStopped >> ", exc, " >> Ignoring..."), LogLevels.NOTE);
             }
         }
     }
 
     ///..
-    // Waits for the map to become empty, waiting in 500 ms chunks.
+    // Waits for the map to become empty.
     private void waitForEmpty(Map<? extends Runnable, ? extends Runnable> map) {
 
         while(true) {

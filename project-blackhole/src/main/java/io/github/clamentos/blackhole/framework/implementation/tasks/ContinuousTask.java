@@ -25,14 +25,14 @@ import java.util.Objects;
 public abstract class ContinuousTask implements Stoppable {
 
     ///
-    /** The stopped flag. */
-    private volatile boolean stopped;
+    /** The status flag of {@code this}. */
+    private volatile byte status;
 
     ///
     /** Instantiates a new {@code ContinuousTask} object. */
     public ContinuousTask() {
 
-        stopped = false;
+        status = 0;
     }
 
     ///
@@ -51,10 +51,10 @@ public abstract class ContinuousTask implements Stoppable {
     /** @return The stopped status flag. */
     public boolean isStopped() {
 
-        return(stopped);
+        return(status == 2);
     }
 
-    ///
+    ///..
     /**
      * <p>Main execution method.</p>
      * This method will perform the following:
@@ -62,13 +62,14 @@ public abstract class ContinuousTask implements Stoppable {
      *TaskManager.getInstance().add(this);
      *initialize();
      *
-     *while(stopped == false) {
+     *while(status == 0) {
      *     
      *    work();
      *}
      * 
      *terminate();
      *TaskManager.getInstance().remove(this);
+     *status = 2;
      * </pre></blockquote>
     */
     @Override
@@ -79,13 +80,14 @@ public abstract class ContinuousTask implements Stoppable {
             TaskManager.getInstance().add(this);
             initialize();
 
-            while(stopped == false) {
+            while(status == 0) {
 
                 work();
             }
 
             terminate();
             TaskManager.getInstance().remove(this);
+            status = 2;
         }
 
         catch(Exception exc) {
@@ -113,7 +115,7 @@ public abstract class ContinuousTask implements Stoppable {
     @Override
     public void stop() {
 
-        stopped = true;
+        status = 1;
     }
 
     ///

@@ -213,14 +213,14 @@ public final class ConfigurationProvider {
 
     /**
      * <p>Specifies the number of pooled database connections.</p>
-     * Default: {@code 50} --- Minimum: {@code 1} --- Maximum: {@code Integer.MAX_VALUE}
+     * Default: {@code 10} --- Minimum: {@code 1} --- Maximum: {@code Integer.MAX_VALUE}
     */
     public final int NUM_DATABASE_CONNECTIONS;
 
     /**
      * <p>Specifies the number of database connection per sub-pools.</p>
      * <p>This value MUST divide {@code NUM_DATABASE_CONNECTIONS}.</p>
-     * Default: {@code 25} --- Minimum: {@code 1} --- Maximum: {@code Integer.MAX_VALUE}
+     * Default: {@code 10} --- Minimum: {@code 1} --- Maximum: {@code Integer.MAX_VALUE}
     */
     public final int NUM_DATABASE_CONNECTIONS_PER_POOL;
 
@@ -298,48 +298,46 @@ public final class ConfigurationProvider {
         LOG_QUEUE_POLL_TIMEOUT = checkInt("500", 0, Integer.MAX_VALUE);
         MAX_LOG_QUEUE_INSERT_ATTEMPTS = checkInt("10", 0, Integer.MAX_VALUE);
         MAX_LOG_QUEUE_POLL_ATTEMPTS = checkInt("10", 0, Integer.MAX_VALUE);
-        MAX_LOG_QUEUE_SIZE = checkInt("100000", 10, Integer.MAX_VALUE);
+        MAX_LOG_QUEUE_SIZE = checkInt("100000", 100, Integer.MAX_VALUE);
         READER_WRITER_BUFFER_SIZE = checkInt("65536", 256, Integer.MAX_VALUE);
 
         METRICS_TASK_SCHEDULING_NUM_CHUNKS = checkInt("600", 100, 100000);
         METRICS_TASK_SCHEDULING_CHUNK_SIZE = checkInt("500", 100, 1000);
 
-        CLIENT_SOCKET_TIMEOUT = checkInt("60000", 1000, Integer.MAX_VALUE);            // continue here
-        MAX_CLIENTS_PER_IP = checkInt("1", 1, Integer.MAX_VALUE);
-        MAX_INCOMING_CONNECTIONS = checkInt("1", 1, Integer.MAX_VALUE);
-        MAX_REQUEST_SIZE = checkInt("1", 1, Integer.MAX_VALUE);
-        MAX_SOCKETS = checkInt("1", 1, Integer.MAX_VALUE);
-        SERVER_PORT = checkInt("1", 1, Integer.MAX_VALUE);
-        SERVER_SOCKET_TIMEOUT = checkInt("1", 1, Integer.MAX_VALUE);
-        MAX_USER_SESSIONS = checkInt("1", 1, Integer.MAX_VALUE);
-        SESSION_DURATION = checkInt("1", 1, Integer.MAX_VALUE);
+        CLIENT_SOCKET_TIMEOUT = checkInt("10000", 1000, Integer.MAX_VALUE);
+        MAX_CLIENTS_PER_IP = checkInt("2", 1, Integer.MAX_VALUE);
+        MAX_INCOMING_CONNECTIONS = checkInt("50", 1, Integer.MAX_VALUE);
+        MAX_REQUEST_SIZE = checkInt("1000000", 100000, Integer.MAX_VALUE);
+        MAX_SOCKETS = checkInt("10000", 10, Integer.MAX_VALUE);
+        SERVER_PORT = checkInt("8080", 0, Integer.MAX_VALUE);
+        SERVER_SOCKET_TIMEOUT = checkInt("500", 100, Integer.MAX_VALUE);
+        MAX_USER_SESSIONS = checkInt("2", 1, Integer.MAX_VALUE);
+        SESSION_DURATION = checkInt("3600000", 900000, Integer.MAX_VALUE);
 
         DATABASE_ADDRESS = checkString("jdbc:postgresql://127.0.0.1:5432/mock_db");
-        DATABASE_CONNECTION_CHECK_TIMEOUT = checkInt("1", 1, Integer.MAX_VALUE);
+        DATABASE_CONNECTION_CHECK_TIMEOUT = checkInt("5", 1, Integer.MAX_VALUE);
         DATABASE_USERNAME = checkString("admin");
         DATABASE_PASSWORD = checkString("admin");
         GENERATE_DATABASE_SCHEMA = checkBoolean("false");
         INITIALIZE_DATABASE_DATA = checkBoolean("false");
-        MAX_NUM_CACHEABLE_PREPARED_STATEMENTS = checkInt("1", 1, Integer.MAX_VALUE);
-        MAX_POOL_POLL_ATTEMPTS = checkInt("1", 1, Integer.MAX_VALUE);
-        MAX_PREPARED_STATEMENTS_CACHE_ENTRY_SIZE = checkInt("1", 1, Integer.MAX_VALUE);
-        NUM_DATABASE_CONNECTIONS = checkInt("1", 1, Integer.MAX_VALUE);
-        NUM_DATABASE_CONNECTIONS_PER_POOL = checkInt("1", 1, Integer.MAX_VALUE);
-        POOL_SHUTDOWN_SLEEP_CHUNK_SIZE = checkInt("1", 1, Integer.MAX_VALUE);
-        PREPARE_THRESHOLD = checkInt("1", 1, Integer.MAX_VALUE);
+        MAX_NUM_CACHEABLE_PREPARED_STATEMENTS = checkInt("256", 1, Integer.MAX_VALUE);
+        MAX_POOL_POLL_ATTEMPTS = checkInt("10", 0, Integer.MAX_VALUE);
+        MAX_PREPARED_STATEMENTS_CACHE_ENTRY_SIZE = checkInt("5", 1, Integer.MAX_VALUE);
+        NUM_DATABASE_CONNECTIONS = checkInt("10", 1, Integer.MAX_VALUE);
+        NUM_DATABASE_CONNECTIONS_PER_POOL = checkInt("10", 1, Integer.MAX_VALUE);
+        POOL_SHUTDOWN_SLEEP_CHUNK_SIZE = checkInt("500", 100, Integer.MAX_VALUE);
+        PREPARE_THRESHOLD = checkInt("5", 1, Integer.MAX_VALUE);
 
-        CACHE_CAPACITY = checkInt("1", 1, Integer.MAX_VALUE);
-        CACHE_ENTRY_DURATION = checkInt("1", 1, Integer.MAX_VALUE);
+        CACHE_CAPACITY = checkInt("1073741824", 0, Integer.MAX_VALUE);
+        CACHE_ENTRY_DURATION = checkInt("60000", 10000, Integer.MAX_VALUE);
 
-        TASK_MANAGER_SLEEP_CHUNK_SIZE = checkInt("1", 1, Integer.MAX_VALUE);
+        TASK_MANAGER_SLEEP_CHUNK_SIZE = checkInt("500", 100, Integer.MAX_VALUE);
 
         printFields();
         log_printer.logToFile("ConfigurationProvider.new >> Instantiation successfull", LogLevels.SUCCESS);
     }
 
     ///
-    // Class methods.
-
     /** @return The {@link ConfigurationProvider} instance created during class loading. */
     public static ConfigurationProvider getInstance() {
 
@@ -347,8 +345,6 @@ public final class ConfigurationProvider {
     }
 
     ///
-    // Instance methods.
-
     // Checks if the value of the current property is "ok", else use the provided default.
     private int checkInt(String default_value, int low, int high) {
 

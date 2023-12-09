@@ -24,7 +24,7 @@ public class App {
     public static void main(String[] args) {
 
         // TODO: pass the actual provider
-        ApplicationStarter.start(null);
+        ApplicationStarter.start(new Prova());
     }
 
     ///

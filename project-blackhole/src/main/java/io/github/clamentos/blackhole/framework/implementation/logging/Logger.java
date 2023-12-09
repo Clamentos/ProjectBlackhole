@@ -79,7 +79,7 @@ public final class Logger {
 
         // Attempt to insert aggressively.
         while(busy_wait_attempts < ConfigurationProvider.getInstance().MAX_LOG_QUEUE_INSERT_ATTEMPTS) {
-            
+
             inserted = queue.offer(log);
 
             if(inserted == true) {
