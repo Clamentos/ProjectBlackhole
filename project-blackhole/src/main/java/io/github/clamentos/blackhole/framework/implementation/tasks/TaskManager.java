@@ -231,7 +231,6 @@ public final class TaskManager {
             case ServerTask st -> {
 
                 remove_locks[0].lock();
-                System.out.println("DBG task manager removing server task");
                 server_task = null;
                 remove_locks[0].unlock();
             }
@@ -239,7 +238,6 @@ public final class TaskManager {
             case MetricsTask mt -> {
 
                 remove_locks[1].lock();
-                System.out.println("DBG task manager removing metrics task");
                 metrics_task = null;
                 remove_locks[1].unlock();
             }
@@ -247,7 +245,6 @@ public final class TaskManager {
             case LogTask lt -> {
 
                 remove_locks[2].lock();
-                System.out.println("DBG task manager removing log task");
                 log_task = null;
                 remove_locks[2].unlock();
             }

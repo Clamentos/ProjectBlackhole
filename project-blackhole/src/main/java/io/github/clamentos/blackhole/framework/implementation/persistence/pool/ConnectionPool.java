@@ -84,12 +84,12 @@ public final class ConnectionPool {
 
         driver_properties.setProperty(
 
-            "preparedStatementCacheQueries", Integer.toString(ConfigurationProvider.getInstance().MAX_NUM_CACHEABLE_PREPARED_STATEMENTS)
+            "preparedStatementCacheQueries", Integer.toString(ConfigurationProvider.getInstance().MAX_NUM_CACHEABLE_STATEMENTS)
         );
 
         driver_properties.setProperty(
 
-            "preparedStatementCacheSizeMiB", Integer.toString(ConfigurationProvider.getInstance().MAX_PREPARED_STATEMENTS_CACHE_ENTRY_SIZE)
+            "preparedStatementCacheSizeMiB", Integer.toString(ConfigurationProvider.getInstance().MAX_STATEMENTS_CACHE_ENTRY_SIZE)
         );
 
         // Instantiate and fill the pools.
@@ -106,15 +106,16 @@ public final class ConnectionPool {
             System.exit(1);
         }
 
-        pools = new ArrayList<>(NUM_DATABASE_CONNECTIONS / num_per_pool);
+        pools = new ArrayList<>();
+        int num_pools = NUM_DATABASE_CONNECTIONS / num_per_pool;
 
         try {
 
-            for(BlockingQueue<PooledConnection> pool : pools) {
+            for(int i = 0; i < num_pools; i++) {
 
-                pool = new LinkedBlockingQueue<>(num_per_pool);
+                pools.add(new LinkedBlockingQueue<>());
 
-                for(int i = 0; i < num_per_pool; i++) {
+                for(int j = 0; j < num_per_pool; j++) {
 
                     Connection connection = DriverManager.getConnection(
 
@@ -122,7 +123,7 @@ public final class ConnectionPool {
                     );
 
                     connection.setAutoCommit(false);
-                    pool.add(new PooledConnection(connection));
+                    pools.get(i).add(new PooledConnection(connection));
                 }
             }
 

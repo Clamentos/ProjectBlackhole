@@ -1,7 +1,7 @@
 package io.github.clamentos.blackhole.framework.implementation.logging;
 
 ///
-//import io.github.clamentos.blackhole.framework.implementation.configuration.ConfigurationProvider;
+import io.github.clamentos.blackhole.framework.implementation.configuration.ConfigurationProvider;
 
 ///..
 import io.github.clamentos.blackhole.framework.implementation.utility.ExceptionFormatter;
@@ -80,7 +80,7 @@ public final class LogPrinter {
     */
     private LogPrinter() {
 
-        WRITER_BUFFER_SIZE = 65536; //ConfigurationProvider.getInstance().READER_WRITER_BUFFER_SIZE;
+        WRITER_BUFFER_SIZE = ConfigurationProvider.getInstance().READER_WRITER_BUFFER_SIZE;
 
         formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss.SSS");
         current_id = new AtomicLong(0);
@@ -300,10 +300,10 @@ public final class LogPrinter {
         writer.write(data);
         writer.flush();
 
-        /*if(ConfigurationProvider.getInstance().FLUSH_AFTER_WRITE == true) {
+        if(ConfigurationProvider.getInstance().FLUSH_AFTER_WRITE == true) {
 
             writer.flush();
-        }*/
+        }
 
         lock.unlock();
     }

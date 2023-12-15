@@ -19,6 +19,7 @@ import io.github.clamentos.blackhole.framework.implementation.persistence.pool.C
 import io.github.clamentos.blackhole.framework.implementation.persistence.pool.PooledConnection;
 
 ///..
+import io.github.clamentos.blackhole.framework.implementation.utility.ExceptionFormatter;
 import io.github.clamentos.blackhole.framework.implementation.utility.ResourceReleaser;
 
 ///..
@@ -66,8 +67,11 @@ public final class ApplicationStarter {
             System.exit(1);
         }
 
-        MetricsTracker metrics_service = MetricsTracker.getInstance();
         ConfigurationProvider configuration_provider = ConfigurationProvider.getInstance();
+
+        printProperties(configuration_provider, log_printer);
+
+        MetricsTracker metrics_service = MetricsTracker.getInstance();
         ConnectionPool connection_pool = ConnectionPool.getInstance();
 
         log_printer.logToFile(
@@ -199,8 +203,33 @@ public final class ApplicationStarter {
         connection.refreshConnection();
         sql = connection.getConnection().createStatement();
         sql.execute(Files.readString(Paths.get(file_path)));
-        ResourceReleaser.release(log_printer, "App.directQuery", sql);
+        ResourceReleaser.release(log_printer, "ApplicationStarter.directQuery", sql);
         connection_pool.releaseConnection(0, connection);
+    }
+
+    ///..
+    private static void printProperties(ConfigurationProvider configuration_provider, LogPrinter log_printer) {
+
+        String[] properties;
+
+        try {
+
+            properties = configuration_provider.getPropertiesToLog();
+        }
+
+        // This should never happen...
+        catch(IllegalAccessException exc) {
+
+            log_printer.logToFile(ExceptionFormatter.format("ConfigurationProvider.printFields >> ", exc, ""), LogLevels.FATAL);
+            System.exit(1);
+
+            return;
+        }
+
+        for(String property : properties) {
+
+            log_printer.logToFile(property, LogLevels.INFO);
+        }
     }
 
     ///..
