@@ -3,12 +3,12 @@ package io.github.clamentos.blackhole.framework.implementation.logging;
 ///
 /**
  * <h3>Log</h3>
- * Template for generating the final log print.
+ * Internal log object used to generate the final print.
 */
 public final record Log(
 
     ///
-    /** The log message string. */
+    /** The log message. */
     String message,
 
     /** The log severity. */

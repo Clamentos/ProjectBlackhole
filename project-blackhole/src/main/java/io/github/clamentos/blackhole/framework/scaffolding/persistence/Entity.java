@@ -21,7 +21,7 @@ public interface Entity {
     ///..
     /**
      * @return <p>The never {@code null} list of database column names associated to {@code this} entity.</p>
-     * For convention, the primary key should always be the first in the list.
+     * For convention, the primary key should always be the first element in the list.
     */
     List<String> getColumnNames();
 
@@ -31,21 +31,25 @@ public interface Entity {
     
     ///..
     /**
-     * Binds the field values of {@code this} into the given prepared-statement for an {@code INSERT} query.
-     * @param statement : The prepared-statement to bind the parameters on.
+     * Binds the field values of {@code this} entity into the given statement for an {@code INSERT} query.
+     * @param statement : The JDBC statement to bind the parameters on.
      * @throws SQLException If any database access error occurs.
     */
     void bindForInsert(PreparedStatement statement) throws SQLException;
 
     ///..
     /**
-     * Binds the field values of {@code this} into the given prepared-statement for an {@code UPDATE} query.
-     * @param statement : The prepared-statement to bind the parameters on.
-     * @param fields : The fields to consider (excluding the primary key). This parameter works as a checklist
+     * Binds the field values of {@code this} entity into the given statement for an {@code UPDATE} query.
+     * @param statement : The JDBC statement to bind the parameters on.
+     * @param fields : The fields to consider. This parameter works as a checklist
      * starting from the first field which maps to least significant bit.
      * @throws SQLException If any database access error occurs.
     */
     void bindForUpdate(PreparedStatement statement, long fields) throws SQLException;
+
+    ///..
+    /** @return {@code true} if {@code this} entity can be cached, {@code false} otherwise. */
+    boolean cacheable();
 
     ///
 }

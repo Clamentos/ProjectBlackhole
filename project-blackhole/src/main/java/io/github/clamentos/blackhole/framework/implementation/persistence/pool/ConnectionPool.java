@@ -95,6 +95,7 @@ public final class ConnectionPool {
         // Instantiate and fill the pools.
         int num_per_pool = ConfigurationProvider.getInstance().NUM_DATABASE_CONNECTIONS_PER_POOL;
 
+        // Check for proper configuration values.
         if((NUM_DATABASE_CONNECTIONS < num_per_pool) || (NUM_DATABASE_CONNECTIONS % num_per_pool) != 0) {
 
             logger.log(

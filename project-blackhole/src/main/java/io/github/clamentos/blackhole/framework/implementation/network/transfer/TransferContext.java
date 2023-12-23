@@ -1,8 +1,8 @@
 package io.github.clamentos.blackhole.framework.implementation.network.transfer;
 
 ///
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 
 ///..
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,10 +19,10 @@ public final record TransferContext(
 
     ///
     /** The socket input stream. */
-    InputStream in,
+    DataInputStream in,
 
     /** The socket output stream. */
-    OutputStream out,
+    DataOutputStream out,
 
     /** The output stream lock. */
     Lock out_lock,

@@ -24,7 +24,7 @@ public interface Filter {
 
     /**
      * Checks if {@code this} filters the target entity.
-     * @param entity : The entity to be tested by {@code this}.
+     * @param entity : The entity to be tested by {@code this} filter.
      * @return {@code true} if the filter matches the specified entity, {@code false} otherwise.
      * @see Entity
     */

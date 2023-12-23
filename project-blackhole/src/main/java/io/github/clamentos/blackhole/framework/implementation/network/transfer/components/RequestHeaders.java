@@ -18,14 +18,22 @@ import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Reso
 public final record RequestHeaders(
 
     ///
-    /**
-     * The identifier of the request containing {@code this}.
-     * @see NetworkRequest
-     */
+    /** The request payload size in bytes. */
+    long payload_size,
+
+    /** The identifier of {@code this} request sent by the client. */
     byte id,
 
-    /** The flag bits. */
+    /**
+     * The request flag bits.
+     * <ol>
+     *     <li>Compression: {@code true} if client desires it, {@code false} otherwise.</li>
+     * </ol>
+    */
     byte flags,
+
+    /** The timestamp used for caching. {@code <= 0} if not available client side. This parameter only works for {@code READ} requests. */
+    long cache_timestamp,
 
     /** The request method. */
     Methods method,

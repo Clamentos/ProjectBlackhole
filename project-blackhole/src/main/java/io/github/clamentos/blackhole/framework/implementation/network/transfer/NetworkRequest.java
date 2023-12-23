@@ -1,6 +1,9 @@
 package io.github.clamentos.blackhole.framework.implementation.network.transfer;
 
 ///
+import io.github.clamentos.blackhole.framework.implementation.network.tasks.RequestTask;
+
+///..
 import io.github.clamentos.blackhole.framework.implementation.network.transfer.components.RequestHeaders;
 
 ///..
@@ -14,6 +17,7 @@ import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Reso
  * This class holds all the fields and data required to handle a network request.
  * @see RequestHeaders
  * @see DataTransferObject
+ * @see RequestTask
 */
 public final record NetworkRequest(
 

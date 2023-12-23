@@ -19,9 +19,9 @@ public interface Deserializer {
     /**
      * Deserializes data coming from the data provider into a data-transfer-object.
      * @param in : The data provider as the source of data.
-     * @return The never {@code null} deserialized data-transfer-object (safe to cast to {@code type} if desired).
+     * @return The never {@code null} deserialized data-transfer-object.
      * @throws DeserializationException If any deserialization error occurs.
-     * @see InputPipe
+     * @see DataProvider
      * @see DataTransferObject
     */
     DataTransferObject deserialize(DataProvider in) throws DeserializationException;

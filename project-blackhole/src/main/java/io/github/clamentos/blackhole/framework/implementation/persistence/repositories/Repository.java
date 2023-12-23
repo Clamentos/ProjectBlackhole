@@ -68,24 +68,27 @@ public final class Repository {
      * @see Entity
      * @see PooledConnection
     */
-    public void insert(List<? extends Entity> entities, PooledConnection connection) throws PersistenceException, IllegalArgumentException {
+    public void insert(List<? extends Entity> entities, PooledConnection connection, boolean commit) throws PersistenceException, IllegalArgumentException {
 
         if(entities == null || connection == null) {
 
             throw new IllegalArgumentException("(Repository.insert) -> The input arguments cannot be null");
         }
 
-        if(entities.size() == 0) {
-
-            return;
-        }
-
         PreparedStatement statement = null;
 
         try {
 
+            if(entities.size() == 0) {
+
+                conditionalCommit(connection, commit);
+                return;
+            }
+
             statement = prepareInsert(entities, connection.getConnection());
             statement.executeUpdate();
+
+            conditionalCommit(connection, commit);
         }
 
         catch(SQLException exc) {
@@ -106,6 +109,7 @@ public final class Repository {
                     }
 
                     statement.executeUpdate();
+                    conditionalCommit(connection, commit);
                 }
 
                 else {
@@ -402,6 +406,15 @@ public final class Repository {
     private String getPlaceholders(int amount) {
 
         return("?,".repeat(amount).substring(0, (amount * 2) - 1));
+    }
+
+    ///..
+    private void conditionalCommit(PooledConnection connection, boolean commit) throws SQLException {
+
+        if(commit == true) {
+
+            connection.getConnection().commit();
+        }
     }
 
     ///

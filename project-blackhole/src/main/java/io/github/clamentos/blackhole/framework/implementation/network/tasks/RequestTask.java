@@ -1,6 +1,9 @@
 package io.github.clamentos.blackhole.framework.implementation.network.tasks;
 
 ///
+import io.github.clamentos.blackhole.framework.implementation.configuration.ConfigurationProvider;
+
+///..
 import io.github.clamentos.blackhole.framework.implementation.logging.LogLevels;
 import io.github.clamentos.blackhole.framework.implementation.logging.Logger;
 import io.github.clamentos.blackhole.framework.implementation.logging.MetricsTracker;
@@ -24,7 +27,6 @@ import io.github.clamentos.blackhole.framework.implementation.tasks.Task;
 
 ///..
 import io.github.clamentos.blackhole.framework.implementation.utility.ExceptionFormatter;
-import io.github.clamentos.blackhole.framework.implementation.utility.StreamUtils;
 
 ///..
 import io.github.clamentos.blackhole.framework.scaffolding.ApplicationContext;
@@ -51,9 +53,6 @@ import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Resp
 import java.io.IOException;
 
 ///..
-import java.util.NoSuchElementException;
-
-///..
 import java.util.concurrent.CountDownLatch;
 
 ///
@@ -61,6 +60,7 @@ import java.util.concurrent.CountDownLatch;
  * <h3>Request task</h3>
  * Responsible for deserializing and dispatching the request as well as sending the response.
  * @see Task
+ * @see TransferTask
 */
 public final class RequestTask extends Task {
 
@@ -81,7 +81,7 @@ public final class RequestTask extends Task {
     private final CountDownLatch signal;
 
     /** The length of the data section of the current request. */
-    private final long data_length;
+    private final long payload_size;
 
     ///..
     /** The user-defined request servlet provider service. */
@@ -99,12 +99,13 @@ public final class RequestTask extends Task {
      * @param application_context : The application context from where to get the providers.
      * @param transfer_context : The transfer context holding shared state.
      * @param signal : The primitive used to synchronize reading from the input stream.
-     * @param data_length : The size of the data section for this request.
+     * @param payload_size : The size of the data section for this request.
      * @throws IllegalArgumentException If either {@code application_context}, {@code transfer_context} or {@code signal} are null.
      * @see ApplicationContext
      * @see TransferContext
+     * @see TransferTask
     */
-    public RequestTask(ApplicationContext application_context, TransferContext transfer_context, CountDownLatch signal, long data_length) throws IllegalArgumentException {
+    public RequestTask(ApplicationContext application_context, TransferContext transfer_context, CountDownLatch signal, long payload_size) throws IllegalArgumentException {
 
         if(application_context == null || transfer_context == null || signal == null) {
 
@@ -117,7 +118,7 @@ public final class RequestTask extends Task {
         this.application_context = application_context;
         this.transfer_context = transfer_context;
         this.signal = signal;
-        this.data_length = data_length;
+        this.payload_size = payload_size;
     }
 
     ///
@@ -138,8 +139,6 @@ public final class RequestTask extends Task {
     /** {@inheritDoc} */
     @Override
     public void work() {
-
-        // TODO: check proper size
 
         RequestHeaders headers = decodeHeaders();
         if(headers == null) return;
@@ -169,6 +168,7 @@ public final class RequestTask extends Task {
 
         byte id = 0;
         byte flags = 0;
+        long cache_imestamp = 0;
         byte raw_method = 0;
         byte raw_resource = 0;
         byte[] session_id = null;
@@ -179,10 +179,11 @@ public final class RequestTask extends Task {
         try {
 
             // Read the raw header bytes from the input stream.
-            id = StreamUtils.readByte(transfer_context.in());
-            flags = StreamUtils.readByte(transfer_context.in());
-            raw_method = StreamUtils.readByte(transfer_context.in());
-            raw_resource = StreamUtils.readByte(transfer_context.in());
+            id = transfer_context.in().readByte();
+            flags = transfer_context.in().readByte();
+            cache_imestamp = transfer_context.in().readLong();
+            raw_method = transfer_context.in().readByte();
+            raw_resource = transfer_context.in().readByte();
 
             // Parse the method and target resource.
             method = Methods.newInstance(raw_method);
@@ -191,17 +192,31 @@ public final class RequestTask extends Task {
             // If the method is not login, read the session id from the input stream.
             if(method.equals(Methods.LOGIN) == false) {
 
-                session_id = StreamUtils.readBytes(transfer_context.in(), 32);
+                session_id = transfer_context.in().readNBytes(32);
+
+                if(session_id.length < 32) {
+
+                    // Raw network error. This situation is unrecoverable, abort (end of stream).
+                    logger.log("RequestTask.work >> End of stream detected while reading the session id >> Aborting...", LogLevels.ERROR);
+                    free();
+                }
             }
 
-            return(new RequestHeaders(id, flags, method, resource, session_id));
+            // Check if the data length is whithin limits.
+            if(resource.isReactive() == false && payload_size > ConfigurationProvider.getInstance().MAX_REQUEST_SIZE) {
+
+                // Too big for "rest" requests.
+                respondError(id, ResponseStatuses.REQUEST_TOO_BIG, "Request payload is too big");
+            }
+
+            return(new RequestHeaders(payload_size, id, flags, cache_imestamp, method, resource, session_id));
         }
 
-        catch(IOException | NoSuchElementException | IllegalArgumentException exc) {
+        catch(IOException | IllegalArgumentException exc) {
 
-            if(exc instanceof IOException || exc instanceof NoSuchElementException) {
+            if(exc instanceof IOException) {
 
-                // Raw network error. This situation is unrecoverable, abort (socket likely to be closed).
+                // Raw network error. This situation is unrecoverable, abort (socket likely to be abruptly closed or got an EOS).
                 logger.log(ExceptionFormatter.format("RequestTask.work >> ", exc, " >> Aborting..."), LogLevels.ERROR);
                 free();
             }
@@ -210,7 +225,7 @@ public final class RequestTask extends Task {
 
                 if(resource == null) {
 
-                    // Parsing of the method failed.
+                    // Parsing of the request method failed.
                     respondError(id, ResponseStatuses.UNKNOWN_METHOD, "Unknown request method id: " + raw_method);
                 }
 
@@ -230,7 +245,7 @@ public final class RequestTask extends Task {
     private DataTransferObject deserializeDto(byte id) {
 
         DataTransferObject dto = null;
-        SocketDataProvider data_provider = new SocketDataProvider(transfer_context.in(), data_length);
+        SocketDataProvider data_provider = new SocketDataProvider(transfer_context.in(), payload_size);
 
         try {
 
@@ -340,7 +355,8 @@ public final class RequestTask extends Task {
 
         try {
 
-            new NetworkResponse(new ResponseHeaders(id, (byte)0, status), new SimpleDto(message)).stream(transfer_context.out());
+            SimpleDto payload = new SimpleDto(message);
+            new NetworkResponse(new ResponseHeaders(payload.getSize(), id, (byte)0, 0,  status), payload).stream(transfer_context.out());
         }
 
         catch(IOException exc) {

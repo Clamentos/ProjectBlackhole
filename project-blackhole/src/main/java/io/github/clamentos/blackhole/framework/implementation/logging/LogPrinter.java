@@ -80,6 +80,7 @@ public final class LogPrinter {
     */
     private LogPrinter() {
 
+        // Instantiate the internal structures.
         WRITER_BUFFER_SIZE = ConfigurationProvider.getInstance().READER_WRITER_BUFFER_SIZE;
 
         formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss.SSS");
@@ -94,7 +95,6 @@ public final class LogPrinter {
 
         catch(IOException exc) {
 
-            // Can still recover by creating a new one.
             if(exc instanceof FileNotFoundException) {
 
                 path = "resources/logs_" + System.currentTimeMillis() + ".log";
@@ -106,8 +106,6 @@ public final class LogPrinter {
                 }
 
                 catch(IOException exc2) {
-
-                    System.out.println("DBG: exc2");
 
                     printToFile(new Log(
                         
@@ -133,8 +131,6 @@ public final class LogPrinter {
     }
 
     ///
-    // Class methods.
-
     /** @return The {@link LogPrinter} instance created during class loading. */
     public static LogPrinter getInstance() {
 
@@ -142,8 +138,6 @@ public final class LogPrinter {
     }
 
     ///
-    // Instance methods.
-
     /**
      * Synchronously logs the message to the console with the given severity.
      * @param message : The message to log.
@@ -183,15 +177,15 @@ public final class LogPrinter {
     ///..
     /**
      * <p>Releases all the file descriptors held by {@code this} class.</p>
-     * This method should only be used on application shutdown.
+     * <b>NOTE: This method should only be used on application shutdown since {@code this} cannot be re-opened.</b>
     */
-    public void close() {
+    public synchronized void close() {
 
         ResourceReleaser.release(this, "LogPrinter.close", writer);
     }
 
     ///.
-    /** @return The next unique log id. */
+    /** @return The next runtime-unique log id. */
     protected long getNextId() {
 
         return(current_id.getAndIncrement());
@@ -297,6 +291,7 @@ public final class LogPrinter {
     private void write(String data) throws IOException {
 
         lock.lock();
+
         writer.write(data);
         writer.flush();
 
@@ -326,6 +321,7 @@ public final class LogPrinter {
             }
         }
 
+        // Select the "latest" (the file name includes a timestamp).
         if(log_names.size() > 0) {
 
             latest = log_names.get(0);

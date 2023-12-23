@@ -52,6 +52,7 @@ import java.util.List;
  * <h3>Metrics task</h3>
  * Periodically writes to the database a summary of various system statistics and logs.
  * @see ContinuousTask
+ * @see MetricsTracker
 */
 public final class MetricsTask extends ContinuousTask {
 
@@ -77,7 +78,10 @@ public final class MetricsTask extends ContinuousTask {
     private int sleep_samples;
     
     ///
-    /** Instantiates a new {@link MetricsTask} object. */
+    /**
+     * Instantiates a new {@link MetricsTask} object.
+     * @see MetricsTracker
+    */
     public MetricsTask() {
 
         super();
@@ -150,7 +154,7 @@ public final class MetricsTask extends ContinuousTask {
 
         try {
 
-            repository.insert(List.of(system_diagnostics), connection);
+            repository.insert(List.of(system_diagnostics), connection, false);
             return(true);
         }
 
@@ -214,7 +218,7 @@ public final class MetricsTask extends ContinuousTask {
 
         try {
 
-            repository.insert(log_entities, connection);
+            repository.insert(log_entities, connection, true);
         }
 
         catch(PersistenceException exc) {

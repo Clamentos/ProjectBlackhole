@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>Exposes various metrics that other classes can update as they run.</p>
  * At any point in time a snapshot of the system can be taken via this class.
  * @see SystemDiagnostics
+ * @see MetricsTask
 */
 public final class MetricsTracker {
 
@@ -88,7 +89,10 @@ public final class MetricsTracker {
     private final AtomicInteger sockets_closed;
 
     ///
-    /** Instantiates a new {@code MetricsTracker} object. */
+    /**
+     * Instantiates a new {@code MetricsTracker} object.
+     * @see MetricsTask
+    */
     private MetricsTracker() {
 
         timestamp_of_instantiation = System.currentTimeMillis();
@@ -114,6 +118,7 @@ public final class MetricsTracker {
         sockets_closed = new AtomicInteger();
 
         TaskManager.getInstance().launchThread(new MetricsTask(), "MetricsTask");
+
         logger.log("MetricsTracker.new >> Instantiated successfully", LogLevels.SUCCESS);
     }
 

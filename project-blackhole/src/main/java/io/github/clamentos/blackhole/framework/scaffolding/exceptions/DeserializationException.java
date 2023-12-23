@@ -4,21 +4,18 @@ package io.github.clamentos.blackhole.framework.scaffolding.exceptions;
 /**
  * <h3>Deserialization exception</h3>
  * Runtime exception indicating an error during deserialization processes.
- * @see RuntimeException
 */
 public class DeserializationException extends RuntimeException {
 
     ///
-    // Instance fields.
+    /** The optional failure message to send as a feedback to the client. */
     private final String response_message;
 
     ///
-    // Constructors.
-
     /**
      * Instantiates a new {@link DeserializationException} object.
      * @param message : The exception detail message.
-     * @param response_message : The message to insert into a potential response.
+     * @param response_message : The message to insert into a potential client response.
     */
     public DeserializationException(String message, String response_message) {
 
@@ -27,8 +24,6 @@ public class DeserializationException extends RuntimeException {
     }
 
     ///
-    // Instance methods.
-
     /** @return The response message or {@code null} if there isn't any. */
     public String getResponseMessage() {
 

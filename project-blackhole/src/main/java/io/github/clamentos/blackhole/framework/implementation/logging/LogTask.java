@@ -18,6 +18,7 @@ import java.util.concurrent.TimeUnit;
  * <h3>Log task</h3>
  * Fetches the logs from the log queue and prints them.
  * @see ContinuousTask
+ * @see Logger
 */
 public final class LogTask extends ContinuousTask {
 
@@ -72,7 +73,6 @@ public final class LogTask extends ContinuousTask {
     @Override
     public void terminate() {
 
-        // Finish logging the leftovers, then exit.
         while(queue.isEmpty() == false) {
 
             iteration();
@@ -113,6 +113,7 @@ public final class LogTask extends ContinuousTask {
             log_printer.logToFile(ExceptionFormatter.format("LogTask.iteration >> ", exc, " >> Ignoring..."), LogLevels.NOTE);
         }
 
+        // If the fetch was successfull, log the log.
         if(log != null) {
 
             log_printer.printToFile(log);

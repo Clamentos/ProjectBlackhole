@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
  * <h3>Logger</h3>
  * <p>Inserts the produced logs into the log queue.</p>
  * Use this class when asynchronous logging is desired for performance reasons.
+ * @see LogTask
 */
 public final class Logger {
 
@@ -31,7 +32,7 @@ public final class Logger {
     private final LogPrinter log_printer;
 
     ///..
-    /** The queue into which insert the log objects. */
+    /** The queue used to insert the log objects into. */
     private final BlockingQueue<Log> queue;
 
     ///
@@ -59,7 +60,7 @@ public final class Logger {
 
     ///
     /**
-     * <p>Logs the message asynchronously, blocking up to {@code ConfigurationProvider.LOG_QUEUE_INSERT_TIMEOUT} milliseconds.</p>
+     * <p>Logs the message asynchronously, blocking up to {@link ConfigurationProvider#LOG_QUEUE_INSERT_TIMEOUT} milliseconds.</p>
      * If this method couldn't complete in such amount of time, it will log the message synchronously as a fallback.
      * @param message : The message to log.
      * @param severity : The severity of the log event.

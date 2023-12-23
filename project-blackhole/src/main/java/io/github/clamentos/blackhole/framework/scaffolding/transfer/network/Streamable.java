@@ -1,8 +1,8 @@
 package io.github.clamentos.blackhole.framework.scaffolding.transfer.network;
 
 ///
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 
 ///
 /**
@@ -14,13 +14,14 @@ public interface Streamable {
     ///
     /** @return The size in bytes of {@code this} streamable.*/
     long getSize();
-    
+
+    ///..
     /**
      * <p>Streams {@code this} through the output stream.</p>
-     * <b>NOTE: This method does not flush the stream.</b>
+     * <b>NOTE: This method does not flush the output stream.</b>
      * @param out : The output stream.
     */
-    void stream(OutputStream out) throws IOException;
+    void stream(DataOutputStream out) throws IOException;
 
     ///
 }

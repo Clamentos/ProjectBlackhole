@@ -21,15 +21,14 @@ import io.github.clamentos.blackhole.framework.implementation.tasks.TaskManager;
 ///..
 import io.github.clamentos.blackhole.framework.implementation.utility.ExceptionFormatter;
 import io.github.clamentos.blackhole.framework.implementation.utility.ResourceReleaser;
-import io.github.clamentos.blackhole.framework.implementation.utility.StreamUtils;
 
 ///..
 import io.github.clamentos.blackhole.framework.scaffolding.ApplicationContext;
 
 ///.
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 
 ///..
 import java.net.Socket;
@@ -37,13 +36,11 @@ import java.net.Socket;
 ///..
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 ///..
 import java.util.concurrent.CountDownLatch;
 
 ///..
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 ///..
@@ -56,6 +53,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Responsible for launching request tasks and managing the client sockets.
  * @see ContinuousTask
  * @see RequestTask
+ * @see ServerTask
 */
 public final class TransferTask extends ContinuousTask {
 
@@ -83,18 +81,15 @@ public final class TransferTask extends ContinuousTask {
     /** The current number of active request tasks. */
     private final AtomicInteger active_request_task_count;
 
-    /** The flag that indicates if the socket was closed due to a timeout. */
-    private final AtomicBoolean timed_out;
-
     /** The buffer holding the threads running the request tasks. */
     private final List<Thread> request_task_references;
 
     ///..
     /** The input stream of the socket. */
-    private InputStream in;
+    private DataInputStream in;
 
     /** The output stream of the socket. */
-    private OutputStream out;
+    private DataOutputStream out;
 
     ///
     /**
@@ -103,6 +98,7 @@ public final class TransferTask extends ContinuousTask {
      * @param client_socket : The client socket to operate on.
      * @throws IllegalArgumentException If either {@code application_context} or {@code client_socket} are {@code null}.
      * @see ApplicationContext
+     * @see ServerTask
     */
     public TransferTask(ApplicationContext application_context, Socket client_socket) throws IllegalArgumentException {
 
@@ -120,7 +116,6 @@ public final class TransferTask extends ContinuousTask {
 
         output_lock = new ReentrantLock();
         active_request_task_count = new AtomicInteger(0);
-        timed_out = new AtomicBoolean(false);
         request_task_references = new ArrayList<>();
 
         logger.log("TransferTask.new >> Instantiated successfully", LogLevels.SUCCESS);
@@ -133,8 +128,8 @@ public final class TransferTask extends ContinuousTask {
 
         try {
 
-            in = client_socket.getInputStream();
-            out = client_socket.getOutputStream();
+            in = new DataInputStream(client_socket.getInputStream());
+            out = new DataOutputStream(client_socket.getOutputStream());
 
             client_socket.setSoTimeout(ConfigurationProvider.getInstance().CLIENT_SOCKET_TIMEOUT);
         }
@@ -156,10 +151,9 @@ public final class TransferTask extends ContinuousTask {
 
         try {
 
-            // Read the next message length and check if it's ok.
-            long data_length = StreamUtils.readNumber(in, 8);
+            long payload_size = in.readLong();
 
-            if(data_length >= 0) {
+            if(payload_size >= 0) {
 
                 // Launch a new request task.
                 CountDownLatch signal = new CountDownLatch(1);
@@ -167,7 +161,7 @@ public final class TransferTask extends ContinuousTask {
 
                 request_task_references.add(TaskManager.getInstance().launchThread(new RequestTask(
 
-                    application_context, transfer_context, signal, data_length
+                    application_context, transfer_context, signal, payload_size
 
                 ), "RequestTask"));
 
@@ -178,28 +172,25 @@ public final class TransferTask extends ContinuousTask {
             else {
 
                 // Client wants to close the connection. Terminate.
+
+                // NOTE: The protocol demands that a request must start by specifying the length of its payload.
+                // A negative value is a special case that signals to the server the desire to gracefully close the connection.
+
                 super.stop();
-                return;
             }
         }
 
-        // Only ignore if interrupted, otherwise terminate.
-        catch(IOException | NoSuchElementException | InterruptedException exc) {
-
-            if(exc instanceof IOException || exc instanceof NoSuchElementException) {
-
-                if(timed_out.get() == false || exc instanceof NoSuchElementException) {
-
-                    logger.log(ExceptionFormatter.format("TransferTask.work >> ", exc, " >> Aborting..."), LogLevels.ERROR);
-                    super.stop();
-
-                    return;
-                }
-            }
+        catch(IOException | InterruptedException exc) {
 
             if(exc instanceof InterruptedException) {
 
                 logger.log(ExceptionFormatter.format("TransferTask.work >> ", exc, " >> Ignoring..."), LogLevels.NOTE);
+            }
+
+            else {
+
+                logger.log(ExceptionFormatter.format("TransferTask.work >> ", exc, " >> Aborting..."), LogLevels.ERROR);
+                super.stop();
             }
         }
     }

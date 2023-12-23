@@ -1,15 +1,12 @@
 package io.github.clamentos.blackhole.framework.implementation.network.transfer.components;
 
 ///
-import io.github.clamentos.blackhole.framework.implementation.utility.StreamUtils;
-
-///..
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.DataTransferObject;
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Streamable;
 
 ///.
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 
 ///
 /**
@@ -50,16 +47,22 @@ public final record SimpleDto(
     ///..
     /** {@inheritDoc} */
     @Override
-    public void stream(OutputStream out) throws IOException {
+    public void stream(DataOutputStream out) throws IOException {
 
-        // Timestamp.
-        out.write((byte)Types.LONG.ordinal());
-        StreamUtils.writeNumber(out, timestamp, 8);
+        out.writeByte(Types.LONG.ordinal());
+        out.writeLong(timestamp);
 
-        // Message string.
-        out.write((byte)Types.STRING.ordinal());
-        StreamUtils.writeNumber(out, message.length(), 4);
+        out.writeByte(Types.STRING.ordinal());
+        out.writeInt(message.length());
         out.write(message.getBytes());
+    }
+
+    ///..
+    /** {@inheritDoc} */
+    @Override
+    public boolean isReactive() {
+
+        return(false);
     }
 
     ///

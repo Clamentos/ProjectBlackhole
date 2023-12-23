@@ -3,6 +3,10 @@ package io.github.clamentos.blackhole.framework.implementation.network;
 ///
 import io.github.clamentos.blackhole.framework.implementation.configuration.ConfigurationProvider;
 
+///..
+import io.github.clamentos.blackhole.framework.implementation.network.tasks.ServerTask;
+import io.github.clamentos.blackhole.framework.implementation.network.tasks.TransferTask;
+
 ///.
 import java.net.SocketAddress;
 
@@ -19,6 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * <h3>Server context</h3>
  * Provides state and methods for connection managing.
+ * @see ServerTask
+ * @see TransferTask
 */
 public final class ServerContext {
 

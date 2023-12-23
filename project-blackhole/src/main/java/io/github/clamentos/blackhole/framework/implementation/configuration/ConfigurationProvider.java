@@ -338,7 +338,6 @@ public final class ConfigurationProvider {
 
         TASK_MANAGER_SLEEP_CHUNK_SIZE = checkInt("500", 100, Integer.MAX_VALUE);
 
-        //printFields();
         logs.put("ConfigurationProvider.new >> Instantiation successfull", LogLevels.SUCCESS);
     }
 

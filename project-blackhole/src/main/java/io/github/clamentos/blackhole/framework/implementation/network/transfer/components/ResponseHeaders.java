@@ -7,8 +7,8 @@ import io.github.clamentos.blackhole.framework.implementation.network.transfer.N
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Streamable;
 
 ///.
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 
 ///
 /**
@@ -20,39 +20,46 @@ import java.io.OutputStream;
 public final record ResponseHeaders(
 
     ///
-    /**
-     * The identifier of the network response containing {@code this}.
-     * @see NetworkResponse
-    */
+    /** The response payload size in bytes. */
+    long payload_size,
+
+    /** The identifier of the associated request. */
     byte id,
 
-    /** The flag bits. */
+    /**
+     * The response flag bits.
+     * <ol>
+     *     <li>Compression: {@code true} if {@code this} response payload is compressed, {@code false} otherwise.</li>
+     * </ol>
+    */
     byte flags,
 
-    /** The response status code of the network response containing {@code this}. */
+    /** The timestamp used for caching. {@code <= 0} if the response is not cacheable. */
+    long cache_timestamp,
+
+    /** The response status code of {@code this}. */
     ResponseStatuses response_status
 
     ///
 ) implements Streamable {
 
     ///
-    // Instance methods.
-
     /** {@inheritDoc} */
     @Override
     public long getSize() {
 
-        return(3);
+        return(11);
     }
 
     ///..
     /** {@inheritDoc} */
     @Override
-    public void stream(OutputStream out) throws IOException {
+    public void stream(DataOutputStream out) throws IOException {
 
-        out.write(id);
-        out.write(flags);
-        out.write((byte)response_status.ordinal());
+        out.writeLong(payload_size);
+        out.writeByte(id);
+        out.writeByte(flags);
+        out.writeByte(response_status.ordinal());
     }
 
     ///

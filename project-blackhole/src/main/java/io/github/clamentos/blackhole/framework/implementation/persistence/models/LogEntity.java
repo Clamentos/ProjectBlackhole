@@ -99,5 +99,13 @@ public final record LogEntity(
         statement.setLong(idx, id);
     }
 
+    ///..
+    /** {@inheritDoc} */
+    @Override
+    public boolean cacheable() {
+
+        return(false);
+    }
+
     ///
 }

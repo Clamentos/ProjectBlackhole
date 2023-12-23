@@ -58,6 +58,7 @@ public final class ServerTask extends ContinuousTask {
      * @param application_context : The application context that will be provided to subsequent tasks.
      * @throws IOException If any IO error occurs while creating the server socket.
      * @throws IllegalArgumentException If {@code Context} is {@code null}.
+     * @see TransferTask
     */
     public ServerTask(ApplicationContext application_context) throws IOException, IllegalArgumentException {
 
@@ -102,7 +103,6 @@ public final class ServerTask extends ContinuousTask {
 
         try {
 
-            // Wait for a connection and accept it when it comes.
             client_socket = server_socket.accept();
         }
 
@@ -117,10 +117,9 @@ public final class ServerTask extends ContinuousTask {
         }
 
         // Check if the requester doesn't exceed the socket limits.
-        // NOTE: at this point getRemoteSocketAddress() will never return null since the socket is guaranteed to be connected.
+        // NOTE: at this point getRemoteSocketAddress() will never return null since the socket is guaranteed to be connected now.
         if(server_context.isClientSocketAllowed(client_socket.getRemoteSocketAddress())) {
 
-            // Launch the input transfer task.
             TaskManager.getInstance().launchThread(new TransferTask(application_context, client_socket), "ConnectionTask");
         }
 

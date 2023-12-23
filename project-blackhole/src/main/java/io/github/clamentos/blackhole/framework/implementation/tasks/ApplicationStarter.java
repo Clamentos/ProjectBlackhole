@@ -193,7 +193,7 @@ public final class ApplicationStarter {
         log_printer.close();
     }
 
-    ///
+    ///.
     // Perform a query aquiring the connection from the pool and then releasing it.
     private static void directQuery(String file_path, ConnectionPool connection_pool, LogPrinter log_printer) throws IOException, SQLException, PersistenceException {
 

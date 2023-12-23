@@ -37,7 +37,7 @@ public enum Types {
     /**
      * Instantiates a new {@link Types} object.
      * @param type_id : The id of the type.
-     * @return The corresponding constant.
+     * @return The never {@code null} corresponding constant.
      * @throws IllegalArgumentException If {@code type_id} is not {@code 0}, {@code 1}, {@code 2}, {@code 3}, {@code 4},
      * {@code 5}, {@code 6}, {@code 7}, {@code 8}, {@code 9} or {@code 10}.
     */

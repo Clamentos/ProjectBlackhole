@@ -213,6 +213,14 @@ public final record SystemDiagnostics(
 
         statement.setLong(idx, creation_date);
     }
+
+    ///..
+    /** {@inheritDoc} */
+    @Override
+    public boolean cacheable() {
+
+        return(false);
+    }
 }
 
 ///

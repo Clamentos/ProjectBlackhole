@@ -17,8 +17,6 @@ package io.github.clamentos.blackhole.framework.scaffolding.transfer.network;
 public enum Methods {
 
     ///
-    // Constants.
-    
     CREATE,
     READ,
     UPDATE,
@@ -27,8 +25,6 @@ public enum Methods {
     LOGOUT;
 
     ///
-    // Class methods.
-
     /**
      * Instantiates a new {@link Methods} object.
      * @param method_id : The method identifier, that is, the corresponding ordinal of the desired constant.
