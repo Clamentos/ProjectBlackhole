@@ -4,17 +4,19 @@ package io.github.clamentos.blackhole.framework.implementation.persistence.repos
 import io.github.clamentos.blackhole.framework.implementation.logging.Logger;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.persistence.PersistenceException;
-
-///..
 import io.github.clamentos.blackhole.framework.implementation.persistence.pool.PooledConnection;
 
 ///..
 import io.github.clamentos.blackhole.framework.implementation.utility.ResourceReleaser;
 
 ///..
+import io.github.clamentos.blackhole.framework.scaffolding.exceptions.PersistenceException;
+import io.github.clamentos.blackhole.framework.scaffolding.exceptions.ResultSetMappingException;
+
+///..
 import io.github.clamentos.blackhole.framework.scaffolding.persistence.Entity;
 import io.github.clamentos.blackhole.framework.scaffolding.persistence.Filter;
+import io.github.clamentos.blackhole.framework.scaffolding.persistence.ResultSetMapper;
 
 ///.
 import java.sql.Connection;
@@ -140,8 +142,7 @@ public final class Repository {
      * @see Filter
      * @see PooledConnection
     */
-    //TODO: release statement
-    public ResultSet select(Filter filter, PooledConnection connection) throws PersistenceException, IllegalArgumentException {
+    public <T extends Entity> List<T> select(Filter filter, PooledConnection connection, ResultSetMapper<T> mapper) throws PersistenceException, IllegalArgumentException, ResultSetMappingException {
 
         if(filter == null || connection == null) {
 
@@ -149,11 +150,12 @@ public final class Repository {
         }
 
         PreparedStatement statement = null;
+        ResultSet result_set = null;
 
         try {
 
             statement = filter.generateSelect(connection.getConnection());
-            return(statement.executeQuery());
+            result_set = statement.executeQuery();
         }
 
         catch(SQLException exc) {
@@ -173,7 +175,7 @@ public final class Repository {
                         statement = filter.generateSelect(connection.getConnection());
                     }
 
-                    return(statement.executeQuery());
+                    result_set = statement.executeQuery();
                 }
 
                 else {
@@ -189,6 +191,11 @@ public final class Repository {
                 throw new PersistenceException(exc2);
             }
         }
+
+        List<T> entities = mapper.map(result_set);
+        ResourceReleaser.release(logger, "Repository.insert", statement, result_set);
+
+        return(entities);
     }
 
     ///..

@@ -4,7 +4,7 @@ package io.github.clamentos.blackhole.framework.implementation.persistence.pool;
 import io.github.clamentos.blackhole.framework.implementation.configuration.ConfigurationProvider;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.persistence.PersistenceException;
+import io.github.clamentos.blackhole.framework.scaffolding.exceptions.PersistenceException;
 
 ///.
 import java.sql.Connection;

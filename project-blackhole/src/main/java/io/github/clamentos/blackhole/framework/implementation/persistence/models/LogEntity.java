@@ -5,6 +5,9 @@ import io.github.clamentos.blackhole.framework.implementation.logging.Log;
 import io.github.clamentos.blackhole.framework.implementation.logging.MetricsTask;
 
 ///..
+import io.github.clamentos.blackhole.framework.scaffolding.cache.Cacheability;
+
+///..
 import io.github.clamentos.blackhole.framework.scaffolding.persistence.Entity;
 
 ///.
@@ -102,9 +105,17 @@ public final record LogEntity(
     ///..
     /** {@inheritDoc} */
     @Override
-    public boolean cacheable() {
+    public Cacheability cacheable() {
 
-        return(false);
+        return(Cacheability.NEVER);
+    }
+
+    ///..
+    /** {@inheritDoc} */
+    @Override
+    public int getCacheabilitySizeLimit() {
+
+        return(-1);
     }
 
     ///

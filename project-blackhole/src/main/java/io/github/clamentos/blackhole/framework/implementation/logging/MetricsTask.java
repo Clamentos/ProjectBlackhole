@@ -4,9 +4,6 @@ package io.github.clamentos.blackhole.framework.implementation.logging;
 import io.github.clamentos.blackhole.framework.implementation.configuration.ConfigurationProvider;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.persistence.PersistenceException;
-
-///..
 import io.github.clamentos.blackhole.framework.implementation.persistence.models.LogEntity;
 import io.github.clamentos.blackhole.framework.implementation.persistence.models.SystemDiagnostics;
 
@@ -24,6 +21,9 @@ import io.github.clamentos.blackhole.framework.implementation.tasks.ContinuousTa
 import io.github.clamentos.blackhole.framework.implementation.utility.ExceptionFormatter;
 import io.github.clamentos.blackhole.framework.implementation.utility.IndirectInteger;
 import io.github.clamentos.blackhole.framework.implementation.utility.ResourceReleaser;
+
+///..
+import io.github.clamentos.blackhole.framework.scaffolding.exceptions.PersistenceException;
 
 ///.
 import java.io.BufferedReader;

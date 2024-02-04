@@ -1,6 +1,9 @@
 package io.github.clamentos.blackhole.framework.scaffolding.persistence;
 
 ///
+import io.github.clamentos.blackhole.framework.scaffolding.cache.Cacheability;
+
+///..
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
@@ -48,8 +51,15 @@ public interface Entity {
     void bindForUpdate(PreparedStatement statement, long fields) throws SQLException;
 
     ///..
-    /** @return {@code true} if {@code this} entity can be cached, {@code false} otherwise. */
-    boolean cacheable();
+    /** @return The cacheability level of {@code this} entity. */
+    Cacheability cacheable();
+
+    ///..
+    /**
+     * @return The cacheability size limit of {@code this} entity.
+     * This method will only be used by the framework if the cacheability of {@code this} entity is {@code Cacheability.SIZE_LIMITED}.
+    */
+    int getCacheabilitySizeLimit();
 
     ///
 }

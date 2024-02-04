@@ -2,7 +2,7 @@ package io.github.clamentos.blackhole.framework.scaffolding.exceptions;
 
 ///
 /**
- * <h3>Deserialization exception</h3>
+ * <h3>Deserialization Exception</h3>
  * Runtime exception indicating an error during deserialization processes.
 */
 public class DeserializationException extends RuntimeException {

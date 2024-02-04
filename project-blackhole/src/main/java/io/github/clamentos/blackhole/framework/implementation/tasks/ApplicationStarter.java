@@ -12,9 +12,6 @@ import io.github.clamentos.blackhole.framework.implementation.logging.MetricsTra
 import io.github.clamentos.blackhole.framework.implementation.network.tasks.ServerTask;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.persistence.PersistenceException;
-
-///..
 import io.github.clamentos.blackhole.framework.implementation.persistence.pool.ConnectionPool;
 import io.github.clamentos.blackhole.framework.implementation.persistence.pool.PooledConnection;
 
@@ -24,6 +21,9 @@ import io.github.clamentos.blackhole.framework.implementation.utility.ResourceRe
 
 ///..
 import io.github.clamentos.blackhole.framework.scaffolding.ApplicationContext;
+
+///..
+import io.github.clamentos.blackhole.framework.scaffolding.exceptions.PersistenceException;
 
 ///.
 import java.io.IOException;
