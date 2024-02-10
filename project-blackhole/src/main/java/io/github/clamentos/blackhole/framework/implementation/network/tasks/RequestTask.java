@@ -1,9 +1,6 @@
 package io.github.clamentos.blackhole.framework.implementation.network.tasks;
 
 ///
-import io.github.clamentos.blackhole.framework.implementation.configuration.ConfigurationProvider;
-
-///..
 import io.github.clamentos.blackhole.framework.implementation.logging.LogLevels;
 import io.github.clamentos.blackhole.framework.implementation.logging.Logger;
 import io.github.clamentos.blackhole.framework.implementation.logging.MetricsTracker;
@@ -39,7 +36,7 @@ import io.github.clamentos.blackhole.framework.scaffolding.servlet.Servlet;
 import io.github.clamentos.blackhole.framework.scaffolding.servlet.ServletProvider;
 
 ///..
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.deserialization.Deserializer;
+import io.github.clamentos.blackhole.framework.scaffolding.transfer.deserialization.DeserializerProvider;
 
 ///..
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.DataTransferObject;
@@ -90,8 +87,8 @@ public final class RequestTask extends Task {
     /** The user-defined request resources provider service. */
     private ResourcesProvider<? extends Enum<?>> resources_provider;
 
-    /** The user-defined request deserializer service. */
-    private Deserializer deserializer;
+    /** The user-defined request deserializer provider service. */
+    private DeserializerProvider deserializer_provider;
 
     ///
     /**
@@ -126,10 +123,14 @@ public final class RequestTask extends Task {
     @Override
     public void initialize() {
 
-        // Get and check all the services from the context.
+        // Check and get all the services from the context.
         if(checkNull(application_context.getServletProvider(), "Servlet provider") == true) return;
         if(checkNull(application_context.getResourcesProvider(), "Resources provider") == true) return;
-        if(checkNull(application_context.getDeserializer(), "Deserializer") == true) return;
+        if(checkNull(application_context.getDeserializerProvider(), "Deserializer provider") == true) return;
+
+        servlet_provider = application_context.getServletProvider();
+        resources_provider = application_context.getResourcesProvider();
+        deserializer_provider = application_context.getDeserializerProvider();
 
         // Officially active.
         transfer_context.active_request_task_count().incrementAndGet();
@@ -143,7 +144,7 @@ public final class RequestTask extends Task {
         RequestHeaders headers = decodeHeaders();
         if(headers == null) return;
 
-        DataTransferObject dto = deserializeDto(headers.id());
+        DataTransferObject dto = deserializeDto(headers.id(), headers.payload_size(), headers.method(), headers.target_resource());
         if(dto == null) return;
 
         if(execute(new NetworkRequest(headers, dto)) == false) return;
@@ -202,13 +203,6 @@ public final class RequestTask extends Task {
                 }
             }
 
-            // Check if the data length is whithin limits.
-            if(resource.isReactive() == false && payload_size > ConfigurationProvider.getInstance().MAX_REQUEST_SIZE) {
-
-                // Too big for "rest" requests.
-                respondError(id, ResponseStatuses.REQUEST_TOO_BIG, "Request payload is too big");
-            }
-
             return(new RequestHeaders(payload_size, id, flags, cache_imestamp, method, resource, session_id));
         }
 
@@ -242,7 +236,7 @@ public final class RequestTask extends Task {
 
     ///..
     // Deserializes the incoming data.
-    private DataTransferObject deserializeDto(byte id) {
+    private DataTransferObject deserializeDto(byte id, long payload_size, Methods request_method, Resources<? extends Enum<?>> resource) {
 
         DataTransferObject dto = null;
         SocketDataProvider data_provider = new SocketDataProvider(transfer_context.in(), payload_size);
@@ -250,15 +244,15 @@ public final class RequestTask extends Task {
         try {
 
             // Call the user-defined deserialized.
-            dto = deserializer.deserialize(data_provider);
+            dto = deserializer_provider.getDeserializer(resource).deserialize(data_provider, payload_size, request_method);
 
-            // If the serializer is not "reactive", once it finishes,
+            // If the deserialization is not "reactive", once it finishes,
             // this task must signal that it's not going to use the input stream anymore.
 
-            // If the serializer is "reactive", then the task will use the stream for the entire duration of the request.
+            // If the deserialization is "reactive", then the task will use the stream for the entire duration of the request.
             // Thus the signal must be sent later (see .execute method).
 
-            if(deserializer.isReactive() == false) {
+            if(dto.isReactive() == false) {
 
                 signal.countDown();
             }
@@ -289,7 +283,7 @@ public final class RequestTask extends Task {
             }
 
             // Bad data.
-            respondError(id, ResponseStatuses.BAD_FORMATTING, exc.getResponseMessage());
+            respondError(id, ResponseStatuses.BAD_FORMATTING, exc.getFailureMessage());
             return(null);
         }
     }
@@ -313,10 +307,10 @@ public final class RequestTask extends Task {
                 response.stream(transfer_context.out());
                 transfer_context.out_lock().unlock();
 
-                // If the deserializer used earlier was "reactive" then, at this point,
+                // If the deserialization done earlier was "reactive" then, at this point,
                 // the input stream is guaranteed to not be used anymore. Signal that.
 
-                if(deserializer.isReactive()) {
+                if(request.getDataTransferObject().isReactive()) {
 
                     signal.countDown();
                 }

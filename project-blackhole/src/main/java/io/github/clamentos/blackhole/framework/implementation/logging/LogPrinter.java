@@ -233,14 +233,15 @@ public final class LogPrinter {
     */
     protected String createNewLogFile() throws IOException {
 
+        lock.lock();
+
         String old_path = path;
         String new_path = "resources/logs_" + System.currentTimeMillis() + ".log";
         Files.createFile(Paths.get(new_path));
 
-        lock.lock();
-
         try {
 
+            ResourceReleaser.release(this, "LogPrinter.createNewLogFile", writer);
             writer = new BufferedWriter(new FileWriter(new_path, true), WRITER_BUFFER_SIZE);
         }
 
@@ -251,7 +252,6 @@ public final class LogPrinter {
         }
 
         path = new_path;
-        ResourceReleaser.release(this, "LogPrinter.createNewLogFile", writer);
 
         lock.unlock();
         return(old_path);

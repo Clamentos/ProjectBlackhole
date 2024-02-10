@@ -119,7 +119,7 @@ public final record SystemDiagnostics(
 
             "\"creation_date\"",
             "\"uptime\"",
-            "\"vritual_threads\"",
+            "\"virtual_threads\"",
             "\"carrier_threads\"",
             "\"memory_used\"",
             "\"memory_free\"",

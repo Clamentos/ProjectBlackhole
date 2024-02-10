@@ -49,9 +49,25 @@ public final record NetworkRequest(
     ///
     /** {@inheritDoc} */
     @Override
+    public byte getId() {
+
+        return(headers.id());
+    }
+    
+    ///..
+    /** {@inheritDoc} */
+    @Override
     public Resources<? extends Enum<?>> getResource() {
 
         return(headers.target_resource());
+    }
+
+    ///..
+    /** {@inheritDoc} */
+    @Override
+    public DataTransferObject getDataTransferObject() {
+
+        return(data);
     }
 
     ///

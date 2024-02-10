@@ -41,7 +41,7 @@ public final record SimpleDto(
     @Override
     public long getSize() {
 
-        return(8 + message.length());
+        return((1 + 8) + (1 + 4 + message.length()));
     }
 
     ///..

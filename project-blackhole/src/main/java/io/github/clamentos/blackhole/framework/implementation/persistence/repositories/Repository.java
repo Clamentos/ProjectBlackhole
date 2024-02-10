@@ -88,7 +88,7 @@ public final class Repository {
             }
 
             statement = prepareInsert(entities, connection.getConnection());
-            statement.executeUpdate();
+            conditionalBatchExecute(statement, entities.size());
 
             conditionalCommit(connection, commit);
         }
@@ -110,7 +110,7 @@ public final class Repository {
                         statement = prepareInsert(entities, connection.getConnection());
                     }
 
-                    statement.executeUpdate();
+                    conditionalBatchExecute(statement, entities.size());
                     conditionalCommit(connection, commit);
                 }
 
@@ -421,6 +421,20 @@ public final class Repository {
         if(commit == true) {
 
             connection.getConnection().commit();
+        }
+    }
+
+    ///..
+    private void conditionalBatchExecute(PreparedStatement statement, int size) throws SQLException {
+
+        if(size > 1) {
+
+            statement.executeBatch();
+        }
+
+        else {
+
+            statement.executeUpdate();
         }
     }
 

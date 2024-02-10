@@ -51,7 +51,10 @@ public interface Entity {
     void bindForUpdate(PreparedStatement statement, long fields) throws SQLException;
 
     ///..
-    /** @return The cacheability level of {@code this} entity. */
+    /**
+     * @return The never {@code null} cacheability level of {@code this} entity.
+     * @see Cacheability
+    */
     Cacheability cacheable();
 
     ///..

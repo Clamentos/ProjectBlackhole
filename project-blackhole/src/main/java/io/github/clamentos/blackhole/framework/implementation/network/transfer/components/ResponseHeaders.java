@@ -48,7 +48,7 @@ public final record ResponseHeaders(
     @Override
     public long getSize() {
 
-        return(11);
+        return(19);
     }
 
     ///..
@@ -59,6 +59,7 @@ public final record ResponseHeaders(
         out.writeLong(payload_size);
         out.writeByte(id);
         out.writeByte(flags);
+        out.writeLong(cache_timestamp);
         out.writeByte(response_status.ordinal());
     }
 

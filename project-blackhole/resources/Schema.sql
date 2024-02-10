@@ -5,7 +5,7 @@ DROP SCHEMA IF EXISTS "public" CASCADE;
 CREATE SCHEMA IF NOT EXISTS "public";
 
 ---
-CREATE TABLE IF NOT EXISTS "Roles"(
+CREATE TABLE "Roles"(
 
     "id"                        SMALLSERIAL PRIMARY KEY,
     "creation_date"             INT NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS "Roles"(
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "Avatars"(
+CREATE TABLE "Avatars"(
 
     "id"                        SMALLSERIAL PRIMARY KEY,
     "creation_date"             INT NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS "Avatars"(
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "Users"(
+CREATE TABLE "Users"(
 
     "id"                        SERIAL PRIMARY KEY,
     "flags"                     SMALLINT NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS "Users"(
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "Types"(
+CREATE TABLE "Types"(
 
     "id"                        SMALLSERIAL PRIMARY KEY,
     "creation_date"             INT NOT NULL,
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS "Types"(
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "Tags"(
+CREATE TABLE "Tags"(
 
     "id"                        SERIAL PRIMARY KEY,
     "creation_date"             INT NOT NULL,
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS "Tags"(
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "Medias"(
+CREATE TABLE "Medias"(
 
     "id"                        BIGSERIAL PRIMARY KEY,
     "creation_date"             INT NOT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS "Medias"(
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "Resources"(
+CREATE TABLE "Resources"(
 
     "id"                        BIGSERIAL PRIMARY KEY,
     "creation_date"             INT NOT NULL,
@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS "Resources"(
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "Links"(
+CREATE TABLE "Links"(
 
     "resource_a"                BIGINT NOT NULL,
     "resource_b"                BIGINT NOT NULL,
@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS "Links"(
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "CategorizeResource"(
+CREATE TABLE "CategorizeResource"(
 
     "tag"                       INT NOT NULL,
     "resource"                  BIGINT NOT NULL,
@@ -132,7 +132,7 @@ CREATE TABLE IF NOT EXISTS "CategorizeResource"(
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "CategorizeMedia"(
+CREATE TABLE "CategorizeMedia"(
 
     "tag"                       INT NOT NULL,
     "media"                     BIGINT NOT NULL,
@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS "CategorizeMedia"(
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "Composed"(
+CREATE TABLE "Composed"(
 
     "resource"                  INT NOT NULL,
     "media"                     BIGINT NOT NULL,
@@ -154,7 +154,7 @@ CREATE TABLE IF NOT EXISTS "Composed"(
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "UpdateNotes"(
+CREATE TABLE "UpdateNotes"(
 
     "id"                        BIGSERIAL NOT NULL PRIMARY KEY,
     "creation_date"             INT NOT NULL,
@@ -170,7 +170,7 @@ CREATE TABLE IF NOT EXISTS "UpdateNotes"(
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "ReportTypes"(
+CREATE TABLE "ReportTypes"(
 
     "id"                        SMALLSERIAL PRIMARY KEY,
     "creation_date"             INT NOT NULL,
@@ -179,7 +179,7 @@ CREATE TABLE IF NOT EXISTS "ReportTypes"(
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "Reports"(
+CREATE TABLE "Reports"(
 
     "id"                        BIGSERIAL PRIMARY KEY,
     "creation_date"             INT NOT NULL,
@@ -199,7 +199,7 @@ CREATE TABLE IF NOT EXISTS "Reports"(
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "SystemDiagnostics"(
+CREATE TABLE "SystemDiagnostics"(
 
     "creation_date"             BIGINT PRIMARY KEY,
     "uptime"                    BIGINT NOT NULL,
@@ -228,7 +228,7 @@ CREATE TABLE IF NOT EXISTS "SystemDiagnostics"(
 );
 
 ---
-CREATE TABLE IF NOT EXISTS "Logs"(
+CREATE TABLE "Logs"(
 
     "id"                        BIGSERIAL PRIMARY KEY,
     "log_id"                    BIGINT NOT NULL,

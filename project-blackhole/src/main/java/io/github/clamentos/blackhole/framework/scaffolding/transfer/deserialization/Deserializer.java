@@ -5,30 +5,32 @@ import io.github.clamentos.blackhole.framework.scaffolding.exceptions.Deserializ
 
 ///..
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.DataTransferObject;
+import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Methods;
 
 ///
 /**
  * <h3>Deserializer</h3>
  * Specifies that the implementing class can deserialize data coming from a data provider into a data-transfer-object.
  * @see DataProvider
+ * @see Methods
  * @see DataTransferObject
 */
+@FunctionalInterface
 public interface Deserializer {
 
     ///
     /**
      * Deserializes data coming from the data provider into a data-transfer-object.
      * @param in : The data provider as the source of data.
+     * @param payload_size : The size of the payload specified in the request headers.
+     * @param request_method : The method of the incoming request.
      * @return The never {@code null} deserialized data-transfer-object.
-     * @throws DeserializationException If any deserialization error occurs.
+     * @throws DeserializationException If any error occurs during the deserialization process.
      * @see DataProvider
+     * @see Methods
      * @see DataTransferObject
     */
-    DataTransferObject deserialize(DataProvider in) throws DeserializationException;
-
-    ///..
-    /** @return {@code true} if {@code this} deserializer is "reactive", {@code false} otherwise. */
-    boolean isReactive();
+    DataTransferObject deserialize(DataProvider in, long payload_size, Methods request_method) throws DeserializationException;
 
     ///
 }

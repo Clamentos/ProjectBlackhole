@@ -1,3 +1,5 @@
+// TODO: proper module configuration.
+
 /**
  * This module specifies the API for the underlying framework.
 */

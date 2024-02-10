@@ -3,3 +3,9 @@ This package is aimed at defining basic persistence-level interfaces for the fra
 
 ## Entity.java
 ...
+
+## Filter.java
+...
+
+## ResultSetMapper.java
+...

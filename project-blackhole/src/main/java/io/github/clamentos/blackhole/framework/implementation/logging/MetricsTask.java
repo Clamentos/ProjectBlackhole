@@ -126,6 +126,7 @@ public final class MetricsTask extends ContinuousTask {
             }
         }
 
+        logger.log("MetricsTask.work >> Begin", LogLevels.INFO);
         sleep_samples = 0;
 
         // Dump the metrics and logs to the database.
@@ -138,6 +139,7 @@ public final class MetricsTask extends ContinuousTask {
         }
 
         pool.releaseConnection(0, connection);
+        logger.log("MetricsTask.work >> End", LogLevels.SUCCESS);
     }
 
     ///..
@@ -188,6 +190,8 @@ public final class MetricsTask extends ContinuousTask {
             }
 
             else {
+
+                System.out.println("DBG entered in the else...");
 
                 if(count == 0) {
 

@@ -2,8 +2,9 @@ package io.github.clamentos.blackhole.framework.scaffolding.transfer.network;
 
 ///
 /**
- * <h3>Data transfer object</h3>
- * Specifies that the implementing class is a data-transfer-object (DTO).
+ * <h3>Data Transfer Object</h3>
+ * <p>Specifies that the implementing class is a data-transfer-object (DTO).</p>
+ * <b>NOTE: this interface is intended for deserialization only.</b> Serialization is done via the {@code Streamable} contract.
 */
 @FunctionalInterface
 public interface DataTransferObject {

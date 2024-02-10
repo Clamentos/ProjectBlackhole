@@ -22,6 +22,7 @@ public interface Filter {
     */
     PreparedStatement generateSelect(Connection connection) throws SQLException;
 
+    ///..
     /**
      * Checks if {@code this} filters the target entity.
      * @param entity : The entity to be tested by {@code this} filter.

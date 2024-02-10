@@ -2,7 +2,7 @@ package io.github.clamentos.blackhole.framework.scaffolding.transfer.deserializa
 
 ///
 /**
- * <h3>Data provider</h3>
+ * <h3>Data Provider</h3>
  * Specifies that the implementing class can provide data to other classes.
 */
 @FunctionalInterface

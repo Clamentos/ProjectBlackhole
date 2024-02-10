@@ -115,12 +115,6 @@ public final class ConfigurationProvider {
     public final int MAX_INCOMING_CONNECTIONS;
 
     /**
-     * <p>Specifies the maximum non-streamed request size in bytes.</p>
-     * Default: {@code 1000000} --- Minimum: {@code 100000} --- Maximum: {@code Integer.MAX_VALUE}
-    */
-    public final int MAX_REQUEST_SIZE;
-
-    /**
      * <p>Specifies the total maximum number of client sockets that can be handled by the system.</p>
      * Default: {@code 10000} --- Minimum: {@code 10} --- Maximum: {@code Integer.MAX_VALUE}
     */
@@ -312,7 +306,6 @@ public final class ConfigurationProvider {
         CLIENT_SOCKET_TIMEOUT = checkInt("10000", 1000, Integer.MAX_VALUE);
         MAX_CLIENTS_PER_IP = checkInt("2", 1, Integer.MAX_VALUE);
         MAX_INCOMING_CONNECTIONS = checkInt("50", 1, Integer.MAX_VALUE);
-        MAX_REQUEST_SIZE = checkInt("1000000", 100000, Integer.MAX_VALUE);
         MAX_SOCKETS = checkInt("10000", 10, Integer.MAX_VALUE);
         SERVER_PORT = checkInt("8080", 0, Integer.MAX_VALUE);
         SERVER_SOCKET_TIMEOUT = checkInt("500", 100, Integer.MAX_VALUE);
