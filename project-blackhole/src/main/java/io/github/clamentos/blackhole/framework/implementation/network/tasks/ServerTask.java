@@ -31,8 +31,8 @@ import java.net.SocketTimeoutException;
 
 ///
 /**
- * <h3>Server task</h3>
- * Responsible for accepting or rejecting incoming client sockets.
+ * <h3>Server Task</h3>
+ * Responsible for accepting or rejecting incoming client TCP connections.
  * @see ContinuousTask
  * @see TransferTask
 */
@@ -56,11 +56,11 @@ public final class ServerTask extends ContinuousTask {
     /**
      * Instantiates a new {@link ServerTask} object.
      * @param application_context : The application context that will be provided to subsequent tasks.
-     * @throws IOException If any IO error occurs while creating the server socket.
      * @throws IllegalArgumentException If {@code Context} is {@code null}.
+     * @throws IOException If any IO error occurs while creating the server socket.
      * @see TransferTask
     */
-    public ServerTask(ApplicationContext application_context) throws IOException, IllegalArgumentException {
+    public ServerTask(ApplicationContext application_context) throws IllegalArgumentException, IOException {
 
         super();
 
@@ -75,13 +75,12 @@ public final class ServerTask extends ContinuousTask {
         this.application_context = application_context;
 
         server_socket = new ServerSocket(
-            
+
             ConfigurationProvider.getInstance().SERVER_PORT,
             ConfigurationProvider.getInstance().MAX_INCOMING_CONNECTIONS
         );
 
         server_socket.setSoTimeout(ConfigurationProvider.getInstance().SERVER_SOCKET_TIMEOUT);
-
         logger.log("ServerTask.new >> Instantiated successfully", LogLevels.SUCCESS);
     }
 
@@ -110,13 +109,16 @@ public final class ServerTask extends ContinuousTask {
 
             if(exc instanceof SocketTimeoutException == false) {
 
-                logger.log(ExceptionFormatter.format("ServerTask.work >> ", exc, " >> Skipping..."), LogLevels.WARNING);
+                logger.log(
+
+                    ExceptionFormatter.format("ServerTask.work >> Could not accept the connection", exc, ">> Skipping..."),
+                    LogLevels.WARNING
+                );
             }
 
             return;
         }
 
-        // Check if the requester doesn't exceed the socket limits.
         // NOTE: at this point getRemoteSocketAddress() will never return null since the socket is guaranteed to be connected now.
         if(server_context.isClientSocketAllowed(client_socket.getRemoteSocketAddress())) {
 
@@ -125,7 +127,6 @@ public final class ServerTask extends ContinuousTask {
 
         else {
 
-            // Too many, refuse.
             ResourceReleaser.release(logger, "ServerTask.work", client_socket);
         }
     }
@@ -142,7 +143,7 @@ public final class ServerTask extends ContinuousTask {
 
         else {
 
-            logger.log("ServerTask.terminate >> Could not close the server socket", LogLevels.ERROR);
+            logger.log("ServerTask.terminate >> Shut down with errors: Could not close the server socket", LogLevels.ERROR);
         }
     }
 

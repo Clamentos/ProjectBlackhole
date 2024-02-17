@@ -9,6 +9,9 @@ import io.github.clamentos.blackhole.framework.scaffolding.transfer.deserializat
 ///..
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.ResourcesProvider;
 
+///..
+import io.github.clamentos.blackhole.framework.scaffolding.transfer.validation.ValidatorProvider;
+
 ///
 /**
  * <h3>Application Context</h3>
@@ -21,24 +24,31 @@ public interface ApplicationContext {
 
     ///
     /**
-     * @return The never {@code null} user-defined servlet provider.
+     * @return The never {@code null} user defined servlet provider.
      * @see ServletProvider
     */
     ServletProvider getServletProvider();
 
     ///..
     /**
-     * @return The never {@code null} user-defined resources provider.
+     * @return The never {@code null} user defined resources provider.
      * @see ResourcesProvider
     */
     ResourcesProvider<? extends Enum<?>> getResourcesProvider();
 
     ///..
     /**
-     * @return The never {@code null} user-defined deserializer provider.
+     * @return The never {@code null} user defined deserializer provider.
      * @see DeserializerProvider
     */
     DeserializerProvider getDeserializerProvider();
+
+    ///..
+    /**
+     * @return The never {@code null} user defined validator provider.
+     * @see ValidatorProvider
+    */
+    ValidatorProvider getValidatorProvider();
 
     ///
 }

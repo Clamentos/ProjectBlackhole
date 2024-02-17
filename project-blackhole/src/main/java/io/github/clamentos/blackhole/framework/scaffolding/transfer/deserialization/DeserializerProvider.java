@@ -7,6 +7,7 @@ import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Reso
 /**
  * <h3>Deserializer Provider</h3>
  * Specifies that the implementing class can provide the user-defined deserializers to other classes.
+ * @see Resources
  * @see Deserializer
 */
 @FunctionalInterface

@@ -17,7 +17,7 @@ public final record Log(
     /** The log instantiation timestamp in milliseconds. */
     long timestamp,
 
-    /** The runtime-unique log identifier. */
+    /** The runtime unique log identifier. */
     long id
 
     ///
@@ -28,7 +28,7 @@ public final record Log(
      * Instantiates a new {@link Log} object.
      * @param message : The log message.
      * @param log_level : The log severity.
-     * @param id : The id of the log item.
+     * @param id : The runtime unique log identifier.
      * @see LogLevels
     */
     protected Log(String message, LogLevels log_level, long id) {

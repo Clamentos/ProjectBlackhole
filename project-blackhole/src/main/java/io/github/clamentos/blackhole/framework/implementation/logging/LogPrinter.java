@@ -38,7 +38,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 ///
 /**
- * <h3>Log printer</h3>
+ * <h3>Log Printer</h3>
  * <p>This class performs the actual logging to the console or log file.</p>
  * Use this class when synchronous logging is desired.
 */
@@ -80,9 +80,7 @@ public final class LogPrinter {
     */
     private LogPrinter() {
 
-        // Instantiate the internal structures.
         WRITER_BUFFER_SIZE = ConfigurationProvider.getInstance().READER_WRITER_BUFFER_SIZE;
-
         formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss.SSS");
         current_id = new AtomicLong(0);
         lock = new ReentrantLock();
@@ -108,8 +106,10 @@ public final class LogPrinter {
                 catch(IOException exc2) {
 
                     printToFile(new Log(
-                        
-                        ExceptionFormatter.format("LogPrinter.new >> ", exc2, " >> Could not instantiate"), LogLevels.FATAL, getNextId()
+
+                        ExceptionFormatter.format("LogPrinter.new >> Could not instantiate", exc2, ">> Aborting..."),
+                        LogLevels.FATAL,
+                        getNextId()
                     ));
 
                     System.exit(1);
@@ -120,13 +120,16 @@ public final class LogPrinter {
 
                 printToFile(new Log(
    
-                    ExceptionFormatter.format("LogPrinter.new >> ", exc, " >> Could not instantiate"), LogLevels.FATAL, getNextId()
+                    ExceptionFormatter.format("LogPrinter.new >> Could not instantiate", exc, ">> Aborting..."),
+                    LogLevels.FATAL,
+                    getNextId()
                 ));
 
                 System.exit(1);
             }
         }
 
+        printToFile(new Log("ApplicationStarter.start >> Application starting...", LogLevels.SUCCESS, getNextId()));
         printToFile(new Log("LogPrinter.new >> Instantiated successfully", LogLevels.SUCCESS, getNextId()));
     }
 
@@ -158,7 +161,7 @@ public final class LogPrinter {
     ///..
     /**
      * <p>Synchronously logs the message to the log file with the given severity.</p>
-     * If this methods cannot write to the file, it will use the console as a fallback.
+     * If this methods couldn't write to the file, it will use the console as a fallback.
      * @param message : The message to log.
      * @param severity : The severity of the log.
      * @throws IllegalArgumentException If {@code severity} is {@code null}.
@@ -194,7 +197,7 @@ public final class LogPrinter {
     ///..
     /**
      * <p>Logs the log to the log file with the given severity synchronously.</p>
-     * If this method cannot write to the file, it will use the console as a fallback.
+     * If this method couldn't write to the file, it will use the console as a fallback.
      * @param log : The log to log.
      * @throws NullPointerException If {@code log} is {@code null}.
      * @see Log
@@ -215,9 +218,11 @@ public final class LogPrinter {
 
                 ExceptionFormatter.format(
 
-                    "LogPrinter.printToFile >> ", exc, " >> Could not write to log file, writing to console instead"
+                    "LogPrinter.printToFile >> Could not write to the log file", exc, ">> Writing to the console instead..."
+                ),
 
-                ), LogLevels.WARNING, getNextId()
+                LogLevels.WARNING,
+                getNextId()
             ));
 
             printToConsole(log);
@@ -252,8 +257,8 @@ public final class LogPrinter {
         }
 
         path = new_path;
-
         lock.unlock();
+
         return(old_path);
     }
 
@@ -269,7 +274,11 @@ public final class LogPrinter {
     }
 
     ///.
-    // Formats and prints to standard out.
+    /**
+     * Logs the log to the console with the given severity synchronously.
+     * @param log : The log to log.
+     * @see Log
+    */
     private void printToConsole(Log log) {
 
         String level = "[" + log.log_level().getColor() + log.log_level().getValue() + "\u001B[0m]-";
@@ -279,7 +288,12 @@ public final class LogPrinter {
     }
 
     ///..
-    // Prepares the partial log message.
+    /**
+     * Constructs a partial log string.
+     * @param log : The log used to build the string.
+     * @return The partial log string containing the log timestamp and id.
+     * @see Log
+    */
     private String partialString(Log log) {
 
         String id = "[" + String.format("%016X", log.id()) + "]-";
@@ -287,13 +301,15 @@ public final class LogPrinter {
     }
 
     ///..
-    // Actual file writing method.
+    /**
+     * Writes to the currently open file {@code writer}.
+     * @param data : The string to write.
+     * @throws IOException If any IO error occurs.
+    */
     private void write(String data) throws IOException {
 
         lock.lock();
-
         writer.write(data);
-        writer.flush();
 
         if(ConfigurationProvider.getInstance().FLUSH_AFTER_WRITE == true) {
 
@@ -304,13 +320,16 @@ public final class LogPrinter {
     }
 
     ///..
-    // Scans the "resource/" directory and returns the name of the latest or oldest "*.log" file.
+    /**
+     * Scans the {@code resource/} directory and returns the name of the latest or oldest {@code *.log} file.
+     * @param latest_mode : Search mode. {@code true} for latest, {@code false} for oldest.
+     * @return The name of the latest or oldest {@code *.log} file.
+     * @throws FileNotFoundException If no eligible file was found.
+    */
     private String findLogFile(boolean latest_mode) throws FileNotFoundException {
 
-        List<String> log_names = new ArrayList<>();
         String latest;
-
-        // Fetch all the names and filter them.
+        List<String> log_names = new ArrayList<>();
         String[] all_names = new File("resources/").list();
 
         for(String name : all_names) {
@@ -321,7 +340,6 @@ public final class LogPrinter {
             }
         }
 
-        // Select the "latest" (the file name includes a timestamp).
         if(log_names.size() > 0) {
 
             latest = log_names.get(0);

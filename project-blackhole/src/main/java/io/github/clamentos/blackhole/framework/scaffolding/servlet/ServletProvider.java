@@ -6,7 +6,8 @@ import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Reso
 ///
 /**
  * <h3>Servlet Provider</h3>
- * Specifies that the implementing class can provide the user-defined servlets to other classes.
+ * Specifies that the implementing class can provide servlets to other classes.
+ * @see Resources
  * @see Servlet
 */
 @FunctionalInterface

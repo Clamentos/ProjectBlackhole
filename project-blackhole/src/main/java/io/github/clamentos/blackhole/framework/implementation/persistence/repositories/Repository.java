@@ -8,18 +8,20 @@ import io.github.clamentos.blackhole.framework.implementation.persistence.pool.P
 
 ///..
 import io.github.clamentos.blackhole.framework.implementation.utility.ResourceReleaser;
+import io.github.clamentos.blackhole.framework.implementation.utility.SqlExceptionDecoder;
 
 ///..
+import io.github.clamentos.blackhole.framework.scaffolding.exceptions.DatabaseConnectionException;
 import io.github.clamentos.blackhole.framework.scaffolding.exceptions.PersistenceException;
 import io.github.clamentos.blackhole.framework.scaffolding.exceptions.ResultSetMappingException;
 
 ///..
+import io.github.clamentos.blackhole.framework.scaffolding.persistence.Entities;
 import io.github.clamentos.blackhole.framework.scaffolding.persistence.Entity;
 import io.github.clamentos.blackhole.framework.scaffolding.persistence.Filter;
 import io.github.clamentos.blackhole.framework.scaffolding.persistence.ResultSetMapper;
 
 ///.
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -32,7 +34,7 @@ import java.util.List;
  * <h3>Repository</h3>
  * Entity repository that provides basic CRUD operations.
 */
-public final class Repository {
+public class Repository {
 
     ///
     /** Singleton instance of {@code this} instantiated during class loading. */
@@ -64,15 +66,25 @@ public final class Repository {
      * <p>Inserts the specified entities into the corresponding table in the database.</p>
      * <b>NOTE: This method assumes that all entities are of the same type.</b>
      * @param entities : The entities to be persisted.
+     * @param descriptor : The entities descriptor.
      * @param connection : The connection to the database.
+     * @param commit : The flag used to indicate if the transaction should be committed or not.
+     * @throws IllegalArgumentException If either {@code entities}, {@code descriptor} or {@code connection} are {@code null}.
      * @throws PersistenceException If any database access error occurrs.
-     * @throws IllegalArgumentException If either {@code entities}, {@code sql} or {@code connection} are {@code null}.
      * @see Entity
+     * @see Entities
      * @see PooledConnection
     */
-    public void insert(List<? extends Entity> entities, PooledConnection connection, boolean commit) throws PersistenceException, IllegalArgumentException {
+    public void insert(
 
-        if(entities == null || connection == null) {
+        List<? extends Entity> entities,
+        Entities<? extends Enum<?>> descriptor,
+        PooledConnection connection,
+        boolean commit
+
+    ) throws IllegalArgumentException, PersistenceException {
+
+        if(entities == null || descriptor == null || connection == null) {
 
             throw new IllegalArgumentException("(Repository.insert) -> The input arguments cannot be null");
         }
@@ -87,27 +99,26 @@ public final class Repository {
                 return;
             }
 
-            statement = prepareInsert(entities, connection.getConnection());
+            statement = prepareInsert(entities, descriptor, connection);
             conditionalBatchExecute(statement, entities.size());
-
             conditionalCommit(connection, commit);
         }
-
-        catch(SQLException exc) {
+        
+        catch(PersistenceException exc) {
 
             try {
 
                 // Immediately rollback.
                 connection.getConnection().rollback();
 
-                // If the SQL error state was caused by a network / connection problem -> refresh & retry.
-                if(exc.getSQLState().substring(0, 2).equals("08")) {
+                // If connection problem -> refresh & retry.
+                if(exc instanceof DatabaseConnectionException) {
 
                     connection.refreshConnection();
 
                     if(statement == null) {
 
-                        statement = prepareInsert(entities, connection.getConnection());
+                        statement = prepareInsert(entities, descriptor, connection);
                     }
 
                     conditionalBatchExecute(statement, entities.size());
@@ -117,14 +128,18 @@ public final class Repository {
                 else {
 
                     // The exception was not caused by a network / connection problem -> cannot recover...
-                    throw new PersistenceException(exc);
+
+                    ResourceReleaser.release(logger, "Repository.insert", statement);
+                    throw exc;
                 }
             }
 
             catch(SQLException exc2) {
 
                 // Failed while retrying, give up...
-                throw new PersistenceException(exc2);
+
+                ResourceReleaser.release(logger, "Repository.insert", statement);
+                throw SqlExceptionDecoder.decode("(Repository.insert) -> Could not insert: ", exc2);
             }
         }
 
@@ -137,14 +152,16 @@ public final class Repository {
      * @param filter : The query filter.
      * @param connection : The database connection.
      * @return The JDBC result set holding the found entities.
+     * @throws IllegalArgumentException If either {@code filter}, {@code connection} or {@code mapper} are {@code null}.
      * @throws PersistenceException If any database access error occurrs.
-     * @throws IllegalArgumentException If either {@code filter} or {@code connection} are {@code null}.
      * @see Filter
      * @see PooledConnection
+     * @see ResultSetMapper
     */
-    public <T extends Entity> List<T> select(Filter filter, PooledConnection connection, ResultSetMapper<T> mapper) throws PersistenceException, IllegalArgumentException, ResultSetMappingException {
+    public <T extends Entity> List<T> select(Filter filter, PooledConnection connection, ResultSetMapper<T> mapper)
+    throws IllegalArgumentException, PersistenceException {
 
-        if(filter == null || connection == null) {
+        if(filter == null || connection == null || mapper == null) {
 
             throw new IllegalArgumentException("(Repository.select) -> The input arguments cannot be null");
         }
@@ -154,25 +171,22 @@ public final class Repository {
 
         try {
 
-            statement = filter.generateSelect(connection.getConnection());
+            statement = prepareSelect(filter, connection);
             result_set = statement.executeQuery();
         }
 
-        catch(SQLException exc) {
+        catch(SQLException | PersistenceException exc) {
 
             try {
 
-                // Immediately rollback.
-                connection.getConnection().rollback();
-
-                // If the SQL error state was caused by a network / connection problem -> refresh & retry.
-                if(exc.getSQLState().substring(0, 2).equals("08")) {
+                // If connection problem -> refresh & retry.
+                if(exc instanceof DatabaseConnectionException) {
 
                     connection.refreshConnection();
 
                     if(statement == null) {
 
-                        statement = filter.generateSelect(connection.getConnection());
+                        statement = prepareSelect(filter, connection);
                     }
 
                     result_set = statement.executeQuery();
@@ -181,38 +195,62 @@ public final class Repository {
                 else {
 
                     // The exception was not caused by a network / connection problem -> cannot recover...
-                    throw new PersistenceException(exc);
+
+                    ResourceReleaser.release(logger, "Repository.select", statement, result_set);
+                    throw exc;
                 }
             }
 
             catch(SQLException exc2) {
 
                 // Failed while retrying, give up...
-                throw new PersistenceException(exc2);
+
+                ResourceReleaser.release(logger, "Repository.select", statement, result_set);
+                throw SqlExceptionDecoder.decode("(Repository.select) -> Could not select: ", exc2);
             }
         }
 
-        List<T> entities = mapper.map(result_set);
-        ResourceReleaser.release(logger, "Repository.insert", statement, result_set);
+        try {
 
-        return(entities);
+            List<T> entities = mapper.map(result_set);
+            ResourceReleaser.release(logger, "Repository.select", statement, result_set);
+
+            return(entities);
+        }
+
+        catch(ResultSetMappingException exc3) {
+
+            ResourceReleaser.release(logger, "Repository.select", statement, result_set);
+            throw exc3;
+        }
     }
 
     ///..
     /**
      * Updates the database table associated to the provided entity.
      * @param entity : The entity to be persisted.
-     * @param connection : The connection to the database.
+     * @param descriptor : The entity descriptor.
      * @param fields : The fields to update in the table.
      * This parameter works as a checklist starting from the first field which maps to least significant bit.
+     * @param connection : The connection to the database.
+     * @param commit : The flag used to indicate if the transaction should be committed or not.
+     * @throws IllegalArgumentException If either {@code entity}, {@code descriptor} or {@code connection} are {@code null}.
      * @throws PersistenceException If any database access error occurrs.
-     * @throws IllegalArgumentException If either {@code entities} or {@code connection} are {@code null}.
      * @see Entity
+     * @see Entities
      * @see PooledConnection
     */
-    public void update(Entity entity, long fields, PooledConnection connection) throws PersistenceException, IllegalArgumentException {
+    public void update(
+        
+        Entity entity,
+        Entities<? extends Enum<?>> descriptor,
+        long fields,
+        PooledConnection connection,
+        boolean commit
 
-        if(entity == null || connection == null) {
+    ) throws IllegalArgumentException, PersistenceException {
+
+        if(entity == null || descriptor == null || connection == null) {
 
             throw new IllegalArgumentException("(Repository.update) -> The input arguments cannot be null");
         }
@@ -221,41 +259,47 @@ public final class Repository {
 
         try {
 
-            statement = prepareUpdate(entity, fields, connection.getConnection());
+            statement = prepareUpdate(entity, descriptor, fields, connection);
             statement.executeUpdate();
+            conditionalCommit(connection, commit);
         }
 
-        catch(SQLException exc) {
+        catch(SQLException | PersistenceException exc) {
 
             try {
 
                 // Immediately rollback.
                 connection.getConnection().rollback();
 
-                // If the SQL error state was caused by a network / connection problem -> refresh & retry.
-                if(exc.getSQLState().substring(0, 2).equals("08")) {
+                // If connection problem -> refresh & retry.
+                if(exc instanceof DatabaseConnectionException) {
 
                     connection.refreshConnection();
 
                     if(statement == null) {
 
-                        statement = prepareUpdate(entity, fields, connection.getConnection());
+                        statement = prepareUpdate(entity, descriptor, fields, connection);
                     }
 
                     statement.executeUpdate();
+                    conditionalCommit(connection, commit);
                 }
 
                 else {
 
                     // The exception was not caused by a network / connection problem -> cannot recover...
-                    throw new PersistenceException(exc);
+
+                    ResourceReleaser.release(logger, "Repository.update", statement);
+                    throw exc;
                 }
             }
 
             catch(SQLException exc2) {
 
                 // Failed while retrying, give up...
-                throw new PersistenceException(exc2);
+
+                ResourceReleaser.release(logger, "Repository.update", statement);
+                throw SqlExceptionDecoder.decode("(Repository.update) -> Could not update: ", exc2);
             }
         }
 
@@ -266,22 +310,24 @@ public final class Repository {
     /**
      * Removes from the specified database table the recods matching the provided keys.
      * @param keys : The primary keys of the records.
-     * @param table_name : The name of the target table.
-     * @param key_column_name : The name of the primary key column.
+     * @param descriptor : The entity descriptor.
      * @param connection : The connection to the database.
+     * @param commit : The flag used to indicate if the transaction should be committed or not.
+     * @throws IllegalArgumentException If either {@code keys}, {@code descriptor} or {@code connection} are {@code null}.
      * @throws PersistenceException If any database access error occurrs.
-     * @throws IllegalArgumentException If either {@code keys} or {@code connection} are {@code null}.
      * @see PooledConnection
     */
-    public void delete(List<Object> keys, String table_name, String key_column_name, PooledConnection connection) throws PersistenceException, IllegalArgumentException {
+    public void delete(List<Object> keys, Entities<? extends Enum<?>> descriptor, PooledConnection connection, boolean commit)
+    throws IllegalArgumentException, PersistenceException {
 
-        if(keys == null || connection == null) {
+        if(keys == null || descriptor == null || connection == null) {
 
             throw new IllegalArgumentException("(Repository.delete) -> The input arguments cannot be null");
         }
 
         if(keys.size() == 0) {
 
+            conditionalCommit(connection, commit);
             return;
         }
 
@@ -289,41 +335,47 @@ public final class Repository {
 
         try {
 
-            statement = prepareDelete(keys, table_name, key_column_name, connection.getConnection());
+            statement = prepareDelete(keys, descriptor, connection);
             statement.executeUpdate();
+            conditionalCommit(connection, commit);
         }
 
-        catch(SQLException exc) {
+        catch(SQLException | PersistenceException exc) {
 
             try {
 
                 // Immediately rollback.
                 connection.getConnection().rollback();
 
-                // If the SQL error state was caused by a network / connection problem -> refresh & retry.
-                if(exc.getSQLState().substring(0, 2).equals("08")) {
+                // If connection problem -> refresh & retry.
+                if(exc instanceof DatabaseConnectionException) {
 
                     connection.refreshConnection();
 
                     if(statement == null) {
 
-                        statement = prepareDelete(keys, table_name, key_column_name, connection.getConnection());
+                        statement = prepareDelete(keys, descriptor, connection);
                     }
 
                     statement.executeUpdate();
+                    conditionalCommit(connection, commit);
                 }
 
                 else {
 
                     // The exception was not caused by a network / connection problem -> cannot recover...
-                    throw new PersistenceException(exc);
+
+                    ResourceReleaser.release(logger, "Repository.delete", statement);
+                    throw exc;
                 }
             }
 
             catch(SQLException exc2) {
 
                 // Failed while retrying, give up...
-                throw new PersistenceException(exc2);
+
+                ResourceReleaser.release(logger, "Repository.delete", statement);
+                throw SqlExceptionDecoder.decode("(Repository.delete) -> Could not delete: ", exc2);
             }
         }
 
@@ -331,82 +383,159 @@ public final class Repository {
     }
 
     ///.
-    private PreparedStatement prepareInsert(List<? extends Entity> entities, Connection connection) throws SQLException {
+    private PreparedStatement prepareInsert(
+
+        List<? extends Entity> entities,
+        Entities<? extends Enum<?>> descriptor,
+        PooledConnection pooled_connection
+
+    ) throws PersistenceException {
 
         StringBuilder columns = new StringBuilder();
-        List<String> column_names = entities.get(0).getColumnNames();
-        String table_name = entities.get(0).getTableName();
-        boolean auto_key = entities.get(0).usesAutoKey();
+        String[] column_names = descriptor.getColumnNames();
+        String table_name = descriptor.getTableName();
+        boolean auto_key = descriptor.usesAutoKey();
 
-        for(int i = (auto_key ? 1 : 0); i < column_names.size(); i++) {
+        for(int i = (auto_key ? 1 : 0); i < column_names.length; i++) {
 
-            columns.append(column_names.get(i) + ",");
+            columns.append(column_names[i] + ",");
         }
 
         columns.deleteCharAt(columns.length() - 1);
-        String placeholders = getPlaceholders(auto_key ? column_names.size() - 1 : column_names.size());
+        String placeholders = getPlaceholders(auto_key ? column_names.length - 1 : column_names.length);
 
-        PreparedStatement statement = connection.prepareStatement(
+        try {
 
-            "INSERT INTO " + table_name + "(" + columns + ") VALUES(" + placeholders + ")"
-        );
+            PreparedStatement statement = pooled_connection.getConnection().prepareStatement(
 
-        for(Entity entity : entities) {
+                "INSERT INTO " + table_name + "(" + columns + ") VALUES(" + placeholders + ")"
+            );
 
-            entity.bindForInsert(statement);
+            pooled_connection.getQueryBinder().setStatement(statement);
 
-            if(entities.size() > 1) {
+            for(Entity entity : entities) {
 
-                statement.addBatch();
+                pooled_connection.getQueryBinder().resetIndex();
+                entity.bindForInsert(pooled_connection.getQueryBinder());
+    
+                if(entities.size() > 1) {
+    
+                    statement.addBatch();
+                }
             }
+
+            return(statement);
         }
 
-        return(statement);
+        catch(SQLException | PersistenceException exc) {
+
+            if(exc instanceof SQLException) {
+
+                throw SqlExceptionDecoder.decode("(Repository.prepareInsert) -> Could not prepare for insert: ", (SQLException)exc);
+            }
+
+            else {
+
+                throw (PersistenceException)exc;
+            }
+        }
     }
 
     ///..
-    private PreparedStatement prepareUpdate(Entity entity, long fields, Connection connection) throws SQLException {
+    private PreparedStatement prepareSelect(Filter filter, PooledConnection pooled_connection) throws PersistenceException {
 
-        // Generate the query.
+        try {
+
+            PreparedStatement statement = pooled_connection.getConnection().prepareStatement(filter.generateSelect());
+
+            pooled_connection.getQueryBinder().setStatement(statement);
+            pooled_connection.getQueryBinder().resetIndex();
+            filter.bindForSelect(pooled_connection.getQueryBinder());
+
+            return(statement);
+        }
+
+        catch(SQLException exc) {
+
+            throw SqlExceptionDecoder.decode("(Repository.prepareSelect) -> Could not prepare for select: ", exc);
+        }
+    }
+
+    ///..
+    private PreparedStatement prepareUpdate(
+
+        Entity entity,
+        Entities<? extends Enum<?>> descriptor,
+        long fields,
+        PooledConnection pooled_connection
+
+    ) throws PersistenceException {
+
         StringBuilder columns = new StringBuilder();
-        List<String> column_names = entity.getColumnNames();
+        String[] column_names = descriptor.getColumnNames();
 
-        for(int i = 1; i < column_names.size(); i++) {
+        for(int i = 1; i < column_names.length; i++) {
 
             if((fields & (1 << i)) > 0) {
 
-                columns.append(column_names.get(i) + "=?,");
+                columns.append(column_names[i] + "=?,");
             }
         }
 
         columns.deleteCharAt(columns.length() - 1);
 
-        // Prepare the statement with the generated INSERT query.
-        PreparedStatement statement = connection.prepareStatement(
+        try {
 
-            "UPDATE " + entity.getTableName() + " SET " + columns + " WHERE " + column_names.get(0) + "=?"
-        );
+            PreparedStatement statement = pooled_connection.getConnection().prepareStatement(
 
-        entity.bindForUpdate(statement, fields);
-        return(statement);
+                "UPDATE " + descriptor.getTableName() + " SET " + columns + " WHERE " + column_names[0] + "=?"
+            );
+
+            pooled_connection.getQueryBinder().setStatement(statement);
+            pooled_connection.getQueryBinder().resetIndex();
+            entity.bindForUpdate(pooled_connection.getQueryBinder(), fields);
+
+            return(statement);
+        }
+
+        catch(SQLException | PersistenceException exc) {
+
+            if(exc instanceof SQLException) {
+
+                throw SqlExceptionDecoder.decode("(Repository.prepareUpdate) -> Could not prepare for update: ", (SQLException)exc);
+            }
+
+            else {
+
+                throw (PersistenceException)exc;
+            }
+        }
     }
 
     ///..
-    private PreparedStatement prepareDelete(List<Object> keys, String table_name, String key_column_name, Connection connection) throws SQLException {
+    private PreparedStatement prepareDelete(List<Object> keys, Entities<? extends Enum<?>> descriptor, PooledConnection pooled_connection) throws PersistenceException {
 
         String placeholders = getPlaceholders(keys.size());
 
-        PreparedStatement statement = connection.prepareStatement(
+        try {
 
-            "DELETE FROM " + table_name + "WHERE " + key_column_name + " IN(" + placeholders + ")"
-        );
+            PreparedStatement statement = pooled_connection.getConnection().prepareStatement(
 
-        for(int i = 0; i < keys.size(); i++) {
+                "DELETE FROM " + descriptor.getTableName() + "WHERE " + descriptor.getColumnNames()[0] + " IN(" + placeholders + ")"
+            );
 
-            statement.setObject(i + 1, keys.get(i));
+            for(int i = 0; i < keys.size(); i++) {
+
+                statement.setObject(i + 1, keys.get(i));
+            }
+
+            return(statement);
         }
 
-        return(statement);
+        catch(SQLException exc) {
+
+            throw SqlExceptionDecoder.decode("(Repository.prepareDelete) -> Could not prepare for delete: ", exc);
+        }
     }
 
     ///..
@@ -416,25 +545,41 @@ public final class Repository {
     }
 
     ///..
-    private void conditionalCommit(PooledConnection connection, boolean commit) throws SQLException {
+    private void conditionalCommit(PooledConnection connection, boolean commit) throws PersistenceException {
 
-        if(commit == true) {
+        try {
 
-            connection.getConnection().commit();
+            if(commit == true) {
+
+                connection.getConnection().commit();
+            }
+        }
+
+        catch(SQLException exc) {
+
+            throw SqlExceptionDecoder.decode("(Repository.conditionalCommit) -> Could not commit: ", exc);
         }
     }
 
     ///..
-    private void conditionalBatchExecute(PreparedStatement statement, int size) throws SQLException {
+    private void conditionalBatchExecute(PreparedStatement statement, int size) throws PersistenceException {
 
-        if(size > 1) {
+        try {
 
-            statement.executeBatch();
+            if(size > 1) {
+
+                statement.executeBatch();
+            }
+    
+            else {
+    
+                statement.executeUpdate();
+            }
         }
 
-        else {
+        catch(SQLException exc) {
 
-            statement.executeUpdate();
+            throw SqlExceptionDecoder.decode("(Repository.conditionalBatchExecute) -> Could not execute: ", exc);
         }
     }
 

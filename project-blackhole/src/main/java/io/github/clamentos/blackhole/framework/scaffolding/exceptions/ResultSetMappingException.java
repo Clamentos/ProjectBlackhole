@@ -2,21 +2,31 @@ package io.github.clamentos.blackhole.framework.scaffolding.exceptions;
 
 ///
 /**
- * <h3>Result set Mapping Exception</h3>
+ * <h3>Result Set Mapping Exception</h3>
  * Runtime exception indicating an error during the result set to entity mapping process.
- * @see GenericException
+ * @see PersistenceException
 */
-public class ResultSetMappingException extends GenericException {
+public final class ResultSetMappingException extends PersistenceException {
 
     ///
     /**
+     * Instantiates a new {@link ResultSetMappingException} object with {@code null} cause.
+     * @param message : The exception detail message.
+    */
+    public ResultSetMappingException(String message) {
+
+        super(message);
+    }
+
+    ///..
+    /**
      * Instantiates a new {@link ResultSetMappingException} object.
      * @param message : The internal exception detail message.
-     * @param failure_message : The message to insert into a potential client response.
+     * @param cause : The cause of {@code this} exception.
     */
-    public ResultSetMappingException(String message, String failure_message) {
+    public ResultSetMappingException(String message, Throwable cause) {
 
-        super(message, failure_message);
+        super(message, cause);
     }
 
     ///

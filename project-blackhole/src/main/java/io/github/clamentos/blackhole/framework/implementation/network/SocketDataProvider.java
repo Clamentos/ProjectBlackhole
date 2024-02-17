@@ -12,7 +12,7 @@ import java.io.InputStream;
 
 ///
 /**
- * <h3>Socket data provider</h3>
+ * <h3>Socket Data Provider</h3>
  * Simple data provider wrapper for input streams used while deserializing requests.
  * @see DataProvider
  * @see RequestTask
@@ -49,11 +49,13 @@ public final class SocketDataProvider implements DataProvider {
     @Override
     public int fill(byte[] chunk, int starting_position, int amount) {
 
+        int amount_fetched;
+
         if(exception == null && data_length > 0) {
 
             try {
 
-                int amount_fetched = in.readNBytes(chunk, starting_position, amount);
+                amount_fetched = in.readNBytes(chunk, starting_position, amount);
                 data_length -= amount_fetched;
 
                 return(amount_fetched);
@@ -76,6 +78,12 @@ public final class SocketDataProvider implements DataProvider {
     public IOException getException() {
 
         return(exception);
+    }
+
+    ///..
+    public long getRemainingToProvide() {
+
+        return(data_length);
     }
 
     ///

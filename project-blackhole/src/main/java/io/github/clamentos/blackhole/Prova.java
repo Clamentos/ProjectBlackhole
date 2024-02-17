@@ -1,22 +1,23 @@
 package io.github.clamentos.blackhole;
 
-import io.github.clamentos.blackhole.framework.implementation.network.transfer.components.ResponseStatuses;
-import io.github.clamentos.blackhole.framework.implementation.network.transfer.components.SimpleDto;
+import io.github.clamentos.blackhole.framework.implementation.network.transfer.components.ErrorDto;
 import io.github.clamentos.blackhole.framework.implementation.network.transfer.components.Types;
 import io.github.clamentos.blackhole.framework.scaffolding.ApplicationContext;
 import io.github.clamentos.blackhole.framework.scaffolding.exceptions.DeserializationException;
 import io.github.clamentos.blackhole.framework.scaffolding.servlet.Servlet;
 import io.github.clamentos.blackhole.framework.scaffolding.servlet.ServletProvider;
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.deserialization.DataProvider;
+import io.github.clamentos.blackhole.framework.scaffolding.transfer.deserialization.Deserializable;
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.deserialization.Deserializer;
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.deserialization.DeserializerProvider;
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.DataTransferObject;
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Methods;
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Request;
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Resources;
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.ResourcesProvider;
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Response;
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.ResponseFactory;
+import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.ResponseStatuses;
+import io.github.clamentos.blackhole.framework.scaffolding.transfer.validation.ValidatorProvider;
 
 // Testing purposes
 public class Prova implements ApplicationContext {
@@ -24,7 +25,7 @@ public class Prova implements ApplicationContext {
     public class DeserializerImpl implements Deserializer {
 
         @Override
-        public DataTransferObject deserialize(DataProvider dp, long payload_size, Methods request_method) throws DeserializationException {
+        public Deserializable deserialize(DataProvider dp, long payload_size, Methods request_method) throws DeserializationException {
 
             byte[] data = new byte[(int)payload_size];
             dp.fill(data, 0, (int)payload_size);
@@ -36,7 +37,7 @@ public class Prova implements ApplicationContext {
                 if(t.equals(Types.LONG) == false) {
 
                     //error
-                    throw new DeserializationException("...", "...");
+                    throw new DeserializationException("...");
                 }
 
                 // read timestamp
@@ -47,19 +48,19 @@ public class Prova implements ApplicationContext {
                 if(t.equals(Types.STRING) == false) {
 
                     //error
-                    throw new DeserializationException("...", "...");
+                    throw new DeserializationException("...");
                 }
 
                 // read string
                 int str_len = (data[10] << 24) | (data[11] << 16) | (data[12] << 8) | data[13];
                 String str = new String(data, 14, str_len);
 
-                return(new SimpleDto(timestamp, str));
+                return(new ErrorDto(timestamp, str, true));
             }
 
             catch(IllegalArgumentException exc) {
 
-                throw new DeserializationException("...", "...");
+                throw new DeserializationException("...");
             }
         }
     }
@@ -112,7 +113,7 @@ public class Prova implements ApplicationContext {
                 //...
             }
 
-            SimpleDto dto = (SimpleDto)request.getDataTransferObject();
+            ErrorDto dto = (ErrorDto)request.getPayload();
             return(ResponseFactory.build(request.getId(), ResponseStatuses.OK, dto));
         }
     }
@@ -158,5 +159,11 @@ public class Prova implements ApplicationContext {
     public DeserializerProvider getDeserializerProvider() {
 
         return(dp);
+    }
+
+    @Override
+    public ValidatorProvider getValidatorProvider() {
+
+        throw new UnsupportedOperationException("Unimplemented method 'getValidatorProvider'");
     }
 }

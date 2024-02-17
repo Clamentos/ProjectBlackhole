@@ -5,9 +5,8 @@ import io.github.clamentos.blackhole.framework.implementation.network.tasks.Requ
 
 ///..
 import io.github.clamentos.blackhole.framework.implementation.network.transfer.components.RequestHeaders;
-
-///..
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.DataTransferObject;
+import io.github.clamentos.blackhole.framework.scaffolding.transfer.deserialization.Deserializable;
+import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Methods;
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Request;
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Resources;
 
@@ -16,7 +15,7 @@ import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Reso
  * <h3>Network Request</h3>
  * This class holds all the fields and data required to handle a network request.
  * @see RequestHeaders
- * @see DataTransferObject
+ * @see Deserializable
  * @see RequestTask
 */
 public final record NetworkRequest(
@@ -26,7 +25,7 @@ public final record NetworkRequest(
     RequestHeaders headers,
 
     /** The actual data payload. */
-    DataTransferObject data
+    Deserializable data
 
     ///
 ) implements Request {
@@ -65,7 +64,15 @@ public final record NetworkRequest(
     ///..
     /** {@inheritDoc} */
     @Override
-    public DataTransferObject getDataTransferObject() {
+    public Methods getMethod() {
+
+        return(headers.method());
+    }
+
+    ///..
+    /** {@inheritDoc} */
+    @Override
+    public Deserializable getPayload() {
 
         return(data);
     }

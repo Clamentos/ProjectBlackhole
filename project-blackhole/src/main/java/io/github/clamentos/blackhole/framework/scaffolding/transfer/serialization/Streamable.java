@@ -1,4 +1,4 @@
-package io.github.clamentos.blackhole.framework.scaffolding.transfer.network;
+package io.github.clamentos.blackhole.framework.scaffolding.transfer.serialization;
 
 ///
 import java.io.DataOutputStream;
@@ -17,7 +17,7 @@ public interface Streamable {
 
     ///..
     /**
-     * <p>Streams {@code this} through the output stream.</p>
+     * <p>Streams {@code this} through the provided output stream.</p>
      * <b>NOTE: This method does not flush the output stream.</b>
      * @param out : The output stream.
     */

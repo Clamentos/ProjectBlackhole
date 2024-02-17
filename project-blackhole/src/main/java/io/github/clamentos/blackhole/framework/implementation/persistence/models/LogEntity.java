@@ -5,21 +5,12 @@ import io.github.clamentos.blackhole.framework.implementation.logging.Log;
 import io.github.clamentos.blackhole.framework.implementation.logging.MetricsTask;
 
 ///..
-import io.github.clamentos.blackhole.framework.scaffolding.cache.Cacheability;
-
-///..
 import io.github.clamentos.blackhole.framework.scaffolding.persistence.Entity;
-
-///.
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-
-///..
-import java.util.List;
+import io.github.clamentos.blackhole.framework.scaffolding.persistence.QueryBinder;
 
 ///
 /**
- * <h3>Log entity</h3>
+ * <h3>Log Entity</h3>
  * Database log entity. Corresponds to the {@code Logs} table.
  * @see Log
  * @see MetricsTask
@@ -48,74 +39,25 @@ public final record LogEntity(
     ///
     /** {@inheritDoc} */
     @Override
-    public String getTableName() {
+    public void bindForInsert(QueryBinder query_binder) {
 
-        return("\"Logs\"");
+        query_binder.bindLong(log_id);
+        query_binder.bindLong(creation_date);
+        query_binder.bindString(log_level);
+        query_binder.bindString(message);
     }
 
     ///..
     /** {@inheritDoc} */
     @Override
-    public List<String> getColumnNames() {
+    public void bindForUpdate(QueryBinder query_binder, long fields) {
 
-        return(List.of(
+        if((fields & 0b000010) > 0) query_binder.bindLong(log_id);
+        if((fields & 0b000100) > 0) query_binder.bindLong(creation_date);
+        if((fields & 0b001000) > 0) query_binder.bindString(log_level);
+        if((fields & 0b010000) > 0) query_binder.bindString(message);
 
-            "\"id\"",
-            "\"log_id\"",
-            "\"creation_date\"",
-            "\"log_level\"",
-            "\"message\""
-        ));
-    }
-
-    ///..
-    /** {@inheritDoc} */
-    @Override
-    public boolean usesAutoKey() {
-
-        return(true);
-    }
-    
-    ///..
-    /** {@inheritDoc} */
-    @Override
-    public void bindForInsert(PreparedStatement statement) throws SQLException {
-
-        statement.setLong(1, log_id);
-        statement.setLong(2, creation_date);
-        statement.setString(3, log_level);
-        statement.setString(4, message);
-    }
-
-    ///..
-    /** {@inheritDoc} */
-    @Override
-    public void bindForUpdate(PreparedStatement statement, long fields) throws SQLException {
-
-        int idx = 1;
-
-        if((fields & 0b000010) > 0) statement.setLong(idx++, log_id);
-        if((fields & 0b000100) > 0) statement.setLong(idx++, creation_date);
-        if((fields & 0b001000) > 0) statement.setString(idx++, log_level);
-        if((fields & 0b010000) > 0) statement.setString(idx++, message);
-
-        statement.setLong(idx, id);
-    }
-
-    ///..
-    /** {@inheritDoc} */
-    @Override
-    public Cacheability cacheable() {
-
-        return(Cacheability.NEVER);
-    }
-
-    ///..
-    /** {@inheritDoc} */
-    @Override
-    public int getCacheabilitySizeLimit() {
-
-        return(-1);
+        query_binder.bindLong(id);
     }
 
     ///

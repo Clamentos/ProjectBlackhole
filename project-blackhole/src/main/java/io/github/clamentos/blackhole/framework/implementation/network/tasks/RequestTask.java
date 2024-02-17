@@ -14,10 +14,9 @@ import io.github.clamentos.blackhole.framework.implementation.network.transfer.N
 import io.github.clamentos.blackhole.framework.implementation.network.transfer.TransferContext;
 
 ///..
+import io.github.clamentos.blackhole.framework.implementation.network.transfer.components.ErrorDto;
 import io.github.clamentos.blackhole.framework.implementation.network.transfer.components.RequestHeaders;
 import io.github.clamentos.blackhole.framework.implementation.network.transfer.components.ResponseHeaders;
-import io.github.clamentos.blackhole.framework.implementation.network.transfer.components.ResponseStatuses;
-import io.github.clamentos.blackhole.framework.implementation.network.transfer.components.SimpleDto;
 
 ///..
 import io.github.clamentos.blackhole.framework.implementation.tasks.Task;
@@ -30,32 +29,42 @@ import io.github.clamentos.blackhole.framework.scaffolding.ApplicationContext;
 
 ///..
 import io.github.clamentos.blackhole.framework.scaffolding.exceptions.DeserializationException;
+import io.github.clamentos.blackhole.framework.scaffolding.exceptions.ValidationException;
 
 ///..
 import io.github.clamentos.blackhole.framework.scaffolding.servlet.Servlet;
 import io.github.clamentos.blackhole.framework.scaffolding.servlet.ServletProvider;
 
 ///..
+import io.github.clamentos.blackhole.framework.scaffolding.transfer.deserialization.Deserializable;
+import io.github.clamentos.blackhole.framework.scaffolding.transfer.deserialization.Deserializer;
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.deserialization.DeserializerProvider;
 
 ///..
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.DataTransferObject;
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Methods;
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Request;
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Resources;
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.ResourcesProvider;
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Response;
+import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.ResponseStatuses;
+
+///..
+import io.github.clamentos.blackhole.framework.scaffolding.transfer.validation.Validator;
+import io.github.clamentos.blackhole.framework.scaffolding.transfer.validation.ValidatorProvider;
 
 ///.
 import java.io.IOException;
+
+///..
+import java.net.SocketTimeoutException;
 
 ///..
 import java.util.concurrent.CountDownLatch;
 
 ///
 /**
- * <h3>Request task</h3>
- * Responsible for deserializing and dispatching the request as well as sending the response.
+ * <h3>Request Task</h3>
+ * Responsible for deserializing and dispatching the request to the servlets, as well as sending the response.
  * @see Task
  * @see TransferTask
 */
@@ -68,7 +77,7 @@ public final class RequestTask extends Task {
     private final MetricsTracker metrics_service;
 
     ///..
-    /** The application context containing the essential user-defined service providers. */
+    /** The application context containing the essential user defined service providers. */
     private final ApplicationContext application_context;
 
     /** The transfer context containing support objects for the current connection. */
@@ -81,28 +90,32 @@ public final class RequestTask extends Task {
     private final long payload_size;
 
     ///..
-    /** The user-defined request servlet provider service. */
+    /** The user defined request servlet provider service. */
     private ServletProvider servlet_provider;
 
-    /** The user-defined request resources provider service. */
+    /** The user defined request resources provider service. */
     private ResourcesProvider<? extends Enum<?>> resources_provider;
 
-    /** The user-defined request deserializer provider service. */
+    /** The user defined request deserializer provider service. */
     private DeserializerProvider deserializer_provider;
+
+    /** The user defined request payload validator provider service. */
+    private ValidatorProvider validator_provider;
 
     ///
     /**
      * Instantiates a new {@link RequestTask} object.
      * @param application_context : The application context from where to get the providers.
      * @param transfer_context : The transfer context holding shared state.
-     * @param signal : The primitive used to synchronize reading from the input stream.
+     * @param signal : The primitive used to synchronize while reading from the input stream.
      * @param payload_size : The size of the data section for this request.
      * @throws IllegalArgumentException If either {@code application_context}, {@code transfer_context} or {@code signal} are null.
      * @see ApplicationContext
      * @see TransferContext
      * @see TransferTask
     */
-    public RequestTask(ApplicationContext application_context, TransferContext transfer_context, CountDownLatch signal, long payload_size) throws IllegalArgumentException {
+    public RequestTask(ApplicationContext application_context, TransferContext transfer_context, CountDownLatch signal, long payload_size)
+    throws IllegalArgumentException {
 
         if(application_context == null || transfer_context == null || signal == null) {
 
@@ -123,16 +136,16 @@ public final class RequestTask extends Task {
     @Override
     public void initialize() {
 
-        // Check and get all the services from the context.
         if(checkNull(application_context.getServletProvider(), "Servlet provider") == true) return;
         if(checkNull(application_context.getResourcesProvider(), "Resources provider") == true) return;
         if(checkNull(application_context.getDeserializerProvider(), "Deserializer provider") == true) return;
+        if(checkNull(application_context.getValidatorProvider(), "Validator provider") == true) return;
 
         servlet_provider = application_context.getServletProvider();
         resources_provider = application_context.getResourcesProvider();
         deserializer_provider = application_context.getDeserializerProvider();
+        validator_provider = application_context.getValidatorProvider();
 
-        // Officially active.
         transfer_context.active_request_task_count().incrementAndGet();
     }
 
@@ -144,19 +157,34 @@ public final class RequestTask extends Task {
         RequestHeaders headers = decodeHeaders();
         if(headers == null) return;
 
-        DataTransferObject dto = deserializeDto(headers.id(), headers.payload_size(), headers.method(), headers.target_resource());
-        if(dto == null) return;
+        Deserializable dto = null;
+
+        if(headers.payload_size() > 0) {
+
+            dto = deserializeDto(headers);
+            if(dto == null) return;
+        }
+
+        else {
+
+            signal.countDown();
+        }
 
         if(execute(new NetworkRequest(headers, dto)) == false) return;
     }
 
     ///.
-    // Checks if an object is null and log.
+    /**
+     * Checks if the provided object is {@code null} and logs in case it is.
+     * @param object : The object to be tested.
+     * @param name : The name of the object used for logging.
+     * @return {@code true} if {@code object} is {@code null}, {@code false} otherwise.
+    */
     private boolean checkNull(Object object, String name) {
 
         if(object == null) {
 
-            logger.log("RequestTask.checkNull >> " + name + " was null. Aborting...", LogLevels.ERROR);
+            logger.log("RequestTask.checkNull >> " + name + " was null >> Aborting...", LogLevels.ERROR);
             return(true);
         }
 
@@ -164,69 +192,83 @@ public final class RequestTask extends Task {
     }
 
     ///..
-    // Decodes the incoming request headers.
+    /** @return The decoded request headers or {@code null} if any failure occurs. */
     private RequestHeaders decodeHeaders() {
 
         byte id = 0;
-        byte flags = 0;
-        long cache_imestamp = 0;
         byte raw_method = 0;
         byte raw_resource = 0;
+        byte flags = 0;
+        long cache_imestamp = 0;
         byte[] session_id = null;
-
         Methods method = null;
         Resources<? extends Enum<?>> resource = null;
 
         try {
 
-            // Read the raw header bytes from the input stream.
             id = transfer_context.in().readByte();
-            flags = transfer_context.in().readByte();
-            cache_imestamp = transfer_context.in().readLong();
             raw_method = transfer_context.in().readByte();
             raw_resource = transfer_context.in().readByte();
+            flags = transfer_context.in().readByte();
+            cache_imestamp = transfer_context.in().readLong();
 
-            // Parse the method and target resource.
-            method = Methods.newInstance(raw_method);
-            resource = resources_provider.getResource(raw_resource);
-
-            // If the method is not login, read the session id from the input stream.
-            if(method.equals(Methods.LOGIN) == false) {
+            if((flags & 0b00000001) > 0) {
 
                 session_id = transfer_context.in().readNBytes(32);
 
                 if(session_id.length < 32) {
 
-                    // Raw network error. This situation is unrecoverable, abort (end of stream).
-                    logger.log("RequestTask.work >> End of stream detected while reading the session id >> Aborting...", LogLevels.ERROR);
-                    free();
+                    logger.log(
+
+                        "RequestTask.decodeHeaders >> End of stream detected while reading the session id >> Aborting...",
+                        LogLevels.ERROR
+                    );
+
+                    respondError(id, ResponseStatuses.BROKEN_STREAM, method, "End of stream detected.", false);
+                    return(null);
                 }
             }
 
-            return(new RequestHeaders(payload_size, id, flags, cache_imestamp, method, resource, session_id));
+            method = Methods.newInstance(raw_method);
+            resource = resources_provider.getResource(raw_resource);
+
+            return(new RequestHeaders(payload_size, id, method, resource, flags, cache_imestamp, session_id));
         }
 
         catch(IOException | IllegalArgumentException exc) {
 
-            if(exc instanceof IOException) {
+            logger.log(
 
-                // Raw network error. This situation is unrecoverable, abort (socket likely to be abruptly closed or got an EOS).
-                logger.log(ExceptionFormatter.format("RequestTask.work >> ", exc, " >> Aborting..."), LogLevels.ERROR);
-                free();
+                ExceptionFormatter.format("RequestTask.decodeHeaders >> Could not decode the request headers", exc, ">> Aborting..."),
+                LogLevels.ERROR
+            );
+
+            if(exc instanceof IllegalArgumentException) {
+
+                if(reposition(payload_size, id, method) == true) {
+
+                    if(resource == null) {
+
+                        respondError(id, ResponseStatuses.UNKNOWN_METHOD, method, "Unknown method with id: " + raw_method, true);
+                    }
+    
+                    else {
+    
+                        respondError(id, ResponseStatuses.UNKNOWN_RESOURCE, method, "Unknown resource with id: " + raw_resource, true);
+                    }
+                }
             }
 
             else {
 
-                if(resource == null) {
+                if(exc instanceof SocketTimeoutException) {
 
-                    // Parsing of the request method failed.
-                    respondError(id, ResponseStatuses.UNKNOWN_METHOD, "Unknown request method id: " + raw_method);
+                    respondError(id, ResponseStatuses.CONNECTION_TIMEOUT, method, "", false);
                 }
 
                 else {
 
-                    // Parsing of the target resource failed.
-                    respondError(id, ResponseStatuses.UNKNOWN_RESOURCE, "Unknown target resource id: " + raw_resource);
+                    respondError(id, ResponseStatuses.CONNECTION_ERROR, method, "", false);
                 }
             }
 
@@ -235,74 +277,128 @@ public final class RequestTask extends Task {
     }
 
     ///..
-    // Deserializes the incoming data.
-    private DataTransferObject deserializeDto(byte id, long payload_size, Methods request_method, Resources<? extends Enum<?>> resource) {
+    /**
+     * Deserializes the payload of the incoming request.
+     * @param headers : The request headers.
+     * @return The decoded payload or {@code null} if any failure occurs.
+    */
+    private Deserializable deserializeDto(RequestHeaders headers) {
 
-        DataTransferObject dto = null;
-        SocketDataProvider data_provider = new SocketDataProvider(transfer_context.in(), payload_size);
+        SocketDataProvider data_provider = new SocketDataProvider(transfer_context.in(), headers.payload_size());
 
         try {
-
-            // Call the user-defined deserialized.
-            dto = deserializer_provider.getDeserializer(resource).deserialize(data_provider, payload_size, request_method);
 
             // If the deserialization is not "reactive", once it finishes,
             // this task must signal that it's not going to use the input stream anymore.
 
             // If the deserialization is "reactive", then the task will use the stream for the entire duration of the request.
-            // Thus the signal must be sent later (see .execute method).
+            // Thus the signal must be sent later (see .execute(...) method).
 
-            if(dto.isReactive() == false) {
+            Deserializer deserializer = deserializer_provider.getDeserializer(headers.target_resource());
 
-                signal.countDown();
+            if(deserializer != null) {
+
+                Deserializable dto = deserializer.deserialize(data_provider, headers.payload_size(), headers.method());
+
+                if(dto.isReactive() == false) {
+
+                    signal.countDown();
+                }
+
+                return(dto);
             }
 
-            return(dto);
+            else {
+
+                logger.log(
+
+                    "RequestTask.deserializeDto >> Deserializer provided for the resource: " +
+                    headers.target_resource().toString() + " was null >> Aborting...",
+                    LogLevels.ERROR
+                );
+
+                if(reposition(headers.payload_size(), headers.id(), headers.method()) == true) {
+
+                    respondError(headers.id(), ResponseStatuses.INTERNAL_ERROR, headers.method(), "", true);
+                }
+
+                return(null);
+            }
         }
 
         catch(DeserializationException exc) {
 
             if(data_provider.getException() != null) {
 
-                // Here means that the data provider didn't give the data to the user-defined deserializer causing it to throw exception.
+                // NOTE: Here means that the data provider didn't give the data to the deserializer causing it to throw exception.
                 // The reason why this happened is because the data provider itself got an IOException and didn't fill any data.
-                // This situation is unrecoverable, abort (socket likely to be closed).
 
-                logger.log(
+                logger.log(ExceptionFormatter.format(
 
-                    ExceptionFormatter.format(
-                        
-                        "RequestTask.work >> ", exc,
-                        ExceptionFormatter.format(" >> Actually caused by >> ", data_provider.getException(), " >> Aborting...")
-                    ),
-                    LogLevels.ERROR
-                );
+                    "RequestTask.deserializeDto >> Could not deserialize", exc,
+                    ExceptionFormatter.format(">> Actually caused by >>", data_provider.getException(), ">> Aborting...")
 
-                free();
+                ), LogLevels.ERROR);
+
+                respondError(headers.id(), ResponseStatuses.CONNECTION_ERROR, headers.method(), "", false);
                 return(null);
             }
 
-            // Bad data.
-            respondError(id, ResponseStatuses.BAD_FORMATTING, exc.getFailureMessage());
+            else {
+
+                if(reposition(data_provider.getRemainingToProvide(), headers.id(), headers.method()) == true) {
+
+                    respondError(headers.id(), ResponseStatuses.BAD_FORMATTING, headers.method(), exc.getMessage(), true);
+                }
+            }
+
             return(null);
         }
     }
 
     ///..
-    // Executes the received request and sends the response.
+    /**
+     * Validates and dispatches the provided request and also sends the response.
+     * @param request : The request to be validated and dispatched.
+     * @return {@code true} if no errors were encountered, {@code false} otherwise.
+    */
     private boolean execute(Request request) {
 
         try {
 
-            // Get the matching user-defined servlet to dispatch to.
+            if(request.getPayload() != null) {
+
+                Validator validator = validator_provider.getValidator(request.getPayload().getClass());
+
+                if(validator != null) {
+
+                    validator.validate(request.getPayload(), request.getMethod());
+                }
+
+                else {
+
+                    logger.log(
+
+                        "RequestTask.execute >> Validator provided for the DTO class: " +
+                        request.getPayload().getClass().getSimpleName() + " was null >> Aborting...",
+                        LogLevels.ERROR
+                    );
+
+                    respondError(
+
+                        request.getId(), ResponseStatuses.INTERNAL_ERROR, request.getMethod(), "", !request.getPayload().isReactive()
+                    );
+
+                    return(false);
+                }
+            }
+
             Servlet servlet = servlet_provider.getServlet(request.getResource());
 
             if(servlet != null) {
 
-                // Dispatch the request.
                 Response response = servlet.handle(request);
 
-                // Grab the output stream in mutual exclusion and send the response.
                 transfer_context.out_lock().lock();
                 response.stream(transfer_context.out());
                 transfer_context.out_lock().unlock();
@@ -310,65 +406,144 @@ public final class RequestTask extends Task {
                 // If the deserialization done earlier was "reactive" then, at this point,
                 // the input stream is guaranteed to not be used anymore. Signal that.
 
-                if(request.getDataTransferObject().isReactive()) {
+                if(request.getPayload() != null && request.getPayload().isReactive()) {
 
                     signal.countDown();
                 }
 
+                updateMetrics(request.getMethod(), response.getResponseStatus().equals(ResponseStatuses.OK));
                 return(true);
             }
 
             else {
 
-                // No servlet found to dispatch to.
                 logger.log(
 
-                    "RequestTask.work >> Could not find servlet for target resource: " + request.getResource().toString(), LogLevels.ERROR
+                    "RequestTask.execute >> Could not find the servlet for the target resource: " +
+                    request.getResource().toString(),
+                    LogLevels.ERROR
                 );
 
-                free();
+                respondError(request.getId(), ResponseStatuses.INTERNAL_ERROR, request.getMethod(), "", true);
                 return(false);
             }
         }
 
-        catch(IOException exc) {
+        catch(IOException | ValidationException exc) {
 
-            // Raw network error. This situation is unrecoverable, abort (socket likely to be closed).
-            logger.log(ExceptionFormatter.format("RequestTask.work >> ", exc, " >> Aborting..."), LogLevels.ERROR);
-            free();
+            if(exc instanceof IOException) {
+
+                logger.log(
+
+                    ExceptionFormatter.format("RequestTask.execute >> Could not send the response", exc, ">> Aborting..."),
+                    LogLevels.ERROR
+                );
+
+                respondError(request.getId(), ResponseStatuses.CONNECTION_ERROR, request.getMethod(), "", false);
+            }
+
+            else {
+
+                respondError(request.getId(), ResponseStatuses.VALIDATION_ERROR, request.getMethod(), exc.getMessage(), true);
+            }
 
             return(false);
         }
     }
 
     ///..
-    // Constructs and sends a simple error response.
-    private void respondError(byte id, ResponseStatuses status, String message) {
+    /**
+     * Repositions the stream by skipping the specified number of bytes.
+     * @param amount : The number of bytes to skip.
+     * @param id : The request id.
+     * @param method : The request method.
+     * @return {@code true} if no error was encountered, {@code false} otherwise.
+    */
+    private boolean reposition(long amount, byte id, Methods method) {
+
+        try {
+
+            transfer_context.in().skip(amount);
+            return(true);
+        }
+
+        catch(IOException exc) {
+
+            logger.log(
+
+                ExceptionFormatter.format("RequestTask.reposition >> Could not reposition the stream", exc, ">> Aborting..."),
+                LogLevels.ERROR
+            );
+
+            respondError(id, ResponseStatuses.CONNECTION_ERROR, method, "", false);
+            return(false);
+        }
+    }
+    
+    ///..
+    /**
+     * Sends an error network response with the given parameters.
+     * @param id : The associated request id.
+     * @param status : The response status.
+     * @param message : The response message.
+     * @param method : The request method used to update metrics.
+     * @see ResponseStatuses
+     * @see Methods
+    */
+    private void respondError(byte id, ResponseStatuses status, Methods method, String message, boolean recoverable) {
 
         transfer_context.out_lock().lock();
 
         try {
 
-            SimpleDto payload = new SimpleDto(message);
+            ErrorDto payload = new ErrorDto(message, recoverable);
             new NetworkResponse(new ResponseHeaders(payload.getSize(), id, (byte)0, 0,  status), payload).stream(transfer_context.out());
+            metrics_service.incrementResponsesSentOk(1);
         }
 
         catch(IOException exc) {
 
             logger.log(ExceptionFormatter.format("RequestTask.respondError >> ", exc, " >> Aborting..."), LogLevels.ERROR);
+            metrics_service.incrementResponsesSentKo(1);
         }
 
         transfer_context.out_lock().unlock();
-        metrics_service.incrementReadRequestsKo(1);
-        free();
+        transfer_context.active_request_task_count().decrementAndGet();
+        signal.countDown();
+
+        updateMetrics(method, false);
     }
 
     ///..
-    // Updates the contexts.
-    private void free() {
+    /**
+     * Updates the request metrics.
+     * @param method : The request type.
+     * @param ok : {@code true} if status is {@link ResponseStatuses#OK}, {@code false} otherwise.
+    */
+    private void updateMetrics(Methods method, boolean ok) {
 
-        transfer_context.active_request_task_count().decrementAndGet();
-        signal.countDown();
+        if(ok == false) {
+
+            switch(method) {
+
+                case null: metrics_service.incrementUnknownRequestsKo(1);
+                case CREATE: metrics_service.incrementCreateRequestsKo(1);
+                case READ: metrics_service.incrementReadRequestsKo(1);
+                case UPDATE: metrics_service.incrementUpdateRequestsKo(1);
+                case DELETE: metrics_service.incrementDeleteRequestsKo(1);
+            }
+        }
+
+        else {
+
+            switch(method) {
+
+                case CREATE: metrics_service.incrementCreateRequestsOk(1);
+                case READ: metrics_service.incrementReadRequestsOk(1);
+                case UPDATE: metrics_service.incrementUpdateRequestsOk(1);
+                case DELETE: metrics_service.incrementDeleteRequestsOk(1);
+            }
+        }
     }
 
     ///

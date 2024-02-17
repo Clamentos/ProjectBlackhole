@@ -1,13 +1,19 @@
 package io.github.clamentos.blackhole.framework.scaffolding.transfer.network;
 
 ///
+import io.github.clamentos.blackhole.framework.scaffolding.transfer.deserialization.Deserializable;
+
+///
 /**
  * <h3>Request</h3>
  * Specifies that the implementing class is a network request.
+ * @see Resources
+ * @see Deserializable
 */
 public interface Request {
 
     ///
+    /** @return The client specified request id to be echoed back in the response. */
     byte getId();
     
     ///..
@@ -19,10 +25,17 @@ public interface Request {
 
     ///..
     /**
-     * @return The possibly {@code null} data transfer object that {@code this} request is carrying.
-     * @see DataTransferObject
+     * @return The never {@code null} method that {@code this} request is specifying.
+     * @see Methods
     */
-    DataTransferObject getDataTransferObject();
+    Methods getMethod();
+
+    ///..
+    /**
+     * @return The possibly {@code null} payload object that {@code this} request is carrying.
+     * @see Deserializable
+    */
+    Deserializable getPayload();
 
     ///
 }

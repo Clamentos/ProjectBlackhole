@@ -3,7 +3,7 @@ package io.github.clamentos.blackhole.framework.scaffolding.transfer.network;
 ///
 /**
  * <h3>Resources Provider</h3>
- * Specifies that the implementing class can provide the user-defined resources to other classes.
+ * Specifies that the implementing class can provide resources to other classes.
  * @see Resources
 */
 @FunctionalInterface

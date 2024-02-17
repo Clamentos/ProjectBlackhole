@@ -2,7 +2,7 @@ package io.github.clamentos.blackhole.framework.implementation.utility;
 
 ///
 /**
- * <h3>Exception formatter</h3>
+ * <h3>Exception Formatter</h3>
  * Provides output formatting methods for printing exceptions.
 */
 public final class ExceptionFormatter {
@@ -14,11 +14,12 @@ public final class ExceptionFormatter {
      * @param pre : The message header.
      * @param exception : The target exception.
      * @param post : The message footer.
-     * @return : The formatted exception message.
+     * @return The formatted exception message.
+     * @throws NullPointerException if {@code exception} is null.
     */
-    public static String format(String pre, Throwable exception, String post) {
-
-        return(pre  + exception.getClass().getSimpleName() + ": " + exception.getMessage() + post);
+    public static String format(String pre, Throwable exception, String post) throws NullPointerException {
+        
+        return(pre  + " [" + exception.getClass().getSimpleName() + ": " + exception.getMessage() + "] " + post);
     }
 
     ///

@@ -6,3 +6,5 @@ package io.github.clamentos.blackhole.framework.scaffolding.transfer.network;
  * Specifies that the implementing class is an enumeration of target resources that a network request can reach.
 */
 public interface Resources<E extends Enum<E>> {}
+
+///

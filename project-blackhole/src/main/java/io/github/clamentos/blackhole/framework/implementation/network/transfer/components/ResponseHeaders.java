@@ -2,9 +2,8 @@ package io.github.clamentos.blackhole.framework.implementation.network.transfer.
 
 ///
 import io.github.clamentos.blackhole.framework.implementation.network.transfer.NetworkResponse;
-
-///..
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Streamable;
+import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.ResponseStatuses;
+import io.github.clamentos.blackhole.framework.scaffolding.transfer.serialization.Streamable;
 
 ///.
 import java.io.DataOutputStream;

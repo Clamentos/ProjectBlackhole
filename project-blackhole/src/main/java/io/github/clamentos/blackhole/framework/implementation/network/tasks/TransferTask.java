@@ -49,7 +49,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 ///
 /**
- * <h3>Transfer task</h3>
+ * <h3>Transfer Task</h3>
  * Responsible for launching request tasks and managing the client sockets.
  * @see ContinuousTask
  * @see RequestTask
@@ -98,7 +98,6 @@ public final class TransferTask extends ContinuousTask {
      * @param client_socket : The client socket to operate on.
      * @throws IllegalArgumentException If either {@code application_context} or {@code client_socket} are {@code null}.
      * @see ApplicationContext
-     * @see ServerTask
     */
     public TransferTask(ApplicationContext application_context, Socket client_socket) throws IllegalArgumentException {
 
@@ -136,10 +135,9 @@ public final class TransferTask extends ContinuousTask {
 
         catch(IOException exc) {
 
-            logger.log(ExceptionFormatter.format("TransferTask.initialize >> ", exc, " >> Aborting..."), LogLevels.ERROR);
+            logger.log(ExceptionFormatter.format("TransferTask.initialize >>", exc, ">> Aborting..."), LogLevels.ERROR);
         }
 
-        // Update the socket counters, metrics and socket properties.
         server_context.increment(client_socket.getRemoteSocketAddress());
         metrics_service.incrementSocketsAccepted(1);
     }
@@ -151,30 +149,36 @@ public final class TransferTask extends ContinuousTask {
 
         try {
 
-            long payload_size = in.readLong();
+            if(active_request_task_count.get() > 0) {
 
-            if(payload_size >= 0) {
+                long payload_size = in.readLong();
 
-                // Launch a new request task.
-                CountDownLatch signal = new CountDownLatch(1);
-                TransferContext transfer_context = new TransferContext(in, out, output_lock, active_request_task_count);
+                if(payload_size >= 0) {
 
-                request_task_references.add(TaskManager.getInstance().launchThread(new RequestTask(
+                    CountDownLatch signal = new CountDownLatch(1);
+                    TransferContext transfer_context = new TransferContext(in, out, output_lock, active_request_task_count);
 
-                    application_context, transfer_context, signal, payload_size
+                    request_task_references.add(TaskManager.getInstance().launchThread(
 
-                ), "RequestTask"));
+                        new RequestTask(application_context, transfer_context, signal, payload_size),
+                        "RequestTask"
+                    ));
 
-                // Wait for the task to finish using the input stream.
-                signal.await();
+                    signal.await();
+                }
+
+                else {
+
+                    // Client wants to close the connection. Terminate.
+
+                    // NOTE: The protocol demands that a request must start by specifying the length of its payload.
+                    // A negative value is a special case that signals to the server the desire to gracefully close the connection.
+
+                    super.stop();
+                }
             }
 
             else {
-
-                // Client wants to close the connection. Terminate.
-
-                // NOTE: The protocol demands that a request must start by specifying the length of its payload.
-                // A negative value is a special case that signals to the server the desire to gracefully close the connection.
 
                 super.stop();
             }
@@ -184,12 +188,21 @@ public final class TransferTask extends ContinuousTask {
 
             if(exc instanceof InterruptedException) {
 
-                logger.log(ExceptionFormatter.format("TransferTask.work >> ", exc, " >> Ignoring..."), LogLevels.NOTE);
+                logger.log(
+
+                    ExceptionFormatter.format("TransferTask.work >> Could not read from the socket", exc, ">> Retrying..."),
+                    LogLevels.NOTE
+                );
             }
 
             else {
 
-                logger.log(ExceptionFormatter.format("TransferTask.work >> ", exc, " >> Aborting..."), LogLevels.ERROR);
+                logger.log(
+
+                    ExceptionFormatter.format("TransferTask.work >> Could not read from the socket", exc, ">> Aborting..."),
+                    LogLevels.ERROR
+                );
+
                 super.stop();
             }
         }
@@ -200,25 +213,26 @@ public final class TransferTask extends ContinuousTask {
     @Override
     public void terminate() {
 
-        // Wait for all request tasks to terminate and then quit.
         for(Thread task : request_task_references) {
 
             try {
 
                 task.join();
             }
-            
+
             catch(InterruptedException exc) {
 
-                logger.log(ExceptionFormatter.format("TransferTask.terminate >> ", exc, " >> Ignoring..."), LogLevels.NOTE);
+                logger.log(
+
+                    ExceptionFormatter.format("TransferTask.terminate >> Could not join child task", exc, ">> Skipping..."),
+                    LogLevels.NOTE
+                );
             }
         }
 
-        // Update the socket counters and metrics.
         server_context.decrement(client_socket.getRemoteSocketAddress());
         metrics_service.incrementSocketsClosed(1);
 
-        // Close the client socket.
         if(ResourceReleaser.release(logger, "TransferTask.terminate", client_socket)) {
 
             logger.log("TransferTask.terminate >> Shut down successfull", LogLevels.SUCCESS);
@@ -226,7 +240,7 @@ public final class TransferTask extends ContinuousTask {
 
         else {
 
-            logger.log("TransferTask.terminate >> Could not close the client socket", LogLevels.ERROR);
+            logger.log("TransferTask.terminate >> Shut down with errors: Could not close the client socket", LogLevels.ERROR);
         }
     }
 

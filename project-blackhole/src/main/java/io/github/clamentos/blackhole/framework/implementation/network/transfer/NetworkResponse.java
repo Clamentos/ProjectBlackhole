@@ -9,7 +9,10 @@ import io.github.clamentos.blackhole.framework.implementation.network.transfer.c
 
 ///..
 import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Response;
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Streamable;
+import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.ResponseStatuses;
+
+///..
+import io.github.clamentos.blackhole.framework.scaffolding.transfer.serialization.Streamable;
 
 ///.
 import java.io.DataOutputStream;
@@ -66,6 +69,14 @@ public final record NetworkResponse(
         out.writeByte(Types.BEGIN.ordinal());
         data.stream(out);
         out.writeByte(Types.END.ordinal());
+    }
+
+    ///..
+    /** {@inheritDocs} */
+    @Override
+    public ResponseStatuses getResponseStatus() {
+
+        return(headers.response_status());
     }
 
     ///

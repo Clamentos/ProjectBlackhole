@@ -1,79 +1,82 @@
 package io.github.clamentos.blackhole.framework.implementation.cache;
 
-import java.util.List;
+import io.github.clamentos.blackhole.framework.scaffolding.persistence.Entities;
+///
+import io.github.clamentos.blackhole.framework.scaffolding.persistence.Entity;
+import io.github.clamentos.blackhole.framework.scaffolding.persistence.Filter;
 
-import io.github.clamentos.blackhole.framework.implementation.configuration.ConfigurationProvider;
+///.
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+///..
+import java.util.concurrent.ConcurrentHashMap;
 
 ///
-// TODO: needs to be completely redone
-public class Cache {
-    
+// TODO: finish
+public final class Cache {
+
     ///
+    /** Singleton instance of {@code this} instantiated during class loading. */
     private static final Cache INSTANCE = new Cache();
 
-    private final int CACHE_CAPACITY;
-    
-    private RequestIndex request_index;
-    private Object[] objects_cache;
+    ///.
+    private final Map<Entities<? extends Enum<?>>, Map<Long, Entity>> entities;
+    private final Map<Filter, Set<Long>> filter_map;
 
     ///
     private Cache() {
 
-        CACHE_CAPACITY = ConfigurationProvider.getInstance().CACHE_CAPACITY;
-    
-        request_index = RequestIndex.getInstance();
-        objects_cache = new Object[CACHE_CAPACITY];
+        filter_map = new ConcurrentHashMap<>();
+        entities = new ConcurrentHashMap<>();
     }
 
     ///
-    /** @return The {@link Cache} instance created during class loading. */
     public static Cache getInstance() {
 
         return(INSTANCE);
     }
 
     ///
-    public void put(byte[] request_bytes, List<Object> objects, int hash_code) {
+    public List<Entity> get(Filter filter) {
 
-        int[] indexes = new int[objects.size()];
+        List<Entity> result = null;
+        Set<Long> ids = filter_map.get(filter);
 
-        for(int i = 0; i < objects.size(); i++) {
+        if(ids != null) {
 
-            int obj_hash = objects.get(i).hashCode() % CACHE_CAPACITY;
-            objects_cache[obj_hash] = objects.get(i);
-            indexes[i] = obj_hash;
-        }
+            result = new ArrayList<>();
 
-        request_index.put(request_bytes, indexes, hash_code);
-    }
+            for(Long id : ids) {
 
-    ///
-    public Object[] get(byte[] request_bytes, int hash_code) {
-
-        Object[] cached_objects;
-        int[] indexes = request_index.get(request_bytes, hash_code);
-
-        if(indexes != null) {
-
-            cached_objects = new Object[indexes.length];
-
-            for(int i = 0; i < indexes.length; i++) {
-
-                cached_objects[i] = objects_cache[indexes[i]];
+                result.add(entities.get(filter.getFilteredEntityType()).get(id));
             }
-
-            return(cached_objects);
         }
 
-        return(null);
+        return(result);
     }
 
-    ///
-    public void update(int[] indexes, List<Object> updated_objects) {
+    ///..
+    public void update(Map<Long, Entity> modified_entities, int entity_type) {
 
-        for(int i = 0; i < indexes.length; i++) {
+        for(Map.Entry<Long, Entity> entry : modified_entities.entrySet()) {
 
-            objects_cache[indexes[i] % CACHE_CAPACITY] = updated_objects.get(i);
+            entities.get(entity_type).put(entry.getKey(), entry.getValue());
+
+            for(Map.Entry<Filter, Set<Long>> entry2 : filter_map.entrySet()) {
+
+                if(entry2.getKey().isFiltered(entry.getValue()) == true) {
+
+                    entry2.getValue().add(entry.getKey());
+                }
+
+                else {
+
+                    entry2.getValue().remove(entry.getKey());
+                }
+            }
         }
     }
 

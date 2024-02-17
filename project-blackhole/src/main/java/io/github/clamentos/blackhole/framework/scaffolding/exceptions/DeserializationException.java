@@ -3,20 +3,30 @@ package io.github.clamentos.blackhole.framework.scaffolding.exceptions;
 ///
 /**
  * <h3>Deserialization Exception</h3>
- * Runtime exception indicating an error during deserialization processes.
- * @see GenericException
+ * Runtime exception indicating an error during the deserialization process.
+ * @see DatabindException
 */
-public class DeserializationException extends GenericException {
+public final class DeserializationException extends DatabindException {
 
     ///
     /**
+     * Instantiates a new {@link DeserializationException} object with {@code null} cause.
+     * @param message : The exception detail message.
+    */
+    public DeserializationException(String message) {
+
+        super(message);
+    }
+
+    ///..
+    /**
      * Instantiates a new {@link DeserializationException} object.
      * @param message : The internal exception detail message.
-     * @param failure_message : The message to insert into a potential client response.
+     * @param cause : The cause of {@code this} exception.
     */
-    public DeserializationException(String message, String failure_message) {
+    public DeserializationException(String message, Throwable cause) {
 
-        super(message, failure_message);
+        super(message, cause);
     }
 
     ///

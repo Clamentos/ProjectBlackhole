@@ -6,6 +6,7 @@ import io.github.clamentos.blackhole.framework.implementation.configuration.Conf
 ///..
 import io.github.clamentos.blackhole.framework.implementation.persistence.models.LogEntity;
 import io.github.clamentos.blackhole.framework.implementation.persistence.models.SystemDiagnostics;
+import io.github.clamentos.blackhole.framework.implementation.persistence.models.SystemEntities;
 
 ///..
 import io.github.clamentos.blackhole.framework.implementation.persistence.pool.ConnectionPool;
@@ -19,7 +20,6 @@ import io.github.clamentos.blackhole.framework.implementation.tasks.ContinuousTa
 
 ///..
 import io.github.clamentos.blackhole.framework.implementation.utility.ExceptionFormatter;
-import io.github.clamentos.blackhole.framework.implementation.utility.IndirectInteger;
 import io.github.clamentos.blackhole.framework.implementation.utility.ResourceReleaser;
 
 ///..
@@ -49,7 +49,7 @@ import java.util.List;
 
 ///
 /**
- * <h3>Metrics task</h3>
+ * <h3>Metrics Task</h3>
  * Periodically writes to the database a summary of various system statistics and logs.
  * @see ContinuousTask
  * @see MetricsTracker
@@ -74,12 +74,16 @@ public final class MetricsTask extends ContinuousTask {
     private final DateTimeFormatter formatter;
 
     ///..
+    /** The split index used when parsing log strings (always holds 1 element to simulate a reference to a mutable int). */
+    private final int[] split_idx;
+
     /** The counter used for scheduling sleeps. */
     private int sleep_samples;
     
     ///
     /**
      * Instantiates a new {@link MetricsTask} object.
+     * @see ContinuousTask
      * @see MetricsTracker
     */
     public MetricsTask() {
@@ -90,8 +94,8 @@ public final class MetricsTask extends ContinuousTask {
         log_printer = LogPrinter.getInstance();
         pool = ConnectionPool.getInstance();
         repository = Repository.getInstance();
-
         formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss.SSS");
+        split_idx = new int[]{0};
 
         logger.log("MetricsTask.new >> Instantiated successfully", LogLevels.SUCCESS);
     }
@@ -109,7 +113,6 @@ public final class MetricsTask extends ContinuousTask {
     @Override
     public void work() {
 
-        // Wait for scheduling.
         if(sleep_samples < ConfigurationProvider.getInstance().METRICS_TASK_SCHEDULING_NUM_CHUNKS) {
 
             try {
@@ -122,14 +125,13 @@ public final class MetricsTask extends ContinuousTask {
 
             catch(InterruptedException exc) {
 
-                logger.log(ExceptionFormatter.format("MetricsTask.work >> ", exc, " >> Ignoring..."), LogLevels.NOTE);
+                logger.log(ExceptionFormatter.format("MetricsTask.work >> Could not sleep", exc, ">> Ignoring..."), LogLevels.NOTE);
             }
         }
 
         logger.log("MetricsTask.work >> Begin", LogLevels.INFO);
         sleep_samples = 0;
 
-        // Dump the metrics and logs to the database.
         SystemDiagnostics snapshot = MetricsTracker.getInstance().sample();
         PooledConnection connection = pool.aquireConnection(0);
 
@@ -151,60 +153,68 @@ public final class MetricsTask extends ContinuousTask {
     }
 
     ///
-    // Takes a snapshot and save it into the database.
+    /**
+     * Saves the system diagnostics snapshot to the database.
+     * @param system_diagnostics : The entity to persist.
+     * @param connection : The connection to the database.
+     * @return {@code true} if successfull, {@code false} otherwise.
+     * @see SystemDiagnostics
+     * @see PooledConnection
+    */
     private boolean snapshotToDb(SystemDiagnostics system_diagnostics, PooledConnection connection) {
 
         try {
 
-            repository.insert(List.of(system_diagnostics), connection, false);
+            repository.insert(List.of(system_diagnostics), SystemEntities.SYSTEM_DIAGNOSTICS, connection, false);
             return(true);
         }
 
         catch(PersistenceException exc) {
 
-            logger.log(ExceptionFormatter.format("MetricsTask.work >> ", exc, " >> Aborting..."), LogLevels.ERROR);
+            logger.log(
+
+                ExceptionFormatter.format("MetricsTask.snapshotToDb >> Could not insert the system diagnostics", exc, ">> Aborting..."),
+                LogLevels.ERROR
+            );
+
             return(false);
         }
     }
 
     ///..
-    // Reads all the logs in the log file and write them to the database.
-    // If the transaction was successfull, this method "cleans" the log file.
-    private boolean logsToDb(PooledConnection connection) {
+    /**
+     * Reads all the logs in the log file and write them to the database.
+     * If the transaction was successfull, this method will "clean" the log file.
+     * @param connection : The connection to the database.
+     * @see PooledConnection
+     * @see LogEntity
+    */
+    private void logsToDb(PooledConnection connection) {
 
-        // NOTE: The number of log files present in the system must be 1 or 2.
-        // If there are 0, then it means that somebody deleted them while the app is running, because the app creates 1 at start up if
-        // there aren't any. More than 2 is impossible as this task ensures that there will always be max 2.
-
-        int count = countLogFiles();
-        String path = null;
+        String old_path = null;
+        BufferedReader reader = null;
         List<LogEntity> log_entities = new ArrayList<>();
+        int count = countLogFiles();
 
         try {
 
-            // Check if there are no "leftovers" from previous failed runs.
             if(count == 1) {
 
-                // Create a new log file and steer the LogPrinter.
-                path = log_printer.createNewLogFile();
+                old_path = log_printer.createNewLogFile();
             }
 
             else {
 
-                System.out.println("DBG entered in the else...");
-
                 if(count == 0) {
 
-                    // This shouldn't be possible. ERROR.
-                    return(false);
+                    logger.log("MetricsTask.logsToDb >> No log file(s) found >> Aborting...", LogLevels.ERROR);
+                    return;
                 }
 
-                // Get the older of the 2.
-                path = log_printer.findOldestLogFile();
+                old_path = log_printer.findOldestLogFile();
             }
 
-            // Read and parse the selected log file.
-            BufferedReader reader = new BufferedReader(new FileReader(path), ConfigurationProvider.getInstance().READER_WRITER_BUFFER_SIZE);
+            reader = new BufferedReader(new FileReader(old_path), ConfigurationProvider.getInstance().READER_WRITER_BUFFER_SIZE);
 
             while(reader.ready()) {
 
@@ -216,40 +226,51 @@ public final class MetricsTask extends ContinuousTask {
 
         catch(IOException exc) {
 
-            logger.log(ExceptionFormatter.format("MetricsTask.work >> ", exc, " >> Aborting..."), LogLevels.ERROR);
-            return(false);
+            logger.log(
+
+                ExceptionFormatter.format("MetricsTask.logsToDb >> Could not process the log file", exc, ">> Aborting..."),
+                LogLevels.ERROR
+            );
+
+            ResourceReleaser.release(logger, "MetricsTask.logsToDb", reader);
+            return;
         }
 
         try {
 
-            repository.insert(log_entities, connection, true);
+            repository.insert(log_entities, SystemEntities.LOG_ENTITY, connection, true);
         }
 
         catch(PersistenceException exc) {
 
-            logger.log(ExceptionFormatter.format("MetricsTask.work >> ", exc, " >> Aborting..."), LogLevels.ERROR);
-            return(false);
+            logger.log(
+
+                ExceptionFormatter.format("MetricsTask.logsToDb >> Could not insert the logs", exc, ">> Aborting..."),
+                LogLevels.ERROR
+            );
+
+            return;
         }
 
-        // Delete the old log file if everything went ok.
         try {
 
-            Files.delete(Paths.get(path));
-            return(true);
+            Files.delete(Paths.get(old_path));
         }
 
         catch(IOException exc) {
 
-            logger.log(ExceptionFormatter.format("MetricsTask.work >> ", exc, " >> Aborting..."), LogLevels.ERROR);
-            return(false);
+            logger.log(
+
+                ExceptionFormatter.format("MetricsTask.logsToDb >> Could not delete the old log file", exc, ">> Aborting..."),
+                LogLevels.ERROR
+            );
         }
     }
 
     ///..
-    // Counts all the "*.log" named files in the "resources/" directory.
+    /** @return The number of {@code *.log} named files in the {@code resources/} directory. */
     private int countLogFiles() {
 
-        // Fetch all the names and count the *.log ones.
         String[] all_names = new File("resources/").list();
         int count = 0;
 
@@ -265,15 +286,20 @@ public final class MetricsTask extends ContinuousTask {
     }
 
     ///..
-    // Parses a single log from the given string.
+    /**
+     * Parses a single log from the given string and constructs a new log entity object.
+     * @param line : The log line to parse.
+     * @return A new log entity that contains the parsed log.
+     * @see LogEntity
+    */
     private LogEntity parseSingle(String line) {
 
-        IndirectInteger idx = new IndirectInteger(0);
+        split_idx[0] = 0;
 
-        String log_level = split(line, idx);
-        String date_time = split(line, idx);
-        String log_id = split(line, idx);
-        String message = split(line, idx);
+        String log_level = split(line, split_idx);
+        String date_time = split(line, split_idx);
+        String log_id = split(line, split_idx);
+        String message = split(line, split_idx);
 
         try {
 
@@ -283,29 +309,39 @@ public final class MetricsTask extends ContinuousTask {
 
         catch(NumberFormatException | ArithmeticException | DateTimeException exc) {
 
-            logger.log(ExceptionFormatter.format("MetricsTask.parseSingle >> ", exc, ""), LogLevels.WARNING);
+            logger.log(
+
+                ExceptionFormatter.format("MetricsTask.parseSingle >> Could not parse the log line", exc, ">> This entry will be skipped"),
+                LogLevels.WARNING
+            );
+
             return(null);
         }
     }
 
     ///..
-    // Splits the string on the ] character.
-    private String split(String line, IndirectInteger start) {
+    /**
+     * Splits the string on the {@code ]} character.
+     * @param line : The log line to split.
+     * @param start : The starting index of the string.
+     * The array should always contain one element used as a reference to an integer.
+     * @return The prefix up to the first {@code ]} character of {@code line}.
+    */
+    private String split(String line, int[] start) {
 
         StringBuilder piece = new StringBuilder();
         char pos;
 
         do {
 
-            pos = line.charAt(start.value);
+            pos = line.charAt(start[0]);
 
-            // Character not '[', ']', '-', whitespace (except space).
             if((Character.isWhitespace(pos) == false || pos == ' ') && pos != '[' && pos != ']' && pos != '-') {
 
                 piece.append(pos);
             }
 
-            start.value++;
+            start[0]++;
 
         } while(pos != ']');
 

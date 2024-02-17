@@ -24,8 +24,8 @@ import java.util.Properties;
 
 ///
 /**
- * <h3>Configuration provider</h3>
- * Provides constants coming from the {@code Application.properties} file located in {@code [classpath]/resources}.
+ * <h3>Configuration Provider</h3>
+ * Provides constants coming from the {@code Application.properties} file located in {@code [classpath]/resources} to other classes.
 */
 public final class ConfigurationProvider {
 
@@ -268,9 +268,15 @@ public final class ConfigurationProvider {
     private final Field[] fields;
 
     ///..
+    /** The current class field index of {@code this}. Used to dynamically get the name of the current class field. */
     private int current_field_index;
 
     ///
+    /**
+     * <p>Instantiates a new {@code ConfigurationProvider} object.</p>
+     * <p>This constructor also initializes all the constants and logs map.</p>
+     * Since this class is a singleton, this constructor will only be called once.
+    */
     private ConfigurationProvider() {
 
         properties = new Properties();
@@ -288,7 +294,12 @@ public final class ConfigurationProvider {
 
             logs.put(
 
-                ExceptionFormatter.format("ConfigurationProvider.new >> ", exc, " >> The defaults will be used"), LogLevels.WARNING
+                ExceptionFormatter.format(
+
+                    "ConfigurationProvider.new >> Could not read the Application.properties file", exc, ">> The defaults will be used"
+                ),
+
+                LogLevels.WARNING
             );
         }
 
@@ -374,7 +385,13 @@ public final class ConfigurationProvider {
     }
 
     ///.
-    // Checks if the value of the current property is "ok", else use the provided default.
+    /**
+     * Checks if the matching property value is acceptable and, if it is, returns it.
+     * @param default_value : The default value of the property.
+     * @param low : The low bound of the property.
+     * @param high : The upper value of the property.
+     * @return The matching property value or {@code default_value} if not acceptable.
+    */
     private int checkInt(String default_value, int low, int high) {
 
         String constant_name = fields[current_field_index++].getName();
@@ -387,7 +404,7 @@ public final class ConfigurationProvider {
             if(result < low || result > high) {
 
                 logs.put(
-                
+
                     "ConfigurationProvider.checkInt >> Property " + constant_name + " must be between "
                     + low + " and " + high + ". The default value of: " + default_value + " will be used",
                     LogLevels.WARNING
@@ -404,12 +421,11 @@ public final class ConfigurationProvider {
             logs.put(
 
                 ExceptionFormatter.format(
-                    
-                    "ConfigurationProvider.checkInt >> ", exc,
-                    " >> On property " + constant_name + " The default value of:" + default_value + "will be used"
-                ),
 
-                LogLevels.WARNING
+                    "ConfigurationProvider.checkInt >>", exc,
+                    ">> On property " + constant_name + ". The default value of:" + default_value + "will be used"
+
+                ), LogLevels.WARNING
             );
 
             return(Integer.parseInt(default_value));
@@ -417,7 +433,11 @@ public final class ConfigurationProvider {
     }
 
     ///..
-    // Checks if the value of the current property is "ok", else use the provided default.
+    /**
+     * Checks if the matching property value is acceptable and, if it is, returns it.
+     * @param default_value : The default value of the property.
+     * @return The matching property value or {@code default_value} if not acceptable.
+    */
     private boolean checkBoolean(String default_value) {
 
         String constant_name = fields[current_field_index++].getName();
@@ -444,7 +464,11 @@ public final class ConfigurationProvider {
     }
 
     ///..
-    // Checks if the value of the current property is "ok", else use the provided default.
+    /**
+     * Checks if the matching property value is acceptable and, if it is, returns it.
+     * @param default_value : The default value of the property.
+     * @return The matching property value or {@code default_value} if not acceptable.
+    */
     private String checkString(String default_value) {
 
         String constant_name = fields[current_field_index++].getName();
@@ -458,7 +482,7 @@ public final class ConfigurationProvider {
                 " must not be null nor empty. The default value of: " + default_value + " will be used",
                 LogLevels.WARNING
             );
-            
+
             return(default_value);
         }
 

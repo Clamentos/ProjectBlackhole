@@ -2,9 +2,9 @@ package io.github.clamentos.blackhole.framework.implementation.logging;
 
 ///
 /**
- * <h3>Log levels</h3>
+ * <h3>Log Levels</h3>
  * <p>Enumeration of all the possible log levels.</p>
- * Each entry is composed of the log level name + color.
+ * Each entry is composed of the log level name + ANSI color escape code.
  * <ol>
  *     <li>{@code DEBUG}: Used for debugging.</li>
  *     <li>{@code INFO}: Used to give harmless but useful information.</li>

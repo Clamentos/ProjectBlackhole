@@ -222,7 +222,9 @@ CREATE TABLE "SystemDiagnostics"(
     "update_requests_ko"        INT NOT NULL,
     "delete_requests_ok"        INT NOT NULL,
     "delete_requests_ko"        INT NOT NULL,
-    "responses_sent"            INT NOT NULL,
+    "unknown_requests_ko"       INT NOT NULL,
+    "responses_sent_ok"         INT NOT NULL,
+    "responses_sent_ko"         INT NOT NULL,
     "sockets_accepted"          INT NOT NULL,
     "sockets_closed"            INT NOT NULL
 );

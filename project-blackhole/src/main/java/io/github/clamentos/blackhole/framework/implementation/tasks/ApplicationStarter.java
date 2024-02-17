@@ -41,10 +41,10 @@ import java.util.Scanner;
 
 ///
 /**
- * <h3>Application starter</h3>
- * This is the main class and it will instantiate and initialize all the necessary resources.
- * Once done, it will wait indefinetly for the "quit" command from the command line. If the "quit" command is entered,
- * this class will begin the shutdown sequence and free all the resources.
+ * <h3>Application Starter</h3>
+ * This is the main class of the framework and it will instantiate and initialize all the necessary resources.
+ * Once done, it will wait indefinetly for the {@code "quit"} command from the command line. If the {@code "quit"} command is entered,
+ * this class will begin the shutdown sequence and free all the resources and terminate the program.
 */
 public final class ApplicationStarter {
 
@@ -80,7 +80,8 @@ public final class ApplicationStarter {
             LogLevels.INFO
         );
 
-        try { // Initialize db schema (if required).
+        // Apply the db schema if required.
+        try {
 
             if(configuration_provider.GENERATE_DATABASE_SCHEMA == true) {
 
@@ -104,15 +105,15 @@ public final class ApplicationStarter {
 
             metrics_service.incrementDatabaseQueriesKo(1);
 
-            log_printer.logToFile(
+            log_printer.logToFile(ExceptionFormatter.format(
 
-                "ApplicationStarter.start >> Could not generate schema, " +
-                exc.getClass().getSimpleName() + ": " + exc.getMessage() + " >> Skipping...",
-                LogLevels.WARNING
-            );
+                "ApplicationStarter.start >> Could not generate schema [", exc, "] >> Skipping..."
+
+            ), LogLevels.WARNING);
         }
 
-        try { // Initialize db data (if required).
+        // Import data to the db if required.
+        try {
 
             if(configuration_provider.INITIALIZE_DATABASE_DATA == true) {
 
@@ -136,12 +137,11 @@ public final class ApplicationStarter {
 
             metrics_service.incrementDatabaseQueriesKo(1);
 
-            log_printer.logToFile(
+            log_printer.logToFile(ExceptionFormatter.format(
 
-                "ApplicationStarter.start > Could not populate the database, " +
-                exc.getClass().getSimpleName() + ": " + exc.getMessage() + " Skipping...",
-                LogLevels.WARNING
-            );
+                "ApplicationStarter.start >> Could not populate the database [", exc, "] >> Skipping..."
+
+            ), LogLevels.WARNING);
         }
 
         // Start the server.
@@ -152,11 +152,11 @@ public final class ApplicationStarter {
 
         catch(IOException exc) {
 
-            log_printer.logToFile(
-                
-                "ApplicationStarter.start > Could not instantiate the server task, IOException: " +
-                exc.getMessage() + " aborting", LogLevels.FATAL
-            );
+            log_printer.logToFile(ExceptionFormatter.format(
+
+                "ApplicationStarter.start >> Could not instantiate the server task [", exc, "] >> Aborting..."
+
+            ), LogLevels.FATAL);
 
             log_printer.close();
             connection_pool.closePool();
@@ -220,9 +220,13 @@ public final class ApplicationStarter {
         // This should never happen...
         catch(IllegalAccessException exc) {
 
-            log_printer.logToFile(ExceptionFormatter.format("ConfigurationProvider.printFields >> ", exc, ""), LogLevels.FATAL);
-            System.exit(1);
+            log_printer.logToFile(ExceptionFormatter.format(
 
+                "ConfigurationProvider.printFields >> Could not access the class fields [", exc, "] >> Aborting..."
+
+            ), LogLevels.FATAL);
+
+            System.exit(1);
             return;
         }
 

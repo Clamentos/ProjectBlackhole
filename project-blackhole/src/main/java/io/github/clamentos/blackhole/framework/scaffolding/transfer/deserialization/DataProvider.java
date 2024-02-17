@@ -13,11 +13,11 @@ public interface DataProvider {
      * <p>Fills the provided buffer with data, blocking if necessary for more to become available.</p>
      * <b>NOTE: This method only modifies the specified section of the provided buffer and leaves the remaining untouched.</b>
      * @param chunk : The input buffer to be filled.
-     * @param starting_position : The starting position of the buffer.
+     * @param offset : The buffer starting position.
      * @param amount : The amount of data to transfer.
-     * @return The number of bytes red or {@code 0} if there isn't any.
+     * @return The number of bytes red or {@code 0} if there isn't any. This value will always be less than or equal to {@code amount}.
     */
-    int fill(byte[] chunk, int starting_position, int amount);
+    int fill(byte[] chunk, int offset, int amount);
 
     ///
 }

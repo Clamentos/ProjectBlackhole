@@ -30,7 +30,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 ///
 /**
- * <h3>Task manager</h3>
+ * <h3>Task Manager</h3>
  * This class is dedicated to managing all the currently running tasks.
 */
 public final class TaskManager {
@@ -40,6 +40,7 @@ public final class TaskManager {
     private static final TaskManager INSTANCE = new TaskManager();
 
     ///.
+    /** See {@link ConfigurationProvider#TASK_MANAGER_SLEEP_CHUNK_SIZE} */
     private final int TASK_MANAGER_SLEEP_CHUNK_SIZE;
 
     ///..
@@ -47,9 +48,13 @@ public final class TaskManager {
     private final LogPrinter log_printer;
 
     ///..
+    /** Synchronization locks for "singleton" type tasks. These locks are used when instantiating said tasks. */
     private final Lock[] add_locks;
+
+    /** Synchronization locks for "singleton" type tasks. These locks are used when terminating said tasks. */
     private final Lock[] remove_locks;
 
+    ///..
     /**
      * The buffer holding the currently active transfer tasks.
      * @see TransferTask
@@ -153,7 +158,7 @@ public final class TaskManager {
      * Adds the provided runnable to the internal tracking buffers.
      * @param runnable : The runnable to run.
      * @throws IllegalArgumentException If {@code runnable} is {@code null} or is not a
-     * server task, metrics task, log task, transfer task or request task.
+     * {@code ServerTask}, {@code MetricsTask}, {@code LogTask}, {@code TransferTask} or {@code RequestTask}.
      * @see ServerTask
      * @see MetricsTask
      * @see LogTask
@@ -217,7 +222,7 @@ public final class TaskManager {
      * Removes the provided runnable to the internal tracking buffers.
      * @param runnable : The runnable to remove.
      * @throws IllegalArgumentException If {@code runnable} is {@code null} or is not a
-     * server task, metrics task, log task, transfer task or request task.
+     * {@code ServerTask}, {@code MetricsTask}, {@code LogTask}, {@code TransferTask} or {@code RequestTask}.
      * @see ServerTask
      * @see MetricsTask
      * @see LogTask
@@ -225,7 +230,7 @@ public final class TaskManager {
      * @see RequestTask
     */
     protected void remove(Runnable runnable) throws IllegalArgumentException {
-        
+
         switch(runnable) {
 
             case ServerTask st -> {
@@ -265,12 +270,17 @@ public final class TaskManager {
     /**
      * Stops all tasks in the managing buffers in the following order:
      * <ol>
-     *     <li>{@link ServerTask}.</li>
-     *     <li>{@link TransferTask}.</li>
+     *     <li>{@code ServerTask}.</li>
+     *     <li>{@code TransferTask}.</li>
      *     <li>{@code RequestTask}.</li>
      *     <li>{@code MetricsTask}.</li>
      *     <li>{@code LogTask}.</li>
      * </ol>
+     * @see ServerTask
+     * @see MetricsTask
+     * @see LogTask
+     * @see TransferTask
+     * @see RequestTask
     */
     protected synchronized void shutdown() {
 
@@ -300,7 +310,7 @@ public final class TaskManager {
 
         while(true) {
 
-            if(task.isStopped()) {
+            if(task == null || task.isStopped()) {
 
                 return;
             }
@@ -312,7 +322,11 @@ public final class TaskManager {
 
             catch(InterruptedException exc) {
 
-                log_printer.logToFile(ExceptionFormatter.format("TaskManager.waitForStopped >> ", exc, " >> Ignoring..."), LogLevels.NOTE);
+                log_printer.logToFile(ExceptionFormatter.format(
+
+                    "TaskManager.waitForStopped >> [", exc, "] >> Ignoring..."
+
+                ), LogLevels.NOTE);
             }
         }
     }
@@ -335,7 +349,11 @@ public final class TaskManager {
 
             catch(InterruptedException exc) {
 
-                log_printer.logToFile(ExceptionFormatter.format("TaskManager.waitForEmpty >> ", exc, " >> Ignoring..."), LogLevels.NOTE);
+                log_printer.logToFile(ExceptionFormatter.format(
+
+                    "TaskManager.waitForEmpty >> [", exc, "] >> Ignoring..."
+
+                ), LogLevels.NOTE);
             }
         }
     }

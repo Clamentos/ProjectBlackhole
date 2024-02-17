@@ -45,7 +45,6 @@ public final class Logger {
 
         log_printer = LogPrinter.getInstance();
         queue = new LinkedBlockingQueue<>(ConfigurationProvider.getInstance().MAX_LOG_QUEUE_SIZE);
-
         TaskManager.getInstance().launchThread(new LogTask(queue), "LogTask");
 
         log_printer.logToFile("Logger.new >> Instantiated successfully", LogLevels.SUCCESS);
@@ -78,7 +77,6 @@ public final class Logger {
         boolean inserted = false;
         int busy_wait_attempts = 0;
 
-        // Attempt to insert aggressively.
         while(busy_wait_attempts < ConfigurationProvider.getInstance().MAX_LOG_QUEUE_INSERT_ATTEMPTS) {
 
             inserted = queue.offer(log);
@@ -91,7 +89,6 @@ public final class Logger {
             busy_wait_attempts++;
         }
 
-        // The busy wait expired the attempts. Insert with blocking behaviour.
         try {
 
             inserted = queue.offer(log, ConfigurationProvider.getInstance().LOG_QUEUE_INSERT_TIMEOUT, TimeUnit.MILLISECONDS);
@@ -99,10 +96,13 @@ public final class Logger {
 
         catch(InterruptedException exc) {
 
-            log_printer.logToFile(ExceptionFormatter.format("Logger.log >> ", exc, " >> Ignoring..."), LogLevels.NOTE);
+            log_printer.logToFile(
+
+                ExceptionFormatter.format("Logger.log >> Could not insert the log into the queue", exc, ">> Inserting synchronously..."),
+                LogLevels.NOTE
+            );
         }
 
-        // Log synchronously as a fallback.
         if(inserted == false) {
 
             log_printer.printToFile(log);

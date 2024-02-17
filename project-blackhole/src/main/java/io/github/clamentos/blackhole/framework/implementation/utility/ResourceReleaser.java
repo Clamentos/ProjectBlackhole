@@ -5,11 +5,12 @@ import io.github.clamentos.blackhole.framework.implementation.logging.LogLevels;
 import io.github.clamentos.blackhole.framework.implementation.logging.LogPrinter;
 import io.github.clamentos.blackhole.framework.implementation.logging.Logger;
 
+///.
 import java.util.Objects;
 
 ///
 /**
- * <h3>Resource releaser</h3>
+ * <h3>Resource Releaser</h3>
  * Provides static methods to release resources, such as database connections, open files or network streams.
 */
 public final class ResourceReleaser {
@@ -21,11 +22,12 @@ public final class ResourceReleaser {
      * @param from : The caller method name (used for logging).
      * @param resources : The variable number of resources to be closed.
      * @return {@code true} if all {@code resources} were closed, {@code false} otherwise.
+     * @see Logger
     */
     public static boolean release(Logger logger, String from, AutoCloseable... resources) {
 
         boolean closed_all = true;
-        
+
         for(AutoCloseable resource : resources) {
 
             try {
@@ -41,8 +43,8 @@ public final class ResourceReleaser {
 
                     ExceptionFormatter.format(
 
-                        "ResourceReleaser.release >> from: " + from + " >> ", exc,
-                        " >> Failed in closing the resource " +
+                        "ResourceReleaser.release >> from: " + from + " >>", exc,
+                        ">> Failed in closing the resource " +
                         Objects.toIdentityString(resource)
                     ),
 
@@ -53,13 +55,15 @@ public final class ResourceReleaser {
 
         return(closed_all);
     }
-    
+
+    ///..
     /**
      * Releases all the provided resources.
      * @param log_printer : The {@code LogPrinter} used in case of failures.
      * @param from : The caller method name (used for logging).
      * @param resources : Variable number of resources to be closed.
      * @return {@code true} if all {@code resources} were closed, {@code false} otherwise.
+     * @see LogPrinter
     */
     public static boolean release(LogPrinter log_printer, String from, AutoCloseable... resources) {
 
@@ -80,8 +84,8 @@ public final class ResourceReleaser {
 
                     ExceptionFormatter.format(
 
-                        "ResourceReleaser.release >> from: " + from + " >> ", exc,
-                        " >> Failed in closing the resource " +
+                        "ResourceReleaser.release >> from: " + from + ">> ", exc,
+                        ">> Failed in closing the resource " +
                         Objects.toIdentityString(resource)
                     ),
 

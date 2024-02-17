@@ -26,12 +26,18 @@ public abstract class Task implements Runnable {
     public Task() {}
 
     ///
-    /** Method to perform initialization operations. */
-    public abstract void initialize();
+    /**
+     * Method to perform initialization operations.
+     * @throws Throwable If any exception occurs.
+    */
+    public abstract void initialize() throws Throwable;
 
     ///..
-    /** Method to perform the operations. */
-    public abstract void work();
+    /**
+     * Method to perform the operations.
+     * @throws Throwable If any exception occurs.
+    */
+    public abstract void work() throws Throwable;
 
     ///
     /**
@@ -66,9 +72,9 @@ public abstract class Task implements Runnable {
             LogPrinter.getInstance().logToFile(
 
                 ExceptionFormatter.format(
-                    
-                    "Uncaught exception in task " + Objects.toIdentityString(this) + " ",
-                    exc, " >> Stack trace: " + sw.toString()
+
+                    "Uncaught exception in task " + Objects.toIdentityString(this) + " [",
+                    exc, "] >> Stack trace: " + sw.toString()
                 ),
 
                 LogLevels.ERROR

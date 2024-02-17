@@ -1,26 +1,29 @@
 package io.github.clamentos.blackhole.framework.scaffolding.persistence;
 
 ///
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-
-///
 /**
  * <h3>Filter</h3>
  * Specifies that the implementing class can generate SQL {@code SELECT} clauses as well as aid caching.
  * @see Entity
+ * @see QueryBinder
+ * @see Entities
 */
 public interface Filter {
 
     ///
     /**
      * Generates the SQL {@code SELECT} statement that describes {@code this} filter.
-     * @param connection : The JDBC connection from which to generate the statement.
-     * @return The never {@code null} JDBC statement to be executed.
-     * @throws SQLException If any database access error occurs.
+     * @return The never {@code null} and never empty query string.
     */
-    PreparedStatement generateSelect(Connection connection) throws SQLException;
+    String generateSelect();
+
+    ///..
+    /**
+     * Binds the field values of {@code this} filter into the given statement for a {@code SELECT} query.
+     * @param query_binder : The statement binder to bind the parameters on.
+     * @see QueryBinder
+    */
+    void bindForSelect(QueryBinder query_binder);
 
     ///..
     /**
@@ -30,6 +33,13 @@ public interface Filter {
      * @see Entity
     */
     boolean isFiltered(Entity entity);
+
+    ///..
+    /**
+     * @return The never {@code null} entity type filtered by {@code this}.
+     * @see Entities
+    */
+    Entities<? extends Enum<?>> getFilteredEntityType();
 
     ///
 }

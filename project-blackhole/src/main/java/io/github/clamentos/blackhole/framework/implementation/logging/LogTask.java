@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 ///
 /**
- * <h3>Log task</h3>
+ * <h3>Log Task</h3>
  * Fetches the logs from the log queue and prints them.
  * @see ContinuousTask
  * @see Logger
@@ -35,6 +35,8 @@ public final class LogTask extends ContinuousTask {
      * Instantiates a new {@link LogTask} object.
      * @param queue : The log queue from where to fetch the logs.
      * @throws IllegalArgumentException If {@code queue} is {@code null}.
+     * @see ContinuousTask
+     * @see Logger
     */
     public LogTask(BlockingQueue<Log> queue) throws IllegalArgumentException {
 
@@ -82,13 +84,12 @@ public final class LogTask extends ContinuousTask {
     }
 
     ///.
-    // Fetches 1 log and prints it.
+    /** Fetches one log from the queue and prints it. */
     private void iteration() {
 
         Log log = null;
         int busy_wait_attempts = 0;
 
-        // Attempt to fetch aggressively.
         while(busy_wait_attempts < ConfigurationProvider.getInstance().MAX_LOG_QUEUE_POLL_ATTEMPTS) {
 
             log = queue.poll();
@@ -102,7 +103,6 @@ public final class LogTask extends ContinuousTask {
             busy_wait_attempts++;
         }
 
-        // The busy wait expired the attempts. Fetch with blocking behaviour.
         try {
 
             log = queue.poll(ConfigurationProvider.getInstance().LOG_QUEUE_POLL_TIMEOUT, TimeUnit.MILLISECONDS);
@@ -110,10 +110,13 @@ public final class LogTask extends ContinuousTask {
 
         catch(InterruptedException exc) {
 
-            log_printer.logToFile(ExceptionFormatter.format("LogTask.iteration >> ", exc, " >> Ignoring..."), LogLevels.NOTE);
+            log_printer.logToFile(
+
+                ExceptionFormatter.format("LogTask.iteration >> Could not fetch from the queue", exc, ">> Retrying..."),
+                LogLevels.NOTE
+            );
         }
 
-        // If the fetch was successfull, log the log.
         if(log != null) {
 
             log_printer.printToFile(log);

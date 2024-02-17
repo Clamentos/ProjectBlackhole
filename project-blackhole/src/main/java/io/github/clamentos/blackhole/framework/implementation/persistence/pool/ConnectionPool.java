@@ -27,8 +27,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 ///
 /**
- * <h3>Connection pool</h3>
+ * <h3>Connection Pool</h3>
  * Provides connection pooling for the persistence layer.
+ * @see PooledConnection
 */
 public final class ConnectionPool {
     
@@ -72,28 +73,21 @@ public final class ConnectionPool {
     private ConnectionPool() {
 
         logger = Logger.getInstance();
+        ConfigurationProvider cfg_p = ConfigurationProvider.getInstance();
 
-        NUM_DATABASE_CONNECTIONS = ConfigurationProvider.getInstance().NUM_DATABASE_CONNECTIONS;
+        NUM_DATABASE_CONNECTIONS = cfg_p.NUM_DATABASE_CONNECTIONS;
 
         // Instantiate and initialize the JDBC driver properties.
         driver_properties = new Properties();
 
-        driver_properties.setProperty("user", ConfigurationProvider.getInstance().DATABASE_USERNAME);
-        driver_properties.setProperty("password", ConfigurationProvider.getInstance().DATABASE_PASSWORD);
-        driver_properties.setProperty( "prepareThreshold", Integer.toString(ConfigurationProvider.getInstance().PREPARE_THRESHOLD));
-
-        driver_properties.setProperty(
-
-            "preparedStatementCacheQueries", Integer.toString(ConfigurationProvider.getInstance().MAX_NUM_CACHEABLE_STATEMENTS)
-        );
-
-        driver_properties.setProperty(
-
-            "preparedStatementCacheSizeMiB", Integer.toString(ConfigurationProvider.getInstance().MAX_STATEMENTS_CACHE_ENTRY_SIZE)
-        );
+        driver_properties.setProperty("user", cfg_p.DATABASE_USERNAME);
+        driver_properties.setProperty("password", cfg_p.DATABASE_PASSWORD);
+        driver_properties.setProperty( "prepareThreshold", Integer.toString(cfg_p.PREPARE_THRESHOLD));
+        driver_properties.setProperty("preparedStatementCacheQueries", Integer.toString(cfg_p.MAX_NUM_CACHEABLE_STATEMENTS));
+        driver_properties.setProperty("preparedStatementCacheSizeMiB", Integer.toString(cfg_p.MAX_STATEMENTS_CACHE_ENTRY_SIZE));
 
         // Instantiate and fill the pools.
-        int num_per_pool = ConfigurationProvider.getInstance().NUM_DATABASE_CONNECTIONS_PER_POOL;
+        int num_per_pool = cfg_p.NUM_DATABASE_CONNECTIONS_PER_POOL;
 
         // Check for proper configuration values.
         if((NUM_DATABASE_CONNECTIONS < num_per_pool) || (NUM_DATABASE_CONNECTIONS % num_per_pool) != 0) {
@@ -118,10 +112,7 @@ public final class ConnectionPool {
 
                 for(int j = 0; j < num_per_pool; j++) {
 
-                    Connection connection = DriverManager.getConnection(
-
-                        ConfigurationProvider.getInstance().DATABASE_ADDRESS, driver_properties
-                    );
+                    Connection connection = DriverManager.getConnection(cfg_p.DATABASE_ADDRESS, driver_properties);
 
                     connection.setAutoCommit(false);
                     pools.get(i).add(new PooledConnection(connection));
@@ -133,7 +124,12 @@ public final class ConnectionPool {
 
         catch(SQLException exc) {
 
-            logger.log(ExceptionFormatter.format("ConnectionPool.new >> ", exc, ""), LogLevels.FATAL);
+            logger.log(ExceptionFormatter.format(
+
+                "ConnectionPool.new >> Could not populate the pool [", exc, "] >> Aborting..."
+
+            ), LogLevels.FATAL);
+
             System.exit(1);
         }
     }
@@ -190,7 +186,7 @@ public final class ConnectionPool {
 
             catch(InterruptedException exc) {
 
-                logger.log(ExceptionFormatter.format("ConnectionPool.aquireConnection >> ", exc, " >> Ignoring..."), LogLevels.NOTE);
+                logger.log(ExceptionFormatter.format("ConnectionPool.aquireConnection >> [", exc, "] >> Ignoring..."), LogLevels.NOTE);
             }
         }
     }
@@ -233,7 +229,7 @@ public final class ConnectionPool {
 
             catch(InterruptedException exc) {
 
-                logger.log(ExceptionFormatter.format("ConnectionPool.releaseConnection >> ", exc, " >> Ignoring..."), LogLevels.NOTE);
+                logger.log(ExceptionFormatter.format("ConnectionPool.releaseConnection >> [", exc, "] >> Ignoring..."), LogLevels.NOTE);
             }
         }
     }
@@ -267,7 +263,7 @@ public final class ConnectionPool {
 
                     catch(InterruptedException exc) {
 
-                        logger.log(ExceptionFormatter.format("ConnectionPool.closePool >> ", exc, " >> Ignoring..."), LogLevels.NOTE);
+                        logger.log(ExceptionFormatter.format("ConnectionPool.closePool >> [", exc, "] >> Ignoring..."), LogLevels.NOTE);
                     }
                 }
             }

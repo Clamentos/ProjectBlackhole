@@ -19,7 +19,7 @@ import java.util.Objects;
 
 ///
 /**
- * <h3>Continuous task</h3>
+ * <h3>Continuous Task</h3>
  * Enforces common behaviour and structure for any runnable that executes for an indefinite amount of time.
 */
 public abstract class ContinuousTask implements Stoppable {
@@ -36,16 +36,25 @@ public abstract class ContinuousTask implements Stoppable {
     }
 
     ///
-    /** Method to perform initialization operations before entering the continuous loop. */
-    public abstract void initialize();
+    /**
+     * Method to perform initialization operations before entering the continuous loop.
+     * @throws Throwable If any exception occurs.
+    */
+    public abstract void initialize() throws Throwable;
 
     ///..
-    /** Method to perform the main operations while in the continuous loop. */
-    public abstract void work();
+    /**
+     * Method to perform the main operations while in the continuous loop.
+     * @throws Throwable If any exception occurs.
+    */
+    public abstract void work() throws Throwable;
 
     ///..
-    /** Method to perform cleanup operations after the the continuous loop. */
-    public abstract void terminate();
+    /**
+     * Method to perform cleanup operations after the the continuous loop.
+     * @throws Throwable If any exception occurs.
+    */
+    public abstract void terminate() throws Throwable;
 
     ///
     /** @return The stopped status flag. */
@@ -82,7 +91,15 @@ public abstract class ContinuousTask implements Stoppable {
 
             while(status == 0) {
 
-                work();
+                try {
+
+                    work();
+                }
+
+                catch(Throwable exc) {
+
+                    printException(exc);
+                }
             }
 
             terminate();
@@ -90,23 +107,9 @@ public abstract class ContinuousTask implements Stoppable {
             status = 2;
         }
 
-        catch(Exception exc) {
+        catch(Throwable exc2) {
 
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-
-            exc.printStackTrace(pw);
-
-            LogPrinter.getInstance().logToFile(
-
-                ExceptionFormatter.format(
-
-                    "Uncaught exception in task " + Objects.toIdentityString(this) + " ",
-                    exc, " >> Stack trace: " + sw.toString()
-                ),
-
-                LogLevels.ERROR
-            );
+            printException(exc2);
         }
     }
 
@@ -116,6 +119,26 @@ public abstract class ContinuousTask implements Stoppable {
     public void stop() {
 
         status = 1;
+    }
+
+    ///.
+    private void printException(Throwable exc) {
+
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+
+        exc.printStackTrace(pw);
+
+        LogPrinter.getInstance().logToFile(
+
+            ExceptionFormatter.format(
+
+                "Uncaught exception in task " + Objects.toIdentityString(this) + " [",
+                exc, "] >> Stack trace: " + sw.toString()
+            ),
+
+            LogLevels.ERROR
+        );
     }
 
     ///

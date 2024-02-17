@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 ///
 /**
- * <h3>Metrics tracker</h3>
+ * <h3>Metrics Tracker</h3>
  * <p>Exposes various metrics that other classes can update as they run.</p>
  * At any point in time a snapshot of the system can be taken via this class.
  * @see SystemDiagnostics
@@ -79,8 +79,14 @@ public final class MetricsTracker {
     /** The atomic counter that tracks the number of failed {@code DELETE} requests. */
     private final AtomicInteger delete_requests_ko;
 
-    /** The atomic counter that tracks the number of responses sent. */
-    private final AtomicInteger responses_sent;
+    /** The atomic counter that tracks the number of failed requests before the request method is known. */
+    private final AtomicInteger unknown_requests_ko;
+
+    /** The atomic counter that tracks the number of responses sent successfully. */
+    private final AtomicInteger responses_sent_ok;
+
+    /** The atomic counter that tracks the number of responses that the server attempted to sent but failed. */
+    private final AtomicInteger responses_sent_ko;
 
     /** The atomic counter that tracks the number of accepted socket connections. */
     private final AtomicInteger sockets_accepted;
@@ -90,7 +96,9 @@ public final class MetricsTracker {
 
     ///
     /**
-     * Instantiates a new {@code MetricsTracker} object.
+     * <p>Instantiates a new {@code MetricsTracker} object.</p>
+     * Since this class is a singleton, this constructor will only be called once.
+     * @see SystemDiagnostics
      * @see MetricsTask
     */
     private MetricsTracker() {
@@ -113,12 +121,13 @@ public final class MetricsTracker {
         update_requests_ko = new AtomicInteger();
         delete_requests_ok = new AtomicInteger();
         delete_requests_ko = new AtomicInteger();
-        responses_sent = new AtomicInteger();
+        unknown_requests_ko = new AtomicInteger();
+        responses_sent_ok = new AtomicInteger();
+        responses_sent_ko = new AtomicInteger();
         sockets_accepted = new AtomicInteger();
         sockets_closed = new AtomicInteger();
 
         TaskManager.getInstance().launchThread(new MetricsTask(), "MetricsTask");
-
         logger.log("MetricsTracker.new >> Instantiated successfully", LogLevels.SUCCESS);
     }
 
@@ -281,12 +290,32 @@ public final class MetricsTracker {
 
     ///..
     /**
-     * Increments the {@code responses_sent} metric by {@code amount}.
+     * Increments the {@code unknown_requests_ko} metric by {@code amount}.
      * @param amount : The amount.
     */
-    public void incrementResponsesSent(int amount) {
+    public void incrementUnknownRequestsKo(int amount) {
 
-        responses_sent.addAndGet(amount);
+        unknown_requests_ko.addAndGet(amount);
+    }
+
+    ///..
+    /**
+     * Increments the {@code responses_sent_ok} metric by {@code amount}.
+     * @param amount : The amount.
+    */
+    public void incrementResponsesSentOk(int amount) {
+
+        responses_sent_ok.addAndGet(amount);
+    }
+
+    ///..
+    /**
+     * Increments the {@code responses_sent_ko} metric by {@code amount}.
+     * @param amount : The amount.
+    */
+    public void incrementResponsesSentKo(int amount) {
+
+        responses_sent_ko.addAndGet(amount);
     }
 
     ///..
@@ -310,45 +339,29 @@ public final class MetricsTracker {
     }
 
     ///.
-    /** @return A {@link SystemDiagnostics} object representing the current status of the system. */
+    /** @return A new {@link SystemDiagnostics} object representing the current status of the system. */
     protected SystemDiagnostics sample() {
 
-        int cache_hits = this.cache_hits.get();
-        this.cache_hits.set(0);
-        int cache_misses = this.cache_misses.get();
-        this.cache_misses.set(0);
-        int database_queries_ok = this.database_queries_ok.get();
-        this.database_queries_ok.set(0);
-        int database_queries_ko = this.database_queries_ko.get();
-        this.database_queries_ko.set(0);
-        int sessions_created = this.sessions_created.get();
-        this.sessions_created.set(0);
-        int sessions_destroyed = this.sessions_destroyed.get();
-        this.sessions_destroyed.set(0);
-        int logged_users = this.logged_users.get();
-        this.logged_users.set(0);
-        int create_requests_ok = this.create_requests_ok.get();
-        this.create_requests_ok.set(0);
-        int create_requests_ko = this.create_requests_ko.get();
-        this.create_requests_ko.set(0);
-        int read_requests_ok = this.read_requests_ok.get();
-        this.read_requests_ok.set(0);
-        int read_requests_ko = this.read_requests_ko.get();
-        this.read_requests_ko.set(0);
-        int update_requests_ok = this.update_requests_ok.get();
-        this.update_requests_ok.set(0);
-        int update_requests_ko = this.update_requests_ko.get();
-        this.update_requests_ko.set(0);
-        int delete_requests_ok = this.delete_requests_ok.get();
-        this.delete_requests_ok.set(0);
-        int delete_requests_ko = this.delete_requests_ko.get();
-        this.delete_requests_ko.set(0);
-        int responses_sent = this.responses_sent.get();
-        this.responses_sent.set(0);
-        int sockets_accepted = this.sockets_accepted.get();
-        this.sockets_accepted.set(0);
-        int sockets_closed = this.sockets_closed.get();
-        this.sockets_closed.set(0);
+        int cache_hits = this.cache_hits.getAndSet(0);
+        int cache_misses = this.cache_misses.getAndSet(0);
+        int database_queries_ok = this.database_queries_ok.getAndSet(0);
+        int database_queries_ko = this.database_queries_ko.getAndSet(0);
+        int sessions_created = this.sessions_created.getAndSet(0);
+        int sessions_destroyed = this.sessions_destroyed.getAndSet(0);
+        int logged_users = this.logged_users.getAndSet(0);
+        int create_requests_ok = this.create_requests_ok.getAndSet(0);
+        int create_requests_ko = this.create_requests_ko.getAndSet(0);
+        int read_requests_ok = this.read_requests_ok.getAndSet(0);
+        int read_requests_ko = this.read_requests_ko.getAndSet(0);
+        int update_requests_ok = this.update_requests_ok.getAndSet(0);
+        int update_requests_ko = this.update_requests_ko.getAndSet(0);
+        int delete_requests_ok = this.delete_requests_ok.getAndSet(0);
+        int delete_requests_ko = this.delete_requests_ko.getAndSet(0);
+        int unknown_requests_ko = this.unknown_requests_ko.getAndSet(0);
+        int responses_sent_ok = this.responses_sent_ok.getAndSet(0);
+        int responses_sent_ko = this.responses_sent_ko.getAndSet(0);
+        int sockets_accepted = this.sockets_accepted.getAndSet(0);
+        int sockets_closed = this.sockets_closed.getAndSet(0);
 
         long now = System.currentTimeMillis();
 
@@ -362,8 +375,8 @@ public final class MetricsTracker {
             cache_hits, cache_misses, database_queries_ok, database_queries_ko,
             sessions_created, sessions_destroyed, logged_users, create_requests_ok,
             create_requests_ko, read_requests_ok, read_requests_ko, update_requests_ok,
-            update_requests_ko, delete_requests_ok, delete_requests_ko, responses_sent,
-            sockets_accepted, sockets_closed
+            update_requests_ko, delete_requests_ok, delete_requests_ko, unknown_requests_ko,
+            responses_sent_ok, responses_sent_ko, sockets_accepted, sockets_closed
         );
 
         return(snapshot);
