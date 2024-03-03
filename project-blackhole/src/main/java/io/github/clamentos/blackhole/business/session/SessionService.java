@@ -1,8 +1,8 @@
 package io.github.clamentos.blackhole.business.session;
 
 import io.github.clamentos.blackhole.framework.implementation.configuration.ConfigurationProvider;
-import io.github.clamentos.blackhole.framework.implementation.logging.LogLevels;
 import io.github.clamentos.blackhole.framework.implementation.logging.Logger;
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.LogLevels;
 
 import java.math.BigInteger;
 

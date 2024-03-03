@@ -4,9 +4,11 @@ package io.github.clamentos.blackhole.framework.implementation.tasks;
 import io.github.clamentos.blackhole.framework.implementation.configuration.ConfigurationProvider;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.logging.LogLevels;
 import io.github.clamentos.blackhole.framework.implementation.logging.LogPrinter;
-import io.github.clamentos.blackhole.framework.implementation.logging.MetricsTracker;
+
+///..
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.LogLevels;
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.MetricsTracker;
 
 ///..
 import io.github.clamentos.blackhole.framework.implementation.network.tasks.ServerTask;
@@ -16,8 +18,10 @@ import io.github.clamentos.blackhole.framework.implementation.persistence.pool.C
 import io.github.clamentos.blackhole.framework.implementation.persistence.pool.PooledConnection;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.utility.ExceptionFormatter;
-import io.github.clamentos.blackhole.framework.implementation.utility.ResourceReleaser;
+import io.github.clamentos.blackhole.framework.implementation.utility.ResourceReleaserInternal;
+
+///..
+import io.github.clamentos.blackhole.framework.implementation.utility.exportable.ExceptionFormatter;
 
 ///..
 import io.github.clamentos.blackhole.framework.scaffolding.ApplicationContext;
@@ -52,16 +56,17 @@ public final class ApplicationStarter {
     /**
      * Starts the whole application.
      * @param context : The user-defined application context.
-     * @see ApplicationContext
     */
     public static void start(ApplicationContext context) {
 
         printBanner();
+
+        TaskManager.getInstance().registerMain(Thread.currentThread());
         LogPrinter log_printer = LogPrinter.getInstance();
 
         if(context == null) {
 
-            log_printer.logToFile("ApplicationStarter.start >> The input argument cannot be null", LogLevels.FATAL);
+            log_printer.logToFile("ApplicationStarter.start => The input argument cannot be null", LogLevels.FATAL);
             log_printer.close();
 
             System.exit(1);
@@ -69,25 +74,24 @@ public final class ApplicationStarter {
 
         ConfigurationProvider configuration_provider = ConfigurationProvider.getInstance();
 
-        printProperties(configuration_provider, log_printer);
+        logProperties(configuration_provider, log_printer);
 
         MetricsTracker metrics_service = MetricsTracker.getInstance();
         ConnectionPool connection_pool = ConnectionPool.getInstance();
 
         log_printer.logToFile(
 
-            "ApplicationStarter.start >> Application PID: " + Long.toString(ProcessHandle.current().pid()),
+            "ApplicationStarter.start => Application PID: " + Long.toString(ProcessHandle.current().pid()),
             LogLevels.INFO
         );
 
-        // Apply the db schema if required.
         try {
 
             if(configuration_provider.GENERATE_DATABASE_SCHEMA == true) {
 
-                log_printer.logToFile("ApplicationStarter.start >> Applying database schema...", LogLevels.INFO);
+                log_printer.logToFile("ApplicationStarter.start => Applying database schema...", LogLevels.INFO);
                 directQuery("resources/Schema.sql", connection_pool, log_printer);
-                log_printer.logToFile("ApplicationStarter.start >> Database schema Applied", LogLevels.SUCCESS);
+                log_printer.logToFile("ApplicationStarter.start => Database schema Applied", LogLevels.SUCCESS);
                 metrics_service.incrementDatabaseQueriesOk(1);
             }
 
@@ -95,7 +99,7 @@ public final class ApplicationStarter {
 
                 log_printer.logToFile(
 
-                    "ApplicationStarter.start >> Skipping database schema application. Property is set to false",
+                    "ApplicationStarter.start => Skipping database schema application. Property is set to false",
                     LogLevels.INFO
                 );
             }
@@ -105,29 +109,28 @@ public final class ApplicationStarter {
 
             metrics_service.incrementDatabaseQueriesKo(1);
 
-            log_printer.logToFile(ExceptionFormatter.format(
+            log_printer.logToFile(
 
-                "ApplicationStarter.start >> Could not generate schema [", exc, "] >> Skipping..."
-
-            ), LogLevels.WARNING);
+                ExceptionFormatter.format("ApplicationStarter.start => Could not generate schema", exc, "Skipping..."),
+                LogLevels.WARNING
+            );
         }
 
-        // Import data to the db if required.
         try {
 
             if(configuration_provider.INITIALIZE_DATABASE_DATA == true) {
 
-                log_printer.logToFile("ApplicationStarter.start >> Importing data to database...", LogLevels.INFO);
+                log_printer.logToFile("ApplicationStarter.start => Importing data to database...", LogLevels.INFO);
                 directQuery("resources/Data.sql", connection_pool, log_printer);
-                log_printer.logToFile("ApplicationStarter.start >> Data imported", LogLevels.SUCCESS);
+                log_printer.logToFile("ApplicationStarter.start => Data imported", LogLevels.SUCCESS);
                 metrics_service.incrementDatabaseQueriesOk(1);
             }
 
             else {
 
                 log_printer.logToFile(
-                
-                    "ApplicationStarter.start >> Skipping data import. Property is set to false",
+
+                    "ApplicationStarter.start => Skipping data import. Property is set to false",
                     LogLevels.INFO
                 );
             }
@@ -137,14 +140,13 @@ public final class ApplicationStarter {
 
             metrics_service.incrementDatabaseQueriesKo(1);
 
-            log_printer.logToFile(ExceptionFormatter.format(
+            log_printer.logToFile(
 
-                "ApplicationStarter.start >> Could not populate the database [", exc, "] >> Skipping..."
-
-            ), LogLevels.WARNING);
+                ExceptionFormatter.format("ApplicationStarter.start => Could not populate the database", exc, "Skipping..."),
+                LogLevels.WARNING
+            );
         }
 
-        // Start the server.
         try {
 
             TaskManager.getInstance().launchThread(new ServerTask(context), "ServerTask");
@@ -152,25 +154,24 @@ public final class ApplicationStarter {
 
         catch(IOException exc) {
 
-            log_printer.logToFile(ExceptionFormatter.format(
+            log_printer.logToFile(
 
-                "ApplicationStarter.start >> Could not instantiate the server task [", exc, "] >> Aborting..."
-
-            ), LogLevels.FATAL);
+                ExceptionFormatter.format("ApplicationStarter.start => Could not instantiate the server task", exc, "Aborting..."),
+                LogLevels.FATAL
+            );
 
             log_printer.close();
-            connection_pool.closePool();
+            connection_pool.close();
 
             System.exit(1);
         }
 
-        // Wait for the user to type "quit".
         Scanner scanner = new Scanner(System.in);
         String s;
 
         while(true) {
 
-            log_printer.logToConsole("Type \"quit\" to gracefully terminate the application", LogLevels.INFO);
+            System.out.println("Type \"quit\" to gracefully terminate the application");
             s = scanner.nextLine();
 
             if(s.equalsIgnoreCase("quit") == true) {
@@ -183,32 +184,47 @@ public final class ApplicationStarter {
 
             else {
 
-                log_printer.logToConsole("Unknown comand: \"" + s + "\"", LogLevels.INFO);
+                System.out.println("Unknown comand: \"" + s + "\"");
             }
         }
 
         scanner.close();
-        connection_pool.closePool();
-        log_printer.logToFile("ApplicationStarter.start >> Shut down successfull", LogLevels.SUCCESS);
+        connection_pool.close();
+        log_printer.logToFile("ApplicationStarter.start => Shut down successfull", LogLevels.SUCCESS);
         log_printer.close();
     }
 
     ///.
-    // Perform a query aquiring the connection from the pool and then releasing it.
-    private static void directQuery(String file_path, ConnectionPool connection_pool, LogPrinter log_printer) throws IOException, SQLException, PersistenceException {
+    /**
+     * Perform a DDL query directly without using the repository.
+     * @param file_path : The path to the SQL script file.
+     * @param connection_pool : The connection pool.
+     * @param log_printer : The log printer.
+     * @throws IOException If any IO error occurs while accessing the file.
+     * @throws SQLException If any database access error occurs.
+     * @throws PersistenceException If any database access error occurs.
+    */
+    private static void directQuery(String file_path, ConnectionPool connection_pool, LogPrinter log_printer)
+    throws IOException, SQLException, PersistenceException {
 
         Statement sql;
-        PooledConnection connection = connection_pool.aquireConnection(0);
+        PooledConnection connection = connection_pool.aquireConnection();
 
         connection.refreshConnection();
         sql = connection.getConnection().createStatement();
         sql.execute(Files.readString(Paths.get(file_path)));
-        ResourceReleaser.release(log_printer, "ApplicationStarter.directQuery", sql);
-        connection_pool.releaseConnection(0, connection);
+
+        ResourceReleaserInternal.release(log_printer, "ApplicationStarter", "directQuery", sql);
+        connection_pool.releaseConnection(connection);
     }
 
     ///..
-    private static void printProperties(ConfigurationProvider configuration_provider, LogPrinter log_printer) {
+    /**
+     * Logs the loaded configuration properties.
+     * @param configuration_provider : The source of configuration constants.
+     * @param log_printer : The log printer.
+    */
+    private static void logProperties(ConfigurationProvider configuration_provider, LogPrinter log_printer) {
 
         String[] properties;
 
@@ -222,7 +238,7 @@ public final class ApplicationStarter {
 
             log_printer.logToFile(ExceptionFormatter.format(
 
-                "ConfigurationProvider.printFields >> Could not access the class fields [", exc, "] >> Aborting..."
+                "ConfigurationProvider.logProperties => Could not access the class fields", exc, "Aborting..."
 
             ), LogLevels.FATAL);
 
@@ -237,11 +253,11 @@ public final class ApplicationStarter {
     }
 
     ///..
-    // Simple ASCII art graphics.
+    /** Print the splash screen banner! */
     private static void printBanner() {
 
         System.out.print(
-            
+
                                                                                      "\r\n" +    
             "                               ................                          \r\n" +
             "                             ...',,;::ccc:;;,'.................          \r\n" +
@@ -266,7 +282,7 @@ public final class ApplicationStarter {
         );
 
         System.out.println(
-            
+
             "  _____           _           _     ____  _            _    _           _      \n" + //
             " |  __ \\         (_)         | |   |  _ \\| |          | |  | |         | |     \n" + //
             " | |__) | __ ___  _  ___  ___| |_  | |_) | | __ _  ___| | _| |__   ___ | | ___ \n" + //

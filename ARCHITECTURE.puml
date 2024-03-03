@@ -1,15 +1,98 @@
-@startuml Class diagram
+@startuml Scaffolding Packages
 
-    ' TODO: finish
+    package "Exceptions" {
 
-    top to bottom direction
-    skinparam linetype ortho
+        [AlreadyExistsException]
+        [AuthorizationException]
+        [ConflictException]
+        [DatabaseConnectionException]
+        [DatabindException]
+        [DeserializationException]
+        [PersistenceException]
+        [QueryBindingException]
+        [ResultSetMappingException]
+        [SessionExpiredException]
+        [SessionNotFoundException]
+        [ValidationException]
+    }
 
-    interface "Runnable"
-    abstract class "Task"
-    abstract class "ContinuousTask"
+    package "Network" {
 
-    "Task" ..|> "Runnable"
-    "ContinuousTask" ..|> "Runnable"
+        package "Controller" {
+
+            [Servlet]
+            [ServletProvider]
+        }
+
+        package "Deserialization" {
+
+            [DataProvider]
+            [Deserializable]
+            [Deserializer]
+            [DeserializerProvider]
+        }
+
+        package "Security" {
+
+            [SessionService]
+            [SessionServiceProvider]
+        }
+
+        package "Serialization" {
+
+            [PartiallyStreamable]
+            [Streamable]
+        }
+
+        package "Transfer" {
+
+            package "Input" {
+
+                [Methods]
+                [Request]
+                [Resources]
+                [ResourcesProvider]
+            }
+
+            package "Output" {
+
+                [Response]
+                [ResponseFactory]
+                [ResponseStatuses]
+            }
+        }
+
+        package "Validation" {
+
+            [Validator]
+            [ValidatorProvider]
+        }
+    }
+
+    package "Persistence" {
+
+        package "Cache" {
+
+            [Cacheability]
+        }
+
+        package "Model" {
+
+            [Entities]
+            [Entity]
+        }
+
+        package "Query" {
+
+            [Filter]
+            [QueryBinder]
+            [ResultSetMapper]
+        }
+    }
+
+    package "Tasks" {
+
+        [Stoppable]
+    }
 
 @enduml

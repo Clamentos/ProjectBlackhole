@@ -226,6 +226,7 @@ CREATE TABLE "SystemDiagnostics"(
     "responses_sent_ok"         INT NOT NULL,
     "responses_sent_ko"         INT NOT NULL,
     "sockets_accepted"          INT NOT NULL,
+    "sockets_refused"           INT NOT NULL,
     "sockets_closed"            INT NOT NULL
 );
 

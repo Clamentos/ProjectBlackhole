@@ -3,10 +3,6 @@ package io.github.clamentos.blackhole.framework.implementation.network;
 ///
 import io.github.clamentos.blackhole.framework.implementation.configuration.ConfigurationProvider;
 
-///..
-import io.github.clamentos.blackhole.framework.implementation.network.tasks.ServerTask;
-import io.github.clamentos.blackhole.framework.implementation.network.tasks.TransferTask;
-
 ///.
 import java.net.SocketAddress;
 
@@ -21,10 +17,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 ///
 /**
- * <h3>Server context</h3>
+ * <h3>Server Context</h3>
  * Provides state and methods for connection managing.
- * @see ServerTask
- * @see TransferTask
 */
 public final class ServerContext {
 
@@ -41,8 +35,8 @@ public final class ServerContext {
 
     ///
     /**
-     * <p>Instantiates a new {@code ServerContext} object.</p>
-     * Since this class is a singleton, this constructor will only be called once.
+     * Instantiates a new {@code ServerContext} object.
+     * @apiNote Since this class is a singleton, this constructor will only be called once.
     */
     private ServerContext() {
 
@@ -96,13 +90,11 @@ public final class ServerContext {
 
         Integer count = sockets_per_ip.getOrDefault(socket_address, 0);
 
-        // If the client has at least 1 entry, decrement.
         if(count > 0) {
 
             sockets_per_ip.put(socket_address, count - 1);
             current_socket_count.decrementAndGet();
 
-            // If the initial get was 1 -> decremented to 0 => no need to keep the entry.
             if(count == 1) {
 
                 sockets_per_ip.remove(socket_address);
@@ -111,7 +103,7 @@ public final class ServerContext {
             return;
         }
 
-        throw new IllegalStateException("(ServerContext.decrement) -> The specified socket address has no entries");
+        throw new IllegalStateException("ServerContext.decrement -> The specified socket address has no entries");
     }
 
     ///

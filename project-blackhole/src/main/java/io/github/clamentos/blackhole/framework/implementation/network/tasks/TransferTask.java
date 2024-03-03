@@ -4,9 +4,11 @@ package io.github.clamentos.blackhole.framework.implementation.network.tasks;
 import io.github.clamentos.blackhole.framework.implementation.configuration.ConfigurationProvider;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.logging.LogLevels;
 import io.github.clamentos.blackhole.framework.implementation.logging.Logger;
-import io.github.clamentos.blackhole.framework.implementation.logging.MetricsTracker;
+
+///..
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.LogLevels;
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.MetricsTracker;
 
 ///..
 import io.github.clamentos.blackhole.framework.implementation.network.ServerContext;
@@ -19,8 +21,10 @@ import io.github.clamentos.blackhole.framework.implementation.tasks.ContinuousTa
 import io.github.clamentos.blackhole.framework.implementation.tasks.TaskManager;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.utility.ExceptionFormatter;
-import io.github.clamentos.blackhole.framework.implementation.utility.ResourceReleaser;
+import io.github.clamentos.blackhole.framework.implementation.utility.ResourceReleaserInternal;
+
+///..
+import io.github.clamentos.blackhole.framework.implementation.utility.exportable.ExceptionFormatter;
 
 ///..
 import io.github.clamentos.blackhole.framework.scaffolding.ApplicationContext;
@@ -41,6 +45,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 ///..
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 ///..
@@ -51,9 +56,6 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * <h3>Transfer Task</h3>
  * Responsible for launching request tasks and managing the client sockets.
- * @see ContinuousTask
- * @see RequestTask
- * @see ServerTask
 */
 public final class TransferTask extends ContinuousTask {
 
@@ -84,6 +86,9 @@ public final class TransferTask extends ContinuousTask {
     /** The buffer holding the threads running the request tasks. */
     private final List<Thread> request_task_references;
 
+    /** The unrecoverable error flag. This flag is raised by request tasks in case an unrecoverable error occurred. */
+    private final AtomicBoolean unercoverable_error_flag;
+
     ///..
     /** The input stream of the socket. */
     private DataInputStream in;
@@ -96,15 +101,8 @@ public final class TransferTask extends ContinuousTask {
      * Instantiates a new {@link TransferTask} object.
      * @param application_context : The application context to be propagated to the request tasks.
      * @param client_socket : The client socket to operate on.
-     * @throws IllegalArgumentException If either {@code application_context} or {@code client_socket} are {@code null}.
-     * @see ApplicationContext
     */
-    public TransferTask(ApplicationContext application_context, Socket client_socket) throws IllegalArgumentException {
-
-        if(application_context == null || client_socket == null) {
-
-            throw new IllegalArgumentException("(TransferTask.new) -> The input arguments cannot be null");
-        }
+    protected TransferTask(ApplicationContext application_context, Socket client_socket) {
 
         logger = Logger.getInstance();
         server_context = ServerContext.getInstance();
@@ -116,14 +114,18 @@ public final class TransferTask extends ContinuousTask {
         output_lock = new ReentrantLock();
         active_request_task_count = new AtomicInteger(0);
         request_task_references = new ArrayList<>();
+        unercoverable_error_flag = new AtomicBoolean(false);
 
-        logger.log("TransferTask.new >> Instantiated successfully", LogLevels.SUCCESS);
+        logger.log("TransferTask.new => Instantiated successfully", LogLevels.SUCCESS);
     }
 
     ///
     /** {@inheritDoc} */
     @Override
     public void initialize() {
+
+        server_context.increment(client_socket.getRemoteSocketAddress());
+        metrics_service.incrementSocketsAccepted(1);
 
         try {
 
@@ -135,11 +137,11 @@ public final class TransferTask extends ContinuousTask {
 
         catch(IOException exc) {
 
-            logger.log(ExceptionFormatter.format("TransferTask.initialize >>", exc, ">> Aborting..."), LogLevels.ERROR);
-        }
+            logger.log(ExceptionFormatter.format("TransferTask.initialize => Could not initialize", exc, "Aborting..."), LogLevels.ERROR);
+            super.stop();
 
-        server_context.increment(client_socket.getRemoteSocketAddress());
-        metrics_service.incrementSocketsAccepted(1);
+            return;
+        }
     }
 
     ///..
@@ -149,14 +151,18 @@ public final class TransferTask extends ContinuousTask {
 
         try {
 
-            if(active_request_task_count.get() > 0) {
+            if(unercoverable_error_flag.get() == false) {
 
                 long payload_size = in.readLong();
 
                 if(payload_size >= 0) {
 
                     CountDownLatch signal = new CountDownLatch(1);
-                    TransferContext transfer_context = new TransferContext(in, out, output_lock, active_request_task_count);
+
+                    TransferContext transfer_context = new TransferContext(
+
+                        in, out, output_lock, active_request_task_count, unercoverable_error_flag
+                    );
 
                     request_task_references.add(TaskManager.getInstance().launchThread(
 
@@ -172,7 +178,7 @@ public final class TransferTask extends ContinuousTask {
                     // Client wants to close the connection. Terminate.
 
                     // NOTE: The protocol demands that a request must start by specifying the length of its payload.
-                    // A negative value is a special case that signals to the server the desire to gracefully close the connection.
+                    // A negative or 0 value is a special case that signals to the server the desire to gracefully close the connection.
 
                     super.stop();
                 }
@@ -190,7 +196,7 @@ public final class TransferTask extends ContinuousTask {
 
                 logger.log(
 
-                    ExceptionFormatter.format("TransferTask.work >> Could not read from the socket", exc, ">> Retrying..."),
+                    ExceptionFormatter.format("TransferTask.work => Could not read from the socket", exc, "Retrying..."),
                     LogLevels.NOTE
                 );
             }
@@ -199,7 +205,7 @@ public final class TransferTask extends ContinuousTask {
 
                 logger.log(
 
-                    ExceptionFormatter.format("TransferTask.work >> Could not read from the socket", exc, ">> Aborting..."),
+                    ExceptionFormatter.format("TransferTask.work => Could not read from the socket", exc, "Aborting..."),
                     LogLevels.ERROR
                 );
 
@@ -224,23 +230,23 @@ public final class TransferTask extends ContinuousTask {
 
                 logger.log(
 
-                    ExceptionFormatter.format("TransferTask.terminate >> Could not join child task", exc, ">> Skipping..."),
+                    ExceptionFormatter.format("TransferTask.terminate => Could not join child task", exc, "Skipping..."),
                     LogLevels.NOTE
                 );
             }
         }
 
         server_context.decrement(client_socket.getRemoteSocketAddress());
-        metrics_service.incrementSocketsClosed(1);
 
-        if(ResourceReleaser.release(logger, "TransferTask.terminate", client_socket)) {
+        if(ResourceReleaserInternal.release(logger, "TransferTask", "terminate", client_socket)) {
 
-            logger.log("TransferTask.terminate >> Shut down successfull", LogLevels.SUCCESS);
+            logger.log("TransferTask.terminate => Shut down successfull", LogLevels.SUCCESS);
+            metrics_service.incrementSocketsClosed(1);
         }
 
         else {
 
-            logger.log("TransferTask.terminate >> Shut down with errors: Could not close the client socket", LogLevels.ERROR);
+            logger.log("TransferTask.terminate => Shut down with errors: Could not close the client socket", LogLevels.ERROR);
         }
     }
 

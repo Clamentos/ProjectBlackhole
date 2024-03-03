@@ -3,8 +3,7 @@ package io.github.clamentos.blackhole.framework.scaffolding.exceptions;
 ///
 /**
  * <h3>Result Set Mapping Exception</h3>
- * Runtime exception indicating an error during the result set to entity mapping process.
- * @see PersistenceException
+ * Runtime exception indicating an error while mapping a database result set.
 */
 public final class ResultSetMappingException extends PersistenceException {
 
@@ -21,7 +20,7 @@ public final class ResultSetMappingException extends PersistenceException {
     ///..
     /**
      * Instantiates a new {@link ResultSetMappingException} object.
-     * @param message : The internal exception detail message.
+     * @param message : The exception detail message.
      * @param cause : The cause of {@code this} exception.
     */
     public ResultSetMappingException(String message, Throwable cause) {

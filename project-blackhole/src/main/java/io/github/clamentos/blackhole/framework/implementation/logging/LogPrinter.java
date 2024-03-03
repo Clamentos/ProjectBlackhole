@@ -4,8 +4,13 @@ package io.github.clamentos.blackhole.framework.implementation.logging;
 import io.github.clamentos.blackhole.framework.implementation.configuration.ConfigurationProvider;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.utility.ExceptionFormatter;
-import io.github.clamentos.blackhole.framework.implementation.utility.ResourceReleaser;
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.LogLevels;
+
+///..
+import io.github.clamentos.blackhole.framework.implementation.utility.ResourceReleaserInternal;
+
+///..
+import io.github.clamentos.blackhole.framework.implementation.utility.exportable.ExceptionFormatter;
 
 ///.
 import java.io.BufferedWriter;
@@ -39,8 +44,8 @@ import java.util.concurrent.locks.ReentrantLock;
 ///
 /**
  * <h3>Log Printer</h3>
- * <p>This class performs the actual logging to the console or log file.</p>
- * Use this class when synchronous logging is desired.
+ * This class performs the actual logging to the console or log file.
+ * @apiNote Use this class when synchronous logging is desired.
 */
 public final class LogPrinter {
 
@@ -49,17 +54,14 @@ public final class LogPrinter {
     private static final LogPrinter INSTANCE = new LogPrinter();
 
     ///.
-    /**
-     * Constant dictating the buffer size of the file writer in bytes.
-     * @see ConfigurationProvider#READER_WRITER_BUFFER_SIZE
-    */
+    /** Constant dictating the buffer size of the file writer in bytes. */
     private final int WRITER_BUFFER_SIZE;
 
     ///..
     /** The log timestamp formatter with pattern: {@code dd/MM/yyyy HH:mm:ss.SSS}. */
     private final DateTimeFormatter formatter;
 
-    /** The atomic counter used to generate the runtime-unique log identifiers. */
+    /** The atomic counter used to generate the runtime unique log identifiers. */
     private final AtomicLong current_id;
 
     /** The synchronization primitive used to enforce mutual exclusion during log file resteering. */
@@ -75,8 +77,8 @@ public final class LogPrinter {
     ///
     /**
      * <p>Instantiates a new {@code LogPrinter} object.</p>
-     * <p>This constructor also creates a new log file if it's not already present.</p>
-     * Since this class is a singleton, this constructor will only be called once.
+     * This constructor also creates a new log file if it's not already present.
+     * @apiNote Since this class is a singleton, this constructor will only be called once.
     */
     private LogPrinter() {
 
@@ -105,32 +107,18 @@ public final class LogPrinter {
 
                 catch(IOException exc2) {
 
-                    printToFile(new Log(
-
-                        ExceptionFormatter.format("LogPrinter.new >> Could not instantiate", exc2, ">> Aborting..."),
-                        LogLevels.FATAL,
-                        getNextId()
-                    ));
-
-                    System.exit(1);
+                    die(exc2);
                 }
             }
 
             else {
 
-                printToFile(new Log(
-   
-                    ExceptionFormatter.format("LogPrinter.new >> Could not instantiate", exc, ">> Aborting..."),
-                    LogLevels.FATAL,
-                    getNextId()
-                ));
-
-                System.exit(1);
+                die(exc);
             }
         }
 
-        printToFile(new Log("ApplicationStarter.start >> Application starting...", LogLevels.SUCCESS, getNextId()));
-        printToFile(new Log("LogPrinter.new >> Instantiated successfully", LogLevels.SUCCESS, getNextId()));
+        printToFile(new Log("ApplicationStarter.start => Application starting...", LogLevels.SUCCESS, getNextId()));
+        printToFile(new Log("LogPrinter.new => Instantiated successfully", LogLevels.SUCCESS, getNextId()));
     }
 
     ///
@@ -142,65 +130,33 @@ public final class LogPrinter {
 
     ///
     /**
-     * Synchronously logs the message to the console with the given severity.
+     * Synchronously logs the message to the log file with the given severity.
      * @param message : The message to log.
      * @param severity : The severity of the log.
-     * @throws IllegalArgumentException If {@code severity} is {@code null}.
-     * @see LogLevels
+     * @throws NullPointerException If {@code log} or any of its parameters are {@code null}.
+     * @apiNote If this methods couldn't write to the file, it will use the console as a fallback.
     */
-    public void logToConsole(String message, LogLevels severity) throws IllegalArgumentException {
-
-        if(severity == null) {
-
-            throw new IllegalArgumentException("(LogPrinter.logToConsole) -> The argument \"severity\" cannot be null");
-        }
-
-        printToConsole(new Log(message, severity, getNextId()));
-    }
-
-    ///..
-    /**
-     * <p>Synchronously logs the message to the log file with the given severity.</p>
-     * If this methods couldn't write to the file, it will use the console as a fallback.
-     * @param message : The message to log.
-     * @param severity : The severity of the log.
-     * @throws IllegalArgumentException If {@code severity} is {@code null}.
-     * @see LogLevels
-    */
-    public void logToFile(String message, LogLevels severity) throws IllegalArgumentException {
-
-        if(severity == null) {
-
-            throw new IllegalArgumentException("(LogPrinter.logToFile) -> The argument \"severity\" cannot be null");
-        }
+    public void logToFile(String message, LogLevels severity) throws NullPointerException {
 
         printToFile(new Log(message, severity, getNextId()));
     }
 
     ///..
     /**
-     * <p>Releases all the file descriptors held by {@code this} class.</p>
-     * <b>NOTE: This method should only be used on application shutdown since {@code this} cannot be re-opened.</b>
+     * Releases all the file descriptors held by {@code this} class.
+     * @apiNote This method should only be used on application shutdown since {@code this} cannot be re-opened.
     */
     public synchronized void close() {
 
-        ResourceReleaser.release(this, "LogPrinter.close", writer);
+        ResourceReleaserInternal.release(this, "LogPrinter", "close", writer);
     }
 
     ///.
-    /** @return The next runtime-unique log id. */
-    protected long getNextId() {
-
-        return(current_id.getAndIncrement());
-    }
-
-    ///..
     /**
-     * <p>Logs the log to the log file with the given severity synchronously.</p>
-     * If this method couldn't write to the file, it will use the console as a fallback.
+     * Logs the log to the log file with the given severity synchronously.
      * @param log : The log to log.
-     * @throws NullPointerException If {@code log} is {@code null}.
-     * @see Log
+     * @throws NullPointerException If {@code log} or any of its parameters are {@code null}.
+     * @apiNote If this method couldn't write to the file, it will use the console as a fallback.
     */
     protected void printToFile(Log log) throws NullPointerException {
 
@@ -218,7 +174,7 @@ public final class LogPrinter {
 
                 ExceptionFormatter.format(
 
-                    "LogPrinter.printToFile >> Could not write to the log file", exc, ">> Writing to the console instead..."
+                    "LogPrinter.printToFile => Could not write to the log file", exc, "Writing to the console instead..."
                 ),
 
                 LogLevels.WARNING,
@@ -227,6 +183,13 @@ public final class LogPrinter {
 
             printToConsole(log);
         }
+    }
+
+    ///..
+    /** @return The next runtime-unique log id. */
+    protected long getNextId() {
+
+        return(current_id.getAndIncrement());
     }
 
     ///..
@@ -246,7 +209,7 @@ public final class LogPrinter {
 
         try {
 
-            ResourceReleaser.release(this, "LogPrinter.createNewLogFile", writer);
+            ResourceReleaserInternal.release(this, "LogPrinter", "createNewLogFile", writer);
             writer = new BufferedWriter(new FileWriter(new_path, true), WRITER_BUFFER_SIZE);
         }
 
@@ -273,13 +236,13 @@ public final class LogPrinter {
         return(findLogFile(false));
     }
 
-    ///.
+    ///..
     /**
      * Logs the log to the console with the given severity synchronously.
      * @param log : The log to log.
-     * @see Log
+     * @throws NullPointerException If {@code log} or any of its parameters are {@code null}.
     */
-    private void printToConsole(Log log) {
+    private void printToConsole(Log log) throws NullPointerException {
 
         String level = "[" + log.log_level().getColor() + log.log_level().getValue() + "\u001B[0m]-";
         String message = "[" + log.log_level().getColor() + log.message() + "\u001B[0m]";
@@ -292,7 +255,6 @@ public final class LogPrinter {
      * Constructs a partial log string.
      * @param log : The log used to build the string.
      * @return The partial log string containing the log timestamp and id.
-     * @see Log
     */
     private String partialString(Log log) {
 
@@ -368,8 +330,26 @@ public final class LogPrinter {
 
         else {
 
-            throw new FileNotFoundException("(LogPrinter.findLogFile) -> No eligible log file was found");
+            throw new FileNotFoundException("LogPrinter.findLogFile -> No eligible log file was found");
         }
+    }
+
+    ///..
+    /**
+     * Forcefully terminate the application due to an unrecoverable exception while instantiating {@code this}.
+     * @param exc : The exception.
+    */
+    private void die(Exception exc) {
+
+        printToFile(new Log(
+   
+            ExceptionFormatter.format("LogPrinter.new => Could not instantiate", exc, "Aborting..."),
+            LogLevels.FATAL,
+            getNextId()
+        ));
+
+        close();
+        System.exit(1);
     }
 
     ///

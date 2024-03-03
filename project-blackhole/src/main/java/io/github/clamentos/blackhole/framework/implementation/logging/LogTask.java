@@ -4,10 +4,13 @@ package io.github.clamentos.blackhole.framework.implementation.logging;
 import io.github.clamentos.blackhole.framework.implementation.configuration.ConfigurationProvider;
 
 ///..
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.LogLevels;
+
+///..
 import io.github.clamentos.blackhole.framework.implementation.tasks.ContinuousTask;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.utility.ExceptionFormatter;
+import io.github.clamentos.blackhole.framework.implementation.utility.exportable.ExceptionFormatter;
 
 ///.
 import java.util.concurrent.BlockingQueue;
@@ -17,8 +20,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * <h3>Log Task</h3>
  * Fetches the logs from the log queue and prints them.
- * @see ContinuousTask
- * @see Logger
 */
 public final class LogTask extends ContinuousTask {
 
@@ -34,23 +35,15 @@ public final class LogTask extends ContinuousTask {
     /**
      * Instantiates a new {@link LogTask} object.
      * @param queue : The log queue from where to fetch the logs.
-     * @throws IllegalArgumentException If {@code queue} is {@code null}.
-     * @see ContinuousTask
-     * @see Logger
     */
-    public LogTask(BlockingQueue<Log> queue) throws IllegalArgumentException {
+    protected LogTask(BlockingQueue<Log> queue) {
 
         super();
-
-        if(queue == null) {
-
-            throw new IllegalArgumentException("(LogTask.new) -> The input argument cannot be null");
-        }
 
         log_printer = LogPrinter.getInstance();
         this.queue = queue;
 
-        log_printer.logToFile("LogTask.new >> Instantiated successfully", LogLevels.SUCCESS);
+        log_printer.logToFile("LogTask.new => Instantiated successfully", LogLevels.SUCCESS);
     }
 
     ///
@@ -80,7 +73,7 @@ public final class LogTask extends ContinuousTask {
             iteration();
         }
 
-        log_printer.logToFile("LogTask.terminate >> Shut down successfull", LogLevels.SUCCESS);
+        log_printer.logToFile("LogTask.terminate => Shut down successfull", LogLevels.SUCCESS);
     }
 
     ///.
@@ -96,7 +89,20 @@ public final class LogTask extends ContinuousTask {
 
             if(log != null) {
 
-                log_printer.printToFile(log);
+                try {
+
+                    log_printer.printToFile(log);
+                }
+
+                catch(NullPointerException exc) {
+
+                    log_printer.logToFile(
+
+                        ExceptionFormatter.format("LogTask.iteration => Could not log", exc, "Skipping this one..."),
+                        LogLevels.ERROR
+                    );
+                }
+                
                 return;
             }
 
@@ -112,7 +118,7 @@ public final class LogTask extends ContinuousTask {
 
             log_printer.logToFile(
 
-                ExceptionFormatter.format("LogTask.iteration >> Could not fetch from the queue", exc, ">> Retrying..."),
+                ExceptionFormatter.format("LogTask.iteration => Could not fetch from the queue", exc, "Retrying..."),
                 LogLevels.NOTE
             );
         }

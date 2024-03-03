@@ -4,10 +4,13 @@ package io.github.clamentos.blackhole.framework.implementation.logging;
 import io.github.clamentos.blackhole.framework.implementation.configuration.ConfigurationProvider;
 
 ///..
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.LogLevels;
+
+///..
 import io.github.clamentos.blackhole.framework.implementation.tasks.TaskManager;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.utility.ExceptionFormatter;
+import io.github.clamentos.blackhole.framework.implementation.utility.exportable.ExceptionFormatter;
 
 ///.
 import java.util.concurrent.BlockingQueue;
@@ -17,9 +20,8 @@ import java.util.concurrent.TimeUnit;
 ///
 /**
  * <h3>Logger</h3>
- * <p>Inserts the produced logs into the log queue.</p>
- * Use this class when asynchronous logging is desired for performance reasons.
- * @see LogTask
+ * Inserts the produced logs into the log queue.
+ * @apiNote Use this class when asynchronous logging is desired for performance reasons.
 */
 public final class Logger {
 
@@ -37,9 +39,8 @@ public final class Logger {
 
     ///
     /**
-     * <p>Instantiates a new {@code Logger} object and starts the log task.</p>
-     * Since this class is a singleton, this constructor will only be called once.
-     * @see LogTask
+     * Instantiates a new {@code Logger} object and starts the log task.
+     * @apiNote Since this class is a singleton, this constructor will only be called once.
     */
     private Logger() {
 
@@ -47,7 +48,7 @@ public final class Logger {
         queue = new LinkedBlockingQueue<>(ConfigurationProvider.getInstance().MAX_LOG_QUEUE_SIZE);
         TaskManager.getInstance().launchThread(new LogTask(queue), "LogTask");
 
-        log_printer.logToFile("Logger.new >> Instantiated successfully", LogLevels.SUCCESS);
+        log_printer.logToFile("Logger.new => Instantiated successfully", LogLevels.SUCCESS);
     }
 
     ///
@@ -59,19 +60,12 @@ public final class Logger {
 
     ///
     /**
-     * <p>Logs the message asynchronously, blocking up to {@link ConfigurationProvider#LOG_QUEUE_INSERT_TIMEOUT} milliseconds.</p>
-     * If this method couldn't complete in such amount of time, it will log the message synchronously as a fallback.
+     * Logs the message asynchronously, blocking up to {@link ConfigurationProvider#LOG_QUEUE_INSERT_TIMEOUT} milliseconds.
      * @param message : The message to log.
      * @param severity : The severity of the log event.
-     * @throws IllegalArgumentException If {@code severity} is {@code null}.
-     * @see LogLevels
+     * @apiNote If this method couldn't complete in such amount of time, it will log the message synchronously as a fallback.
     */
-    public void log(String message, LogLevels severity) throws IllegalArgumentException {
-
-        if(severity == null) {
-
-            throw new IllegalArgumentException("(Logger.log) -> The argument \"severity\" cannot be null");
-        }
+    public void log(String message, LogLevels severity) {
 
         Log log = new Log(message, severity, log_printer.getNextId());
         boolean inserted = false;
@@ -98,14 +92,26 @@ public final class Logger {
 
             log_printer.logToFile(
 
-                ExceptionFormatter.format("Logger.log >> Could not insert the log into the queue", exc, ">> Inserting synchronously..."),
+                ExceptionFormatter.format("Logger.log => Could not insert the log into the queue", exc, "Logging synchronously..."),
                 LogLevels.NOTE
             );
         }
 
         if(inserted == false) {
 
-            log_printer.printToFile(log);
+            try {
+
+                log_printer.printToFile(log);
+            }
+
+            catch(NullPointerException exc) {
+
+                log_printer.logToFile(
+
+                    ExceptionFormatter.format("Logger.log => Could not synchronously log", exc, "Skipping this one..."),
+                    LogLevels.ERROR
+                );
+            }
         }
     }
 

@@ -1,19 +1,13 @@
 package io.github.clamentos.blackhole.framework.implementation.network.transfer.components;
 
 ///
-import io.github.clamentos.blackhole.framework.implementation.network.transfer.NetworkRequest;
-
-///..
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Methods;
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Resources;
+import io.github.clamentos.blackhole.framework.scaffolding.network.transfer.input.Methods;
+import io.github.clamentos.blackhole.framework.scaffolding.network.transfer.input.Resources;
 
 ///
 /**
- * <h3>Request headers</h3>
+ * <h3>Request Headers</h3>
  * Specifies the headers for the network request.
- * @see NetworkRequest
- * @see Methods
- * @see Resources
 */
 public final record RequestHeaders(
 
@@ -31,11 +25,12 @@ public final record RequestHeaders(
     Resources<? extends Enum<?>> target_resource,
 
     /**
-     * The request flag bits.
-     * <ol>
-     *     <li>Authorization: {@code true} if the client is providing the session id.</li>
+     * The request flag bits from least significant to most significant:
+     * <ul>
+     *     <li>Authorization: {@code true} if the client is providing the session id, {@code false} otherwise.</li>
      *     <li>Compression: {@code true} if the client desires it, {@code false} otherwise.</li>
-     * </ol>
+     *     <li>The remaining bits are reserved for future use.</li>
+     * </ul>
     */
     byte flags,
 
@@ -46,4 +41,27 @@ public final record RequestHeaders(
     byte[] session_id
 
     ///
-) {}
+) {
+
+    ///
+    /**
+     * Instantiates a new {@link RequestHeaders} object.
+     * @param payload_size : The request payload size in bytes.
+     * @param id : The identifier of {@code this} request sent by the client.
+     * @param method : The request method.
+     * @param target_resource : The target resource that the request manipulates.
+     * @param flags : The request flag bits.
+     * @param cache_timestamp : The timestamp used for caching.
+     * @param session_id : The optional session identifier.
+     * @throws IllegalArgumentException If either {@code method} or {@code target_resource} are {@code null}.
+    */
+    public RequestHeaders {
+
+        if(method == null || target_resource == null) {
+
+            throw new IllegalArgumentException("RequestHeaders.new -> The input arguments cannot be null");
+        }
+    }
+
+    ///
+}

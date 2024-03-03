@@ -1,6 +1,9 @@
 package io.github.clamentos.blackhole.framework.implementation.logging;
 
 ///
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.LogLevels;
+
+///
 /**
  * <h3>Log</h3>
  * Internal log object used to generate the final print.
@@ -29,7 +32,6 @@ public final record Log(
      * @param message : The log message.
      * @param log_level : The log severity.
      * @param id : The runtime unique log identifier.
-     * @see LogLevels
     */
     protected Log(String message, LogLevels log_level, long id) {
 

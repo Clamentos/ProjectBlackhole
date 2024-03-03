@@ -1,11 +1,13 @@
 package io.github.clamentos.blackhole.framework.implementation.tasks;
 
 ///
-import io.github.clamentos.blackhole.framework.implementation.logging.LogLevels;
 import io.github.clamentos.blackhole.framework.implementation.logging.LogPrinter;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.utility.ExceptionFormatter;
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.LogLevels;
+
+///..
+import io.github.clamentos.blackhole.framework.implementation.utility.exportable.ExceptionFormatter;
 
 ///.
 import java.io.PrintWriter;
@@ -23,21 +25,21 @@ public abstract class Task implements Runnable {
 
     ///
     /** Instantiates a new {@code Task} object. */
-    public Task() {}
+    protected Task() {}
 
     ///
     /**
      * Method to perform initialization operations.
      * @throws Throwable If any exception occurs.
     */
-    public abstract void initialize() throws Throwable;
+    protected abstract void initialize() throws Throwable;
 
     ///..
     /**
      * Method to perform the operations.
      * @throws Throwable If any exception occurs.
     */
-    public abstract void work() throws Throwable;
+    protected abstract void work() throws Throwable;
 
     ///
     /**
@@ -73,8 +75,8 @@ public abstract class Task implements Runnable {
 
                 ExceptionFormatter.format(
 
-                    "Uncaught exception in task " + Objects.toIdentityString(this) + " [",
-                    exc, "] >> Stack trace: " + sw.toString()
+                    "Task.run => Uncaught exception in task " + Objects.toIdentityString(this),
+                    exc, "Stack trace: " + sw.toString()
                 ),
 
                 LogLevels.ERROR

@@ -4,10 +4,12 @@ package io.github.clamentos.blackhole.framework.implementation.tasks;
 import io.github.clamentos.blackhole.framework.implementation.configuration.ConfigurationProvider;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.logging.LogLevels;
 import io.github.clamentos.blackhole.framework.implementation.logging.LogPrinter;
 import io.github.clamentos.blackhole.framework.implementation.logging.LogTask;
 import io.github.clamentos.blackhole.framework.implementation.logging.MetricsTask;
+
+///..
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.LogLevels;
 
 ///..
 import io.github.clamentos.blackhole.framework.implementation.network.tasks.RequestTask;
@@ -15,7 +17,7 @@ import io.github.clamentos.blackhole.framework.implementation.network.tasks.Serv
 import io.github.clamentos.blackhole.framework.implementation.network.tasks.TransferTask;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.utility.ExceptionFormatter;
+import io.github.clamentos.blackhole.framework.implementation.utility.exportable.ExceptionFormatter;
 
 ///.
 import java.util.Iterator;
@@ -31,7 +33,7 @@ import java.util.concurrent.locks.ReentrantLock;
 ///
 /**
  * <h3>Task Manager</h3>
- * This class is dedicated to managing all the currently running tasks.
+ * Manages all the currently running tasks.
 */
 public final class TaskManager {
 
@@ -40,7 +42,7 @@ public final class TaskManager {
     private static final TaskManager INSTANCE = new TaskManager();
 
     ///.
-    /** See {@link ConfigurationProvider#TASK_MANAGER_SLEEP_CHUNK_SIZE} */
+    /** The sleep chunk size in milliseconds, used while waiting task termination. */
     private final int TASK_MANAGER_SLEEP_CHUNK_SIZE;
 
     ///..
@@ -55,41 +57,29 @@ public final class TaskManager {
     private final Lock[] remove_locks;
 
     ///..
-    /**
-     * The buffer holding the currently active transfer tasks.
-     * @see TransferTask
-    */
+    /** The buffer holding the currently active transfer tasks. */
     private final Map<TransferTask, TransferTask> transfer_tasks;
 
-    /**
-     * The buffer holding the currently active request tasks.
-     * @see RequestTask
-    */
+    /** The buffer holding the currently active request tasks. */
     private final Map<RequestTask, RequestTask> request_tasks;
 
     ///..
-    /**
-     * The currently active server task.
-     * @see ServerTask
-    */
+    /** The thread that executed the {@code .start(...)} method of {@code ApplicationStarter}. */
+    private volatile Thread main;
+    
+    /** The currently active server task. */
     private volatile ServerTask server_task;
 
-    /**
-     * The currently active metrics task.
-     * @see MetricsTask
-    */
+    /** The currently active metrics task. */
     private volatile MetricsTask metrics_task;
 
-    /**
-     * The currently active log task.
-     * @see LogTask
-    */
+    /** The currently active log task. */
     private volatile LogTask log_task;
 
     ///
     /**
-     * <p>Instantiates a new {@code TaskManager} object.</p>
-     * Since this class is a singleton, this constructor will only be called once.
+     * Instantiates a new {@code TaskManager} object.
+     * @apiNote Since this class is a singleton, this constructor will only be called once.
     */
     private TaskManager() {
 
@@ -118,6 +108,13 @@ public final class TaskManager {
     }
 
     ///
+    /** @return {@code true} if the calling thread is the main thread, {@code false} otherwise. */
+    public boolean isMain() {
+
+        return(Thread.currentThread() == main);
+    }
+
+    ///..
     /**
      * Launches a new virtual thread with the provided parameters.
      * @param runnable : The runnable to be executed by the new thread.
@@ -128,7 +125,7 @@ public final class TaskManager {
 
         if(runnable == null) {
 
-            throw new IllegalArgumentException("(TaskManager.launchThread) -> The argument \"runnable\" cannot be null");
+            throw new IllegalArgumentException("TaskManager.launchThread -> The input argument \"runnable\" cannot be null");
         }
 
         Thread thread = Thread.ofVirtual().start(runnable);
@@ -155,15 +152,26 @@ public final class TaskManager {
 
     ///.
     /**
+     * Registers the main thread.
+     * @param main : The main thread to register.
+     * @throws IllegalStateException If the main thread is already registered.
+    */
+    protected void registerMain(Thread main) throws IllegalStateException {
+
+        if(this.main != null) {
+        
+            throw new IllegalStateException("TaskManager.registerMain -> Main already registered");
+        }
+
+        this.main = main;
+    }
+
+    ///..
+    /**
      * Adds the provided runnable to the internal tracking buffers.
      * @param runnable : The runnable to run.
      * @throws IllegalArgumentException If {@code runnable} is {@code null} or is not a
      * {@code ServerTask}, {@code MetricsTask}, {@code LogTask}, {@code TransferTask} or {@code RequestTask}.
-     * @see ServerTask
-     * @see MetricsTask
-     * @see LogTask
-     * @see TransferTask
-     * @see RequestTask
     */
     protected void add(Runnable runnable) throws IllegalArgumentException {
 
@@ -208,11 +216,11 @@ public final class TaskManager {
             case TransferTask tt -> transfer_tasks.put(tt, tt);
             case RequestTask rt -> request_tasks.put(rt, rt);
 
-            case null -> throw new IllegalArgumentException("(TaskManager.add) -> The argument \"runnable\" cannot be null");
+            case null -> throw new IllegalArgumentException("TaskManager.add -> The input argument \"runnable\" cannot be null");
 
             default -> throw new IllegalArgumentException(
 
-                "(TaskManager.add) -> Unknown runnable type: " + runnable.getClass().getSimpleName()
+                "TaskManager.add -> Unknown runnable type: " + runnable.getClass().getSimpleName()
             );
         }
     }
@@ -223,11 +231,6 @@ public final class TaskManager {
      * @param runnable : The runnable to remove.
      * @throws IllegalArgumentException If {@code runnable} is {@code null} or is not a
      * {@code ServerTask}, {@code MetricsTask}, {@code LogTask}, {@code TransferTask} or {@code RequestTask}.
-     * @see ServerTask
-     * @see MetricsTask
-     * @see LogTask
-     * @see TransferTask
-     * @see RequestTask
     */
     protected void remove(Runnable runnable) throws IllegalArgumentException {
 
@@ -257,11 +260,11 @@ public final class TaskManager {
             case TransferTask tt -> transfer_tasks.remove(tt);
             case RequestTask rt -> request_tasks.remove(rt);
 
-            case null -> throw new IllegalArgumentException("(TaskManager.remove) -> The argument \"runnable\" cannot be null");
+            case null -> throw new IllegalArgumentException("TaskManager.remove -> The input argument \"runnable\" cannot be null");
 
             default -> throw new IllegalArgumentException(
 
-                "(TaskManager.remove) -> Unknown runnable type: " + runnable.getClass().getSimpleName()
+                "TaskManager.remove -> Unknown runnable type: " + runnable.getClass().getSimpleName()
             );
         }
     }
@@ -276,36 +279,29 @@ public final class TaskManager {
      *     <li>{@code MetricsTask}.</li>
      *     <li>{@code LogTask}.</li>
      * </ol>
-     * @see ServerTask
-     * @see MetricsTask
-     * @see LogTask
-     * @see TransferTask
-     * @see RequestTask
     */
-    protected synchronized void shutdown() {
+    protected void shutdown() {
 
-        // Server task.
         if(server_task != null) server_task.stop();
         waitForStopped(server_task);
 
-        // Transfer tasks.
         terminate(transfer_tasks.values().iterator());
         waitForEmpty(transfer_tasks);
 
-        // Request tasks.
         waitForEmpty(request_tasks);
 
-        // Metrics task.
         if(metrics_task != null) metrics_task.stop();
         waitForStopped(metrics_task);
 
-        // Log task.
         if(log_task != null) log_task.stop();
         waitForStopped(log_task);
     }
 
     ///.
-    // Waits for the task to be stopped.
+    /**
+     * Waits for the provided task to be stopped.
+     * @param task : The task to wait for.
+    */
     private void waitForStopped(ContinuousTask task) {
 
         while(true) {
@@ -322,17 +318,19 @@ public final class TaskManager {
 
             catch(InterruptedException exc) {
 
-                log_printer.logToFile(ExceptionFormatter.format(
+                log_printer.logToFile(
 
-                    "TaskManager.waitForStopped >> [", exc, "] >> Ignoring..."
-
-                ), LogLevels.NOTE);
+                    ExceptionFormatter.format("TaskManager.waitForStopped => Interrupted while waiting", exc, "Ignoring..."), LogLevels.NOTE
+                );
             }
         }
     }
 
     ///..
-    // Waits for the map to become empty.
+    /**
+     * Waits for the provided map to become empty.
+     * @param map : The map to wait for.
+    */
     private void waitForEmpty(Map<? extends Runnable, ? extends Runnable> map) {
 
         while(true) {
@@ -349,17 +347,19 @@ public final class TaskManager {
 
             catch(InterruptedException exc) {
 
-                log_printer.logToFile(ExceptionFormatter.format(
+                log_printer.logToFile(
 
-                    "TaskManager.waitForEmpty >> [", exc, "] >> Ignoring..."
-
-                ), LogLevels.NOTE);
+                    ExceptionFormatter.format("TaskManager.waitForEmpty => Interrupted while waiting", exc, "Ignoring..."), LogLevels.NOTE
+                );
             }
         }
     }
 
     ///..
-    // Iterate the buffer and terminate the continuous tasks.
+    /**
+     * Iterates the buffer and terminates the continuous tasks.
+     * @param iterator : The iterator to iterate on.
+    */
     private void terminate(Iterator<? extends ContinuousTask> iterator) {
 
         while(iterator.hasNext()) {

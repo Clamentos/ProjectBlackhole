@@ -1,10 +1,7 @@
 package io.github.clamentos.blackhole.framework.implementation.network;
 
 ///
-import io.github.clamentos.blackhole.framework.implementation.network.tasks.RequestTask;
-
-///..
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.deserialization.DataProvider;
+import io.github.clamentos.blackhole.framework.scaffolding.network.deserialization.DataProvider;
 
 ///.
 import java.io.IOException;
@@ -14,8 +11,6 @@ import java.io.InputStream;
 /**
  * <h3>Socket Data Provider</h3>
  * Simple data provider wrapper for input streams used while deserializing requests.
- * @see DataProvider
- * @see RequestTask
 */
 public final class SocketDataProvider implements DataProvider {
 
@@ -81,7 +76,8 @@ public final class SocketDataProvider implements DataProvider {
     }
 
     ///..
-    public long getRemainingToProvide() {
+    /** @return The number of bytes needed to reposition the stream. */
+    public long getRemainingToReposition() {
 
         return(data_length);
     }

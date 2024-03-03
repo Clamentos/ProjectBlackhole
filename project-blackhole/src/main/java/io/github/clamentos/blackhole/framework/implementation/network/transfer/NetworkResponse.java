@@ -1,18 +1,17 @@
 package io.github.clamentos.blackhole.framework.implementation.network.transfer;
 
-///
-import io.github.clamentos.blackhole.framework.implementation.network.tasks.RequestTask;
+///..
+import io.github.clamentos.blackhole.framework.scaffolding.network.serialization.Streamable;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.network.transfer.components.Types;
+import io.github.clamentos.blackhole.framework.scaffolding.network.transfer.output.Response;
+import io.github.clamentos.blackhole.framework.scaffolding.network.transfer.output.ResponseStatuses;
+
+///..
 import io.github.clamentos.blackhole.framework.implementation.network.transfer.components.ResponseHeaders;
 
 ///..
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Response;
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.ResponseStatuses;
-
-///..
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.serialization.Streamable;
+import io.github.clamentos.blackhole.framework.implementation.network.transfer.components.exportable.Types;
 
 ///.
 import java.io.DataOutputStream;
@@ -20,11 +19,8 @@ import java.io.IOException;
 
 ///
 /**
- * <h3>Network response</h3>
+ * <h3>Network Response</h3>
  * This class holds all the fields and data that can be sent through a stream as a network response.
- * @see ResponseHeaders
- * @see Streamable
- * @see RequestTask
 */
 public final record NetworkResponse(
 
@@ -47,7 +43,7 @@ public final record NetworkResponse(
 
         if(headers == null) {
 
-            throw new IllegalArgumentException("The input argument \"headers\" cannot be null");
+            throw new IllegalArgumentException("NetworkResponse.new -> The input argument \"headers\" cannot be null");
         }
     }
 
@@ -56,7 +52,15 @@ public final record NetworkResponse(
     @Override
     public long getSize() {
 
-        return(headers.getSize() + data.getSize());
+        if(data != null) {
+
+            return(headers.getSize() + data.getSize() + 2);
+        }
+
+        else {
+
+            return(headers.getSize() + 2);
+        }
     }
 
     ///..
@@ -67,7 +71,7 @@ public final record NetworkResponse(
         headers.stream(out);
 
         out.writeByte(Types.BEGIN.ordinal());
-        data.stream(out);
+        if(data != null) data.stream(out);
         out.writeByte(Types.END.ordinal());
     }
 

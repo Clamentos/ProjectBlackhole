@@ -4,6 +4,10 @@ package io.github.clamentos.blackhole.framework.implementation.logging;
 import io.github.clamentos.blackhole.framework.implementation.configuration.ConfigurationProvider;
 
 ///..
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.LogLevels;
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.MetricsTracker;
+
+///..
 import io.github.clamentos.blackhole.framework.implementation.persistence.models.LogEntity;
 import io.github.clamentos.blackhole.framework.implementation.persistence.models.SystemDiagnostics;
 import io.github.clamentos.blackhole.framework.implementation.persistence.models.SystemEntities;
@@ -13,14 +17,16 @@ import io.github.clamentos.blackhole.framework.implementation.persistence.pool.C
 import io.github.clamentos.blackhole.framework.implementation.persistence.pool.PooledConnection;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.persistence.repositories.Repository;
+import io.github.clamentos.blackhole.framework.implementation.persistence.query.Repository;
 
 ///..
 import io.github.clamentos.blackhole.framework.implementation.tasks.ContinuousTask;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.utility.ExceptionFormatter;
-import io.github.clamentos.blackhole.framework.implementation.utility.ResourceReleaser;
+import io.github.clamentos.blackhole.framework.implementation.utility.ResourceReleaserInternal;
+
+///..
+import io.github.clamentos.blackhole.framework.implementation.utility.exportable.ExceptionFormatter;
 
 ///..
 import io.github.clamentos.blackhole.framework.scaffolding.exceptions.PersistenceException;
@@ -51,8 +57,6 @@ import java.util.List;
 /**
  * <h3>Metrics Task</h3>
  * Periodically writes to the database a summary of various system statistics and logs.
- * @see ContinuousTask
- * @see MetricsTracker
 */
 public final class MetricsTask extends ContinuousTask {
 
@@ -81,11 +85,7 @@ public final class MetricsTask extends ContinuousTask {
     private int sleep_samples;
     
     ///
-    /**
-     * Instantiates a new {@link MetricsTask} object.
-     * @see ContinuousTask
-     * @see MetricsTracker
-    */
+    /** Instantiates a new {@link MetricsTask} object. */
     public MetricsTask() {
 
         super();
@@ -97,7 +97,7 @@ public final class MetricsTask extends ContinuousTask {
         formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss.SSS");
         split_idx = new int[]{0};
 
-        logger.log("MetricsTask.new >> Instantiated successfully", LogLevels.SUCCESS);
+        logger.log("MetricsTask.new => Instantiated successfully", LogLevels.SUCCESS);
     }
 
     ///
@@ -125,23 +125,23 @@ public final class MetricsTask extends ContinuousTask {
 
             catch(InterruptedException exc) {
 
-                logger.log(ExceptionFormatter.format("MetricsTask.work >> Could not sleep", exc, ">> Ignoring..."), LogLevels.NOTE);
+                logger.log(ExceptionFormatter.format("MetricsTask.work => Could not sleep", exc, "Ignoring..."), LogLevels.NOTE);
             }
         }
 
-        logger.log("MetricsTask.work >> Begin", LogLevels.INFO);
+        logger.log("MetricsTask.work => Begin", LogLevels.INFO);
         sleep_samples = 0;
 
         SystemDiagnostics snapshot = MetricsTracker.getInstance().sample();
-        PooledConnection connection = pool.aquireConnection(0);
+        PooledConnection connection = pool.aquireConnection();
 
         if(snapshotToDb(snapshot, connection) == true) {
 
             logsToDb(connection);
         }
 
-        pool.releaseConnection(0, connection);
-        logger.log("MetricsTask.work >> End", LogLevels.SUCCESS);
+        pool.releaseConnection(connection);
+        logger.log("MetricsTask.work => End", LogLevels.SUCCESS);
     }
 
     ///..
@@ -149,7 +149,7 @@ public final class MetricsTask extends ContinuousTask {
     @Override
     public void terminate() {
 
-        logger.log("MetricsTask.terminate >> Shut down successfull", LogLevels.SUCCESS);
+        logger.log("MetricsTask.terminate => Shut down successfull", LogLevels.SUCCESS);
     }
 
     ///
@@ -158,8 +158,6 @@ public final class MetricsTask extends ContinuousTask {
      * @param system_diagnostics : The entity to persist.
      * @param connection : The connection to the database.
      * @return {@code true} if successfull, {@code false} otherwise.
-     * @see SystemDiagnostics
-     * @see PooledConnection
     */
     private boolean snapshotToDb(SystemDiagnostics system_diagnostics, PooledConnection connection) {
 
@@ -173,7 +171,7 @@ public final class MetricsTask extends ContinuousTask {
 
             logger.log(
 
-                ExceptionFormatter.format("MetricsTask.snapshotToDb >> Could not insert the system diagnostics", exc, ">> Aborting..."),
+                ExceptionFormatter.format("MetricsTask.snapshotToDb => Could not insert the system diagnostics", exc, "Aborting..."),
                 LogLevels.ERROR
             );
 
@@ -186,8 +184,6 @@ public final class MetricsTask extends ContinuousTask {
      * Reads all the logs in the log file and write them to the database.
      * If the transaction was successfull, this method will "clean" the log file.
      * @param connection : The connection to the database.
-     * @see PooledConnection
-     * @see LogEntity
     */
     private void logsToDb(PooledConnection connection) {
 
@@ -207,7 +203,7 @@ public final class MetricsTask extends ContinuousTask {
 
                 if(count == 0) {
 
-                    logger.log("MetricsTask.logsToDb >> No log file(s) found >> Aborting...", LogLevels.ERROR);
+                    logger.log("MetricsTask.logsToDb => No log file(s) found. Aborting...", LogLevels.ERROR);
                     return;
                 }
 
@@ -221,18 +217,18 @@ public final class MetricsTask extends ContinuousTask {
                 log_entities.add(parseSingle(reader.readLine()));
             }
 
-            ResourceReleaser.release(logger, "MetricsTask.logsToDb", reader);
+            ResourceReleaserInternal.release(logger, "MetricsTask", "logsToDb", reader);
         }
 
         catch(IOException exc) {
 
             logger.log(
 
-                ExceptionFormatter.format("MetricsTask.logsToDb >> Could not process the log file", exc, ">> Aborting..."),
+                ExceptionFormatter.format("MetricsTask.logsToDb => Could not process the log file", exc, "Aborting..."),
                 LogLevels.ERROR
             );
 
-            ResourceReleaser.release(logger, "MetricsTask.logsToDb", reader);
+            ResourceReleaserInternal.release(logger, "MetricsTask", "logsToDb", reader);
             return;
         }
 
@@ -245,7 +241,7 @@ public final class MetricsTask extends ContinuousTask {
 
             logger.log(
 
-                ExceptionFormatter.format("MetricsTask.logsToDb >> Could not insert the logs", exc, ">> Aborting..."),
+                ExceptionFormatter.format("MetricsTask.logsToDb => Could not insert the logs", exc, "Aborting..."),
                 LogLevels.ERROR
             );
 
@@ -261,7 +257,7 @@ public final class MetricsTask extends ContinuousTask {
 
             logger.log(
 
-                ExceptionFormatter.format("MetricsTask.logsToDb >> Could not delete the old log file", exc, ">> Aborting..."),
+                ExceptionFormatter.format("MetricsTask.logsToDb => Could not delete the old log file", exc, "Aborting..."),
                 LogLevels.ERROR
             );
         }
@@ -290,7 +286,6 @@ public final class MetricsTask extends ContinuousTask {
      * Parses a single log from the given string and constructs a new log entity object.
      * @param line : The log line to parse.
      * @return A new log entity that contains the parsed log.
-     * @see LogEntity
     */
     private LogEntity parseSingle(String line) {
 
@@ -311,7 +306,7 @@ public final class MetricsTask extends ContinuousTask {
 
             logger.log(
 
-                ExceptionFormatter.format("MetricsTask.parseSingle >> Could not parse the log line", exc, ">> This entry will be skipped"),
+                ExceptionFormatter.format("MetricsTask.parseSingle => Could not parse the log line", exc, "This entry will be skipped"),
                 LogLevels.WARNING
             );
 

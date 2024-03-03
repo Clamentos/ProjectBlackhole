@@ -4,8 +4,11 @@ package io.github.clamentos.blackhole.framework.implementation.network.tasks;
 import io.github.clamentos.blackhole.framework.implementation.configuration.ConfigurationProvider;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.logging.LogLevels;
 import io.github.clamentos.blackhole.framework.implementation.logging.Logger;
+
+///..
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.LogLevels;
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.MetricsTracker;
 
 ///..
 import io.github.clamentos.blackhole.framework.implementation.network.ServerContext;
@@ -15,8 +18,10 @@ import io.github.clamentos.blackhole.framework.implementation.tasks.ContinuousTa
 import io.github.clamentos.blackhole.framework.implementation.tasks.TaskManager;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.utility.ExceptionFormatter;
-import io.github.clamentos.blackhole.framework.implementation.utility.ResourceReleaser;
+import io.github.clamentos.blackhole.framework.implementation.utility.ResourceReleaserInternal;
+
+///..
+import io.github.clamentos.blackhole.framework.implementation.utility.exportable.ExceptionFormatter;
 
 ///..
 import io.github.clamentos.blackhole.framework.scaffolding.ApplicationContext;
@@ -33,8 +38,6 @@ import java.net.SocketTimeoutException;
 /**
  * <h3>Server Task</h3>
  * Responsible for accepting or rejecting incoming client TCP connections.
- * @see ContinuousTask
- * @see TransferTask
 */
 public final class ServerTask extends ContinuousTask {
 
@@ -45,8 +48,11 @@ public final class ServerTask extends ContinuousTask {
     /** The server context service that tracks and manages client sockets. */
     private final ServerContext server_context;
 
+    /** The service used to track application metrics. */
+    private final MetricsTracker metrics_service;
+
     ///..
-    /** The application context containing the essential user-defined service providers. */
+    /** The application context containing the essential user defined service providers. */
     private final ApplicationContext application_context;
 
     /** The currently active server socket. */
@@ -56,21 +62,15 @@ public final class ServerTask extends ContinuousTask {
     /**
      * Instantiates a new {@link ServerTask} object.
      * @param application_context : The application context that will be provided to subsequent tasks.
-     * @throws IllegalArgumentException If {@code Context} is {@code null}.
      * @throws IOException If any IO error occurs while creating the server socket.
-     * @see TransferTask
     */
-    public ServerTask(ApplicationContext application_context) throws IllegalArgumentException, IOException {
+    public ServerTask(ApplicationContext application_context) throws IOException {
 
         super();
 
-        if(application_context == null) {
-
-            throw new IllegalArgumentException("(ServerTask.new) -> The input argument cannot be null");
-        }
-
         logger = Logger.getInstance();
         server_context = ServerContext.getInstance();
+        metrics_service = MetricsTracker.getInstance();
 
         this.application_context = application_context;
 
@@ -81,7 +81,7 @@ public final class ServerTask extends ContinuousTask {
         );
 
         server_socket.setSoTimeout(ConfigurationProvider.getInstance().SERVER_SOCKET_TIMEOUT);
-        logger.log("ServerTask.new >> Instantiated successfully", LogLevels.SUCCESS);
+        logger.log("ServerTask.new => Instantiated successfully", LogLevels.SUCCESS);
     }
 
     ///
@@ -111,7 +111,7 @@ public final class ServerTask extends ContinuousTask {
 
                 logger.log(
 
-                    ExceptionFormatter.format("ServerTask.work >> Could not accept the connection", exc, ">> Skipping..."),
+                    ExceptionFormatter.format("ServerTask.work => Could not accept the connection", exc, "Skipping..."),
                     LogLevels.WARNING
                 );
             }
@@ -119,7 +119,6 @@ public final class ServerTask extends ContinuousTask {
             return;
         }
 
-        // NOTE: at this point getRemoteSocketAddress() will never return null since the socket is guaranteed to be connected now.
         if(server_context.isClientSocketAllowed(client_socket.getRemoteSocketAddress())) {
 
             TaskManager.getInstance().launchThread(new TransferTask(application_context, client_socket), "ConnectionTask");
@@ -127,7 +126,12 @@ public final class ServerTask extends ContinuousTask {
 
         else {
 
-            ResourceReleaser.release(logger, "ServerTask.work", client_socket);
+            metrics_service.incrementSocketsRefused(1);
+
+            if(ResourceReleaserInternal.release(logger, "ServerTask", "work", client_socket) == true) {
+
+                metrics_service.incrementSocketsClosed(1);
+            }
         }
     }
 
@@ -136,14 +140,14 @@ public final class ServerTask extends ContinuousTask {
     @Override
     public void terminate() {
 
-        if(ResourceReleaser.release(logger, "ServerTask.terminate", server_socket)) {
+        if(ResourceReleaserInternal.release(logger, "ServerTask", "terminate", server_socket)) {
 
-            logger.log("ServerTask.terminate >> Shut down successfull", LogLevels.SUCCESS);
+            logger.log("ServerTask.terminate => Shut down successfull", LogLevels.SUCCESS);
         }
 
         else {
 
-            logger.log("ServerTask.terminate >> Shut down with errors: Could not close the server socket", LogLevels.ERROR);
+            logger.log("ServerTask.terminate => Shut down with errors: Could not close the server socket", LogLevels.ERROR);
         }
     }
 

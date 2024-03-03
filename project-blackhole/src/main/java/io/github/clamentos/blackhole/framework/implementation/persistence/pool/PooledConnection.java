@@ -4,32 +4,35 @@ package io.github.clamentos.blackhole.framework.implementation.persistence.pool;
 import io.github.clamentos.blackhole.framework.implementation.configuration.ConfigurationProvider;
 
 ///..
+import io.github.clamentos.blackhole.framework.implementation.persistence.query.SqlQueryBinder;
+
+///..
 import io.github.clamentos.blackhole.framework.scaffolding.exceptions.DatabaseConnectionException;
 
 ///..
-import io.github.clamentos.blackhole.framework.scaffolding.persistence.QueryBinder;
+import io.github.clamentos.blackhole.framework.scaffolding.persistence.query.QueryBinder;
 
 ///.
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+///..
+import java.util.concurrent.atomic.AtomicBoolean;
+
 ///
 /**
  * <h3>Pooled Connection</h3>
  * Wrapper on the JDBC connection class.
- * @see ConnectionPool
- * @see QueryBinder
- * @see SqlQueryBinder
 */
 public final class PooledConnection {
 
     ///
-    /**
-     * The associated query binder.
-     * @see QueryBinder
-     * @see SqlQueryBinder
-    */
+    /** The availability flag used by the connection pool. */
+    private final AtomicBoolean available;
+    
+    ///..
+    /** The associated query binder. */
     private final SqlQueryBinder query_binder;
 
     ///..
@@ -40,27 +43,17 @@ public final class PooledConnection {
     /**
      * Instantiates a new {@link PooledConnection} object.
      * @param connection : The JDBC connection.
-     * @throws IllegalArgumentException If {@code connection} is {@code null}.
-     * @see QueryBinder
-     * @see SqlQueryBinder
     */
-    public PooledConnection(Connection connection) throws IllegalArgumentException {
+    protected PooledConnection(Connection connection) {
 
-        if(connection != null) {
-
-            query_binder = new SqlQueryBinder();
-            this.connection = connection;
-        }
-
-        else {
-
-            throw new IllegalArgumentException("(PooledConnection.new) -> argument \"connection\" cannot be null");
-        }
+        available = new AtomicBoolean(true);
+        query_binder = new SqlQueryBinder();
+        this.connection = connection;
     }
 
     ///
     /**
-     * @return The associated query binder.
+     * @return The never {@code null} associated query binder.
      * @see QueryBinder
      * @see SqlQueryBinder
     */
@@ -70,7 +63,7 @@ public final class PooledConnection {
     }
 
     ///..
-    /** @return The associated connection. */
+    /** @return The never {@code null} associated connection. */
     public Connection getConnection() {
 
         return(connection);
@@ -80,8 +73,14 @@ public final class PooledConnection {
     /**
      * Refreshes the connection in-place. If {@code this} is valid, this method does nothing.
      * @throws DatabaseConnectionException If any database access error occurs.
+     * @throws IllegalStateException If the available flag of {@code this} is {@code true}.
     */
-    public void refreshConnection() throws DatabaseConnectionException {
+    public void refreshConnection() throws DatabaseConnectionException, IllegalStateException {
+
+        if(available.get() == true) {
+
+            throw new IllegalStateException("PooledConnection.refreshConnection -> Cannot refresh while available");
+        }
 
         try {
 
@@ -100,8 +99,15 @@ public final class PooledConnection {
 
         catch(SQLException exc) {
 
-            throw new DatabaseConnectionException("(PooledConnection.refreshConnection) -> Could not refresh the database connection", exc);
+            throw new DatabaseConnectionException("PooledConnection.refreshConnection -> Could not refresh the database connection", exc);
         }
+    }
+
+    ///.
+    /** @return The never {@code null} availability flag of {@code this}. */
+    protected AtomicBoolean getAvailable() {
+
+        return(available);
     }
 
     ///

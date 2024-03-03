@@ -1,19 +1,15 @@
 package io.github.clamentos.blackhole.framework.implementation.persistence.models;
 
 ///
-import io.github.clamentos.blackhole.framework.implementation.logging.MetricsTask;
-import io.github.clamentos.blackhole.framework.implementation.logging.MetricsTracker;
+import io.github.clamentos.blackhole.framework.scaffolding.persistence.model.Entity;
 
 ///..
-import io.github.clamentos.blackhole.framework.scaffolding.persistence.Entity;
-import io.github.clamentos.blackhole.framework.scaffolding.persistence.QueryBinder;
+import io.github.clamentos.blackhole.framework.scaffolding.persistence.query.QueryBinder;
 
 ///
 /**
  * <h3>System Diagnostics</h3>
  * System snapshot entity. Corresponds to the {@code SystemDiagnostics} table.
- * @see MetricsTask
- * @see MetricsTracker
 */
 public final record SystemDiagnostics(
 
@@ -93,6 +89,9 @@ public final record SystemDiagnostics(
     /** The number of accepted socket connections. */
     int sockets_accepted,
 
+    /** The number of refused socket connections. */
+    int sockets_refused,
+
     /** The number of closed socket connections. */
     int sockets_closed
 
@@ -100,8 +99,12 @@ public final record SystemDiagnostics(
 ) implements Entity {
 
     ///
+    /**
+     * {@inheritDoc}
+     * @throws NullPointerException If {@code query_binder} is {@code null}.
+    */
     @Override
-    public void bindForInsert(QueryBinder query_binder) {
+    public void bindForInsert(QueryBinder query_binder) throws NullPointerException {
 
         query_binder.bindLong(creation_date);
         query_binder.bindLong(uptime);
@@ -128,39 +131,44 @@ public final record SystemDiagnostics(
         query_binder.bindInt(responses_sent_ok);
         query_binder.bindInt(responses_sent_ko);
         query_binder.bindInt(sockets_accepted);
+        query_binder.bindInt(sockets_refused);
         query_binder.bindInt(sockets_closed);
     }
 
     ///..
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     * @throws NullPointerException If {@code query_binder} is {@code null}.
+    */
     @Override
-    public void bindForUpdate(QueryBinder query_binder, long fields) {
+    public void bindForUpdate(QueryBinder query_binder, long fields) throws NullPointerException {
 
-        if((fields & 0b000000000000000000000000010) > 0) query_binder.bindLong(uptime);
-        if((fields & 0b000000000000000000000000100) > 0) query_binder.bindInt(vritual_threads);
-        if((fields & 0b000000000000000000000001000) > 0) query_binder.bindInt(carrier_threads);
-        if((fields & 0b000000000000000000000010000) > 0) query_binder.bindLong(memory_used);
-        if((fields & 0b000000000000000000000100000) > 0) query_binder.bindLong(memory_free);
-        if((fields & 0b000000000000000000001000000) > 0) query_binder.bindInt(cache_hits);
-        if((fields & 0b000000000000000000010000000) > 0) query_binder.bindInt(cache_misses);
-        if((fields & 0b000000000000000000100000000) > 0) query_binder.bindInt(database_queries_ok);
-        if((fields & 0b000000000000000001000000000) > 0) query_binder.bindInt(database_queries_ko);
-        if((fields & 0b000000000000000010000000000) > 0) query_binder.bindInt(sessions_created);
-        if((fields & 0b000000000000000100000000000) > 0) query_binder.bindInt(sessions_destroyed);
-        if((fields & 0b000000000000001000000000000) > 0) query_binder.bindInt(logged_users);
-        if((fields & 0b000000000000010000000000000) > 0) query_binder.bindInt(create_requests_ok);
-        if((fields & 0b000000000000100000000000000) > 0) query_binder.bindInt(read_requests_ok);
-        if((fields & 0b000000000001000000000000000) > 0) query_binder.bindInt(update_requests_ok);
-        if((fields & 0b000000000010000000000000000) > 0) query_binder.bindInt(delete_requests_ok);
-        if((fields & 0b000000000100000000000000000) > 0) query_binder.bindInt(create_requests_ko);
-        if((fields & 0b000000001000000000000000000) > 0) query_binder.bindInt(read_requests_ko);
-        if((fields & 0b000000010000000000000000000) > 0) query_binder.bindInt(update_requests_ko);
-        if((fields & 0b000000100000000000000000000) > 0) query_binder.bindInt(delete_requests_ko);
-        if((fields & 0b000001000000000000000000000) > 0) query_binder.bindInt(unknown_requests_ko);
-        if((fields & 0b000010000000000000000000000) > 0) query_binder.bindInt(responses_sent_ok);
-        if((fields & 0b000100000000000000000000000) > 0) query_binder.bindInt(responses_sent_ko);
-        if((fields & 0b001000000000000000000000000) > 0) query_binder.bindInt(sockets_accepted);
-        if((fields & 0b010000000000000000000000000) > 0) query_binder.bindInt(sockets_closed);
+        if((fields & 0b0000000000000000000000000010) > 0) query_binder.bindLong(uptime);
+        if((fields & 0b0000000000000000000000000100) > 0) query_binder.bindInt(vritual_threads);
+        if((fields & 0b0000000000000000000000001000) > 0) query_binder.bindInt(carrier_threads);
+        if((fields & 0b0000000000000000000000010000) > 0) query_binder.bindLong(memory_used);
+        if((fields & 0b0000000000000000000000100000) > 0) query_binder.bindLong(memory_free);
+        if((fields & 0b0000000000000000000001000000) > 0) query_binder.bindInt(cache_hits);
+        if((fields & 0b0000000000000000000010000000) > 0) query_binder.bindInt(cache_misses);
+        if((fields & 0b0000000000000000000100000000) > 0) query_binder.bindInt(database_queries_ok);
+        if((fields & 0b0000000000000000001000000000) > 0) query_binder.bindInt(database_queries_ko);
+        if((fields & 0b0000000000000000010000000000) > 0) query_binder.bindInt(sessions_created);
+        if((fields & 0b0000000000000000100000000000) > 0) query_binder.bindInt(sessions_destroyed);
+        if((fields & 0b0000000000000001000000000000) > 0) query_binder.bindInt(logged_users);
+        if((fields & 0b0000000000000010000000000000) > 0) query_binder.bindInt(create_requests_ok);
+        if((fields & 0b0000000000000100000000000000) > 0) query_binder.bindInt(read_requests_ok);
+        if((fields & 0b0000000000001000000000000000) > 0) query_binder.bindInt(update_requests_ok);
+        if((fields & 0b0000000000010000000000000000) > 0) query_binder.bindInt(delete_requests_ok);
+        if((fields & 0b0000000000100000000000000000) > 0) query_binder.bindInt(create_requests_ko);
+        if((fields & 0b0000000001000000000000000000) > 0) query_binder.bindInt(read_requests_ko);
+        if((fields & 0b0000000010000000000000000000) > 0) query_binder.bindInt(update_requests_ko);
+        if((fields & 0b0000000100000000000000000000) > 0) query_binder.bindInt(delete_requests_ko);
+        if((fields & 0b0000001000000000000000000000) > 0) query_binder.bindInt(unknown_requests_ko);
+        if((fields & 0b0000010000000000000000000000) > 0) query_binder.bindInt(responses_sent_ok);
+        if((fields & 0b0000100000000000000000000000) > 0) query_binder.bindInt(responses_sent_ko);
+        if((fields & 0b0001000000000000000000000000) > 0) query_binder.bindInt(sockets_accepted);
+        if((fields & 0b0010000000000000000000000000) > 0) query_binder.bindInt(sockets_refused);
+        if((fields & 0b0100000000000000000000000000) > 0) query_binder.bindInt(sockets_closed);
 
         query_binder.bindLong(creation_date);
     }

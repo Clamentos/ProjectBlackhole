@@ -1,9 +1,10 @@
 package io.github.clamentos.blackhole.framework.implementation.network.transfer.components;
 
 ///
-import io.github.clamentos.blackhole.framework.implementation.network.transfer.NetworkResponse;
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.ResponseStatuses;
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.serialization.Streamable;
+import io.github.clamentos.blackhole.framework.scaffolding.network.serialization.Streamable;
+
+///..
+import io.github.clamentos.blackhole.framework.scaffolding.network.transfer.output.ResponseStatuses;
 
 ///.
 import java.io.DataOutputStream;
@@ -11,10 +12,8 @@ import java.io.IOException;
 
 ///
 /**
- * <h3>Response headers</h3>
+ * <h3>Response Headers</h3>
  * Specifies the headers for the network response.
- * @see NetworkResponse
- * @see ResponseStatuses
 */
 public final record ResponseHeaders(
 
@@ -26,32 +25,54 @@ public final record ResponseHeaders(
     byte id,
 
     /**
-     * The response flag bits.
-     * <ol>
-     *     <li>Compression: {@code true} if {@code this} response payload is compressed, {@code false} otherwise.</li>
-     * </ol>
+     * The response flag bits from least significant to most significant:
+     * <ul>
+     *     <li>Compression: {@code true} if the response payload is compressed, {@code false} otherwise.</li>
+     *     <li>The remaining bits are reserved for future use.</li>
+     * </ul>
     */
     byte flags,
 
-    /** The timestamp used for caching. {@code <= 0} if the response is not cacheable. */
+    /** The timestamp used for caching. {@code <= 0} if the payload is not cacheable. */
     long cache_timestamp,
 
-    /** The response status code of {@code this}. */
+    /** The response status code of the associated response. */
     ResponseStatuses response_status
 
     ///
 ) implements Streamable {
 
     ///
+    /**
+     * Instantiates a new {@link ResponseHeaders} object.
+     * @param payload_size : The response payload size in bytes.
+     * @param id : The identifier of the associated request.
+     * @param flags : The response flag bits.
+     * @param cache_timestamp : The timestamp used for caching.
+     * @param response_status : The response status code of the associated response.
+     * @throws IllegalArgumentException If {@code response_status} is {@code null}.
+    */
+    public ResponseHeaders {
+
+        if(response_status == null) {
+
+            throw new IllegalArgumentException("ResponseHeaders.new -> The input argument \"response_status\" cannot be null");
+        }
+    }
+    
+    ///
     /** {@inheritDoc} */
     @Override
     public long getSize() {
 
-        return(19);
+        return(21);
     }
 
     ///..
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     * @throws NullPointerException If {@code out} is {@code null}.
+    */
     @Override
     public void stream(DataOutputStream out) throws IOException {
 

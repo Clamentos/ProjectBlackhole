@@ -4,12 +4,19 @@ package io.github.clamentos.blackhole.framework.implementation.persistence.pool;
 import io.github.clamentos.blackhole.framework.implementation.configuration.ConfigurationProvider;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.logging.LogLevels;
 import io.github.clamentos.blackhole.framework.implementation.logging.Logger;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.utility.ExceptionFormatter;
-import io.github.clamentos.blackhole.framework.implementation.utility.ResourceReleaser;
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.LogLevels;
+
+///..
+import io.github.clamentos.blackhole.framework.implementation.tasks.TaskManager;
+
+///..
+import io.github.clamentos.blackhole.framework.implementation.utility.ResourceReleaserInternal;
+
+///..
+import io.github.clamentos.blackhole.framework.implementation.utility.exportable.ExceptionFormatter;
 
 ///.
 import java.sql.Connection;
@@ -17,19 +24,18 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 ///..
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 
 ///..
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+///..
+import java.util.concurrent.locks.LockSupport;
 
 ///
 /**
  * <h3>Connection Pool</h3>
- * Provides connection pooling for the persistence layer.
- * @see PooledConnection
+ * Provides database connection pooling for the persistence layer.
 */
 public final class ConnectionPool {
     
@@ -42,96 +48,65 @@ public final class ConnectionPool {
     private final Logger logger;
 
     ///..
-    /**
-     * The number of database connections in the pool.
-     * @see ConfigurationProvider#NUM_DATABASE_CONNECTIONS
-    */
-    private final int NUM_DATABASE_CONNECTIONS;
-
-    ///..
     /** The JDBC driver configuration properties. */
     private final Properties driver_properties;
 
     ///..
-    /**
-     * <p>The connection pools.</p>
-     * Splitted into sub-pools to help with lock contention.
-    */
-    private List<BlockingQueue<PooledConnection>> pools;
+    /** The connection pool. */
+    private final PooledConnection[] pool;
 
-    /**
-     * <p>The open flag for {@code this}.</p>
-     * This field is used to avoid closing the pool twice. Once closed, the pool cannot be opened again.
-    */
-    private volatile boolean is_open;
+    /** The queue of waiting threads. */
+    private final ConcurrentLinkedQueue<Thread> waiters;
+
+    ///..
+    /** The internal pool status flag. */
+    private boolean is_closed;
 
     ///
     /**
-     * <p>Instantiates a new {@code ConnectionPool} object and starts the log task.</p>
-     * Since this class is a singleton, this constructor will only be called once.
+     * Instantiates a new {@code ConnectionPool} object and starts the log task.
+     * @apiNote Since this class is a singleton, this constructor will only be called once.
     */
     private ConnectionPool() {
 
         logger = Logger.getInstance();
         ConfigurationProvider cfg_p = ConfigurationProvider.getInstance();
 
-        NUM_DATABASE_CONNECTIONS = cfg_p.NUM_DATABASE_CONNECTIONS;
-
-        // Instantiate and initialize the JDBC driver properties.
         driver_properties = new Properties();
 
         driver_properties.setProperty("user", cfg_p.DATABASE_USERNAME);
         driver_properties.setProperty("password", cfg_p.DATABASE_PASSWORD);
-        driver_properties.setProperty( "prepareThreshold", Integer.toString(cfg_p.PREPARE_THRESHOLD));
+        driver_properties.setProperty("prepareThreshold", Integer.toString(cfg_p.PREPARE_THRESHOLD));
         driver_properties.setProperty("preparedStatementCacheQueries", Integer.toString(cfg_p.MAX_NUM_CACHEABLE_STATEMENTS));
         driver_properties.setProperty("preparedStatementCacheSizeMiB", Integer.toString(cfg_p.MAX_STATEMENTS_CACHE_ENTRY_SIZE));
 
-        // Instantiate and fill the pools.
-        int num_per_pool = cfg_p.NUM_DATABASE_CONNECTIONS_PER_POOL;
-
-        // Check for proper configuration values.
-        if((NUM_DATABASE_CONNECTIONS < num_per_pool) || (NUM_DATABASE_CONNECTIONS % num_per_pool) != 0) {
-
-            logger.log(
-
-                "ConnectionPool.new >> NUM_DATABASE_CONNECTIONS_PER_POOL must divide NUM_DATABASE_CONNECTIONS",
-                LogLevels.FATAL
-            );
-
-            System.exit(1);
-        }
-
-        pools = new ArrayList<>();
-        int num_pools = NUM_DATABASE_CONNECTIONS / num_per_pool;
+        pool = new PooledConnection[cfg_p.NUM_DATABASE_CONNECTIONS];
+        waiters = new ConcurrentLinkedQueue<>();
 
         try {
 
-            for(int i = 0; i < num_pools; i++) {
+            for(int i = 0; i < cfg_p.NUM_DATABASE_CONNECTIONS; i++) {
 
-                pools.add(new LinkedBlockingQueue<>());
-
-                for(int j = 0; j < num_per_pool; j++) {
-
-                    Connection connection = DriverManager.getConnection(cfg_p.DATABASE_ADDRESS, driver_properties);
-
-                    connection.setAutoCommit(false);
-                    pools.get(i).add(new PooledConnection(connection));
-                }
+                Connection connection = DriverManager.getConnection(cfg_p.DATABASE_ADDRESS, driver_properties);
+                connection.setAutoCommit(false);
+                pool[i] = new PooledConnection(connection);
             }
-
-            logger.log("ConnectionPool.new >> Instantiation successfull", LogLevels.SUCCESS);
         }
 
         catch(SQLException exc) {
 
-            logger.log(ExceptionFormatter.format(
+            logger.log(
 
-                "ConnectionPool.new >> Could not populate the pool [", exc, "] >> Aborting..."
+                ExceptionFormatter.format("ConnectionPool.new => Could not populate the pool", exc, "Aborting..."),
+                LogLevels.FATAL
+            );
 
-            ), LogLevels.FATAL);
-
+            close();
             System.exit(1);
         }
+
+        is_closed = false;
+        logger.log("ConnectionPool.new => Instantiation successfull", LogLevels.SUCCESS);
     }
 
     ///
@@ -142,132 +117,83 @@ public final class ConnectionPool {
     }
 
     ///
-    /** @return The never {@code null} currently set JDBC driver properties. */
-    public Properties getDriverProperties() {
-
-        return(driver_properties);
-    }
-
-    ///..
     /**
-     * <p>Aquires a {@link PooledConnection} from the connection pool.</p>
-     * <b>NOTE: This method does NOT guarantee that the aquired connections are valid.</b>
-     * @param caller : The reference of the caller. This is used to select which sub-pool to use in order to spread lock contention.
+     * Aquires a database connection from the pool.
      * @return One connection from the pool.
-     * @see PooledConnection
+     * @apiNote This method does NOT guarantee that the aquired connections are valid. If not, a refresh is needed.
     */
-    public PooledConnection aquireConnection(Object caller) {
+    public PooledConnection aquireConnection() {
 
-        BlockingQueue<PooledConnection> pool = pools.get((int)(System.identityHashCode(caller) % pools.size()));
-        int busy_wait_attempts = 0;
-
+        int id = (int)Thread.currentThread().threadId();
         PooledConnection connection;
 
-        // Attempt to insert aggressively.
-        while(busy_wait_attempts < ConfigurationProvider.getInstance().MAX_POOL_POLL_ATTEMPTS) {
-
-            connection = pool.poll();
-
-            if(connection != null) {
-
-                return(connection);
-            }
-
-            busy_wait_attempts++;
-        }
-
-        // The busy wait expired the attempts. Insert with blocking behaviour.
         while(true) {
 
-            try {
+            for(int i = 0; i < pool.length; i++) {
 
-                return(connection = pool.take());
+                connection = pool[(id + i) % pool.length];
+
+                if(connection.getAvailable().get() == true) {
+
+                    connection.getAvailable().set(false);
+                    return(connection);
+                }
             }
 
-            catch(InterruptedException exc) {
-
-                logger.log(ExceptionFormatter.format("ConnectionPool.aquireConnection >> [", exc, "] >> Ignoring..."), LogLevels.NOTE);
-            }
+            waiters.offer(Thread.currentThread());
+            LockSupport.park();
         }
     }
 
     ///..
     /**
-     * Releases the specified {@link PooledConnection} back into the pool.
-     * @param caller : The reference of the caller. This is used to select which sub-pool to use in order to spread lock contention.
+     * Releases the specified database connection back into the pool.
      * @param connection : The connection to release.
-     * @throws IllegalStateException If the pool capacity is exceeded.
-     * @throws NullPointerException If {@code connection} is {@code null}.
-     * @see PooledConnection
+     * @throws IllegalArgumentException If {@code connection} is {@code null}.
     */
-    public void releaseConnection(Object caller, PooledConnection connection) throws IllegalStateException, NullPointerException {
+    public void releaseConnection(PooledConnection connection) throws IllegalArgumentException {
 
-        BlockingQueue<PooledConnection> pool = pools.get((int)(System.identityHashCode(caller) % pools.size()));
-        boolean inserted = false;
-        int busy_wait_attempts = 0;
+        if(connection == null) {
 
-        // Attempt to insert aggressively.
-        while(busy_wait_attempts < 10) {
-
-            inserted = pool.offer(connection);
-
-            if(inserted == true) {
-
-                return;
-            }
-
-            busy_wait_attempts++;
+            throw new IllegalArgumentException("ConnectionPool.releaseCOnnection -> The input parameter cannot be null");
         }
 
-        // The busy wait expired the attempts. Insert with blocking behaviour.
-        while(true) {
-
-            try {
-
-                pool.put(connection);
-            }
-
-            catch(InterruptedException exc) {
-
-                logger.log(ExceptionFormatter.format("ConnectionPool.releaseConnection >> [", exc, "] >> Ignoring..."), LogLevels.NOTE);
-            }
-        }
+        connection.getAvailable().set(true);
+        LockSupport.unpark(waiters.poll());
     }
 
     ///..
     /**
-     * <p>Releases and closes all connections in the pool.</p>
-     * <b>NOTE: Subsequent calls to this method will do nothing.</b>
+     * Releases and closes all connections in the pool.
+     * @throws IllegalCallerException If this method is called by anyone other than the {@code main} task.
     */
-    public synchronized void closePool() {
+    public void close() throws IllegalCallerException {
 
-        if(is_open) {
+        if(TaskManager.getInstance().isMain()) {
 
-            for(BlockingQueue<PooledConnection> pool : pools) {
+            if(is_closed == false) {
 
-                // Check if all connections have been released.
-                if(pool.size() == NUM_DATABASE_CONNECTIONS) {
+                for(PooledConnection connection : pool) {
 
-                    for(PooledConnection connection : pool) {
-
-                        ResourceReleaser.release(logger, "ConnectionPool.closePool", connection.getConnection());
-                    }
+                    connection.getAvailable().set(false);
+                    ResourceReleaserInternal.release(logger, "ConnectionPool", "closeConnection", connection.getConnection());
                 }
 
-                else {
-
-                    try {
-
-                        Thread.sleep(ConfigurationProvider.getInstance().POOL_SHUTDOWN_SLEEP_CHUNK_SIZE);
-                    }
-
-                    catch(InterruptedException exc) {
-
-                        logger.log(ExceptionFormatter.format("ConnectionPool.closePool >> [", exc, "] >> Ignoring..."), LogLevels.NOTE);
-                    }
-                }
+                is_closed = true;
             }
         }
+
+        else {
+
+            throw new IllegalCallerException("ConnectionPool.closeConnection -> Not main task");
+        }
+    }
+
+    ///.
+    /** @return The never {@code null} currently set JDBC driver properties. */
+    protected Properties getDriverProperties() {
+
+        return(driver_properties);
     }
 
     ///

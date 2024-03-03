@@ -1,13 +1,17 @@
 package io.github.clamentos.blackhole.framework.implementation.configuration;
 
 ///
-import io.github.clamentos.blackhole.framework.implementation.logging.LogLevels;
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.LogLevels;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.utility.ExceptionFormatter;
+import io.github.clamentos.blackhole.framework.implementation.utility.ResourceReleaserInternal;
+
+///..
+import io.github.clamentos.blackhole.framework.implementation.utility.exportable.ExceptionFormatter;
 
 ///.
 import java.io.IOException;
+import java.io.InputStream;
 
 ///..
 import java.lang.reflect.Field;
@@ -194,12 +198,6 @@ public final class ConfigurationProvider {
     public final int MAX_NUM_CACHEABLE_STATEMENTS;
 
     /**
-     * <p>Specifies the maximum number of busy-wait attempts on the pool before blocking.</p>
-     * Default: {@code 10} --- Minimum: {@code 0} --- Maximum: {@code Integer.MAX_VALUE}
-    */
-    public final int MAX_POOL_POLL_ATTEMPTS;
-
-    /**
      * <p>Specifies the maximum size in mebibytes that each prepared statement cache entry can be.</p>
      * Default: {@code 5} --- Minimum: {@code 1} --- Maximum: {@code Integer.MAX_VALUE}
     */
@@ -212,38 +210,10 @@ public final class ConfigurationProvider {
     public final int NUM_DATABASE_CONNECTIONS;
 
     /**
-     * <p>Specifies the number of database connection per sub-pools.</p>
-     * <p>This value MUST divide {@code NUM_DATABASE_CONNECTIONS}.</p>
-     * Default: {@code 10} --- Minimum: {@code 1} --- Maximum: {@code Integer.MAX_VALUE}
-    */
-    public final int NUM_DATABASE_CONNECTIONS_PER_POOL;
-
-    /**
-     * <p>Specifies the "sleep chunk" size while closing the pool in milliseconds.</p>
-     * Default: {@code 500} --- Minimum: {@code 100} --- Maximum: {@code Integer.MAX_VALUE}
-    */
-    public final int POOL_SHUTDOWN_SLEEP_CHUNK_SIZE;
-
-    /**
      * <p>Specifies the number of executions on a prepared statement before switching to database-side statement caching.</p>
      * Default: {@code 5} --- Minimum: {@code 1} --- Maximum: {@code Integer.MAX_VALUE}
     */
     public final int PREPARE_THRESHOLD;
-
-    ///..
-    // Caching.
-
-    /**
-     * <p>Specifies the maximum size of the cache in bytes.</p>
-     * Default: {@code 1073741824} --- Minimum: {@code 0} --- Maximum: {@code Integer.MAX_VALUE}
-    */
-    public final int CACHE_CAPACITY;
-
-    /**
-     * <p>Specifies the timeout in milliseconds of each cache entry.</p>
-     * Default: {@code 60000} --- Minimum: {@code 10000} --- Maximum: {@code Integer.MAX_VALUE}
-    */
-    public final int CACHE_ENTRY_DURATION;
 
     ///..
     // Task managing.
@@ -260,24 +230,25 @@ public final class ConfigurationProvider {
 
     /**
      * <p>The messages that {@code this} class generates during instantiation.</p>
-     * This is necessary to avoid circular dependencies since it's not possible to use any class.
+     * This is necessary to avoid circular dependencies since it's not possible to use any logger class.
     */
     private final Map<String, LogLevels> logs;
 
-    /** The public fields of {@code this}. */
+    /** The public fields of {@code this} class. */
     private final Field[] fields;
 
     ///..
-    /** The current class field index of {@code this}. Used to dynamically get the name of the current class field. */
+    /** The current class field index of {@code this}, used to dynamically get the name of the current class field. */
     private int current_field_index;
 
     ///
     /**
-     * <p>Instantiates a new {@code ConfigurationProvider} object.</p>
-     * <p>This constructor also initializes all the constants and logs map.</p>
-     * Since this class is a singleton, this constructor will only be called once.
+     * Instantiates a new {@code ConfigurationProvider} object.
+     * @apiNote Since this class is a singleton, this constructor will only be called once.
     */
     private ConfigurationProvider() {
+
+        InputStream in = null;
 
         properties = new Properties();
         logs = new HashMap<>();
@@ -287,7 +258,8 @@ public final class ConfigurationProvider {
 
         try {
 
-            properties.load(Files.newInputStream(Paths.get("resources/Application.properties")));
+            in = Files.newInputStream(Paths.get("resources/Application.properties"));
+            properties.load(in);
         }
 
         catch(InvalidPathException | IOException exc) {
@@ -296,12 +268,14 @@ public final class ConfigurationProvider {
 
                 ExceptionFormatter.format(
 
-                    "ConfigurationProvider.new >> Could not read the Application.properties file", exc, ">> The defaults will be used"
+                    "ConfigurationProvider.new => Could not read the \"application.properties\" file", exc, "The defaults will be used"
                 ),
 
                 LogLevels.WARNING
             );
         }
+
+        ResourceReleaserInternal.release(logs, "ConfigurationProvider", "new", in);
 
         FLUSH_AFTER_WRITE = checkBoolean("true");
         LOG_QUEUE_INSERT_TIMEOUT = checkInt("500", 0, Integer.MAX_VALUE);
@@ -330,19 +304,13 @@ public final class ConfigurationProvider {
         GENERATE_DATABASE_SCHEMA = checkBoolean("false");
         INITIALIZE_DATABASE_DATA = checkBoolean("false");
         MAX_NUM_CACHEABLE_STATEMENTS = checkInt("256", 1, Integer.MAX_VALUE);
-        MAX_POOL_POLL_ATTEMPTS = checkInt("10", 0, Integer.MAX_VALUE);
         MAX_STATEMENTS_CACHE_ENTRY_SIZE = checkInt("5", 1, Integer.MAX_VALUE);
         NUM_DATABASE_CONNECTIONS = checkInt("10", 1, Integer.MAX_VALUE);
-        NUM_DATABASE_CONNECTIONS_PER_POOL = checkInt("10", 1, Integer.MAX_VALUE);
-        POOL_SHUTDOWN_SLEEP_CHUNK_SIZE = checkInt("500", 100, Integer.MAX_VALUE);
         PREPARE_THRESHOLD = checkInt("5", 1, Integer.MAX_VALUE);
-
-        CACHE_CAPACITY = checkInt("1073741824", 0, Integer.MAX_VALUE);
-        CACHE_ENTRY_DURATION = checkInt("60000", 10000, Integer.MAX_VALUE);
 
         TASK_MANAGER_SLEEP_CHUNK_SIZE = checkInt("500", 100, Integer.MAX_VALUE);
 
-        logs.put("ConfigurationProvider.new >> Instantiation successfull", LogLevels.SUCCESS);
+        logs.put("ConfigurationProvider.new => Instantiated successfully", LogLevels.SUCCESS);
     }
 
     ///
@@ -360,7 +328,10 @@ public final class ConfigurationProvider {
     }
 
     ///..
-    /** @return The never {@code null} array of properties processed by {@code this} class ready to be logged. */
+    /**
+     * @return The never {@code null} array of properties processed by {@code this} class ready to be logged.
+     * @throws IllegalAccessException If any field access error occurs.
+    */
     public String[] getPropertiesToLog() throws IllegalAccessException {
 
         String padding;
@@ -405,7 +376,7 @@ public final class ConfigurationProvider {
 
                 logs.put(
 
-                    "ConfigurationProvider.checkInt >> Property " + constant_name + " must be between "
+                    "ConfigurationProvider.checkInt => Property " + constant_name + " must be between "
                     + low + " and " + high + ". The default value of: " + default_value + " will be used",
                     LogLevels.WARNING
                 );
@@ -422,10 +393,11 @@ public final class ConfigurationProvider {
 
                 ExceptionFormatter.format(
 
-                    "ConfigurationProvider.checkInt >>", exc,
-                    ">> On property " + constant_name + ". The default value of:" + default_value + "will be used"
+                    "ConfigurationProvider.checkInt =>", exc,
+                    "On property " + constant_name + ". The default value of:" + default_value + "will be used"
+                ),
 
-                ), LogLevels.WARNING
+                LogLevels.WARNING
             );
 
             return(Integer.parseInt(default_value));
@@ -455,7 +427,7 @@ public final class ConfigurationProvider {
 
         logs.put(
 
-            "ConfigurationProvider.checkBoolean >> Property " + constant_name +
+            "ConfigurationProvider.checkBoolean => Property " + constant_name +
             " must be either true or false. The default value of: " + default_value + " will be used",
             LogLevels.WARNING
         );
@@ -478,7 +450,7 @@ public final class ConfigurationProvider {
 
             logs.put(
 
-                "ConfigurationProvider.checkString >> Property " + constant_name +
+                "ConfigurationProvider.checkString => Property " + constant_name +
                 " must not be null nor empty. The default value of: " + default_value + " will be used",
                 LogLevels.WARNING
             );

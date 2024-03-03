@@ -1,26 +1,35 @@
 package io.github.clamentos.blackhole;
 
-import io.github.clamentos.blackhole.framework.implementation.network.transfer.components.ErrorDto;
-import io.github.clamentos.blackhole.framework.implementation.network.transfer.components.Types;
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.LogLevels;
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.NamedLogger;
+import io.github.clamentos.blackhole.framework.implementation.network.security.NetworkSessionService;
+import io.github.clamentos.blackhole.framework.implementation.network.transfer.components.exportable.ErrorDto;
+import io.github.clamentos.blackhole.framework.implementation.network.transfer.components.exportable.Types;
+import io.github.clamentos.blackhole.framework.implementation.utility.exportable.ResponseFactory;
 import io.github.clamentos.blackhole.framework.scaffolding.ApplicationContext;
 import io.github.clamentos.blackhole.framework.scaffolding.exceptions.DeserializationException;
-import io.github.clamentos.blackhole.framework.scaffolding.servlet.Servlet;
-import io.github.clamentos.blackhole.framework.scaffolding.servlet.ServletProvider;
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.deserialization.DataProvider;
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.deserialization.Deserializable;
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.deserialization.Deserializer;
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.deserialization.DeserializerProvider;
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Methods;
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Request;
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Resources;
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.ResourcesProvider;
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.Response;
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.ResponseFactory;
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.network.ResponseStatuses;
-import io.github.clamentos.blackhole.framework.scaffolding.transfer.validation.ValidatorProvider;
+import io.github.clamentos.blackhole.framework.scaffolding.exceptions.ValidationException;
+import io.github.clamentos.blackhole.framework.scaffolding.network.controller.Servlet;
+import io.github.clamentos.blackhole.framework.scaffolding.network.controller.ServletProvider;
+import io.github.clamentos.blackhole.framework.scaffolding.network.deserialization.DataProvider;
+import io.github.clamentos.blackhole.framework.scaffolding.network.deserialization.Deserializable;
+import io.github.clamentos.blackhole.framework.scaffolding.network.deserialization.Deserializer;
+import io.github.clamentos.blackhole.framework.scaffolding.network.deserialization.DeserializerProvider;
+import io.github.clamentos.blackhole.framework.scaffolding.network.security.Role;
+import io.github.clamentos.blackhole.framework.scaffolding.network.transfer.input.Methods;
+import io.github.clamentos.blackhole.framework.scaffolding.network.transfer.input.Request;
+import io.github.clamentos.blackhole.framework.scaffolding.network.transfer.input.Resources;
+import io.github.clamentos.blackhole.framework.scaffolding.network.transfer.input.ResourcesProvider;
+import io.github.clamentos.blackhole.framework.scaffolding.network.transfer.output.Response;
+import io.github.clamentos.blackhole.framework.scaffolding.network.transfer.output.ResponseStatuses;
+import io.github.clamentos.blackhole.framework.scaffolding.network.validation.Validator;
+import io.github.clamentos.blackhole.framework.scaffolding.network.validation.ValidatorProvider;
 
-// Testing purposes
+// Testing purposes, may not work
 public class Prova implements ApplicationContext {
+
+    final NamedLogger logger = new NamedLogger();
+    NetworkSessionService nss = NetworkSessionService.getInstance();
 
     public class DeserializerImpl implements Deserializer {
 
@@ -72,6 +81,7 @@ public class Prova implements ApplicationContext {
         @Override
         public Deserializer getDeserializer(Resources<? extends Enum<?>> resource) {
 
+            logger.log("getDeserializer", "message", LogLevels.INFO);
             return(d);
         }
     }
@@ -98,12 +108,18 @@ public class Prova implements ApplicationContext {
 
     private ResP rp = new ResP();
 
+    public enum RoleI implements Role<RoleI> {
+
+        USER,
+        ADMIN
+    }
+
     public class Serv implements Servlet {
 
         @Override
         public Response handle(Request request) {
 
-            try {
+            /*try {
 
                 Thread.sleep(1000);
             }
@@ -111,10 +127,10 @@ public class Prova implements ApplicationContext {
             catch(InterruptedException exc) {
 
                 //...
-            }
+            }*/
 
             ErrorDto dto = (ErrorDto)request.getPayload();
-            return(ResponseFactory.build(request.getId(), ResponseStatuses.OK, dto));
+            return(ResponseFactory.build(request, ResponseStatuses.OK, (byte)0, 0L, dto));
         }
     }
 
@@ -139,7 +155,19 @@ public class Prova implements ApplicationContext {
 
     private ServP sp = new ServP();
     
+    public class Val implements Validator {
 
+        @Override
+        public void validate(Deserializable obj, Methods request_method) throws ValidationException {
+
+            // empty
+        }
+    }
+
+    private Val v = new Val();
+
+
+    
 
 
 
@@ -164,6 +192,9 @@ public class Prova implements ApplicationContext {
     @Override
     public ValidatorProvider getValidatorProvider() {
 
-        throw new UnsupportedOperationException("Unimplemented method 'getValidatorProvider'");
+        return((dto) -> {
+
+            return(v);
+        });
     }
 }

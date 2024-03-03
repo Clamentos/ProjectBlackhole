@@ -1,14 +1,16 @@
 package io.github.clamentos.blackhole.framework.implementation.tasks;
 
 ///
-import io.github.clamentos.blackhole.framework.implementation.logging.LogLevels;
 import io.github.clamentos.blackhole.framework.implementation.logging.LogPrinter;
 
 ///..
-import io.github.clamentos.blackhole.framework.implementation.utility.ExceptionFormatter;
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.LogLevels;
 
 ///..
-import io.github.clamentos.blackhole.framework.scaffolding.task.Stoppable;
+import io.github.clamentos.blackhole.framework.implementation.utility.exportable.ExceptionFormatter;
+
+///..
+import io.github.clamentos.blackhole.framework.scaffolding.tasks.Stoppable;
 
 ///.
 import java.io.PrintWriter;
@@ -30,7 +32,7 @@ public abstract class ContinuousTask implements Stoppable {
 
     ///
     /** Instantiates a new {@code ContinuousTask} object. */
-    public ContinuousTask() {
+    protected ContinuousTask() {
 
         status = 0;
     }
@@ -40,30 +42,23 @@ public abstract class ContinuousTask implements Stoppable {
      * Method to perform initialization operations before entering the continuous loop.
      * @throws Throwable If any exception occurs.
     */
-    public abstract void initialize() throws Throwable;
+    protected abstract void initialize() throws Throwable;
 
     ///..
     /**
      * Method to perform the main operations while in the continuous loop.
      * @throws Throwable If any exception occurs.
     */
-    public abstract void work() throws Throwable;
+    protected abstract void work() throws Throwable;
 
     ///..
     /**
      * Method to perform cleanup operations after the the continuous loop.
      * @throws Throwable If any exception occurs.
     */
-    public abstract void terminate() throws Throwable;
+    protected abstract void terminate() throws Throwable;
 
     ///
-    /** @return The stopped status flag. */
-    public boolean isStopped() {
-
-        return(status == 2);
-    }
-
-    ///..
     /**
      * <p>Main execution method.</p>
      * This method will perform the following:
@@ -98,7 +93,7 @@ public abstract class ContinuousTask implements Stoppable {
 
                 catch(Throwable exc) {
 
-                    printException(exc);
+                    logException(exc);
                 }
             }
 
@@ -109,7 +104,7 @@ public abstract class ContinuousTask implements Stoppable {
 
         catch(Throwable exc2) {
 
-            printException(exc2);
+            logException(exc2);
         }
     }
 
@@ -122,7 +117,18 @@ public abstract class ContinuousTask implements Stoppable {
     }
 
     ///.
-    private void printException(Throwable exc) {
+    /** @return The stopped status flag. */
+    protected boolean isStopped() {
+
+        return(status == 2);
+    }
+
+    ///.
+    /**
+     * Logs the uncaught exception.
+     * @param exc : The exception to log.
+    */
+    private void logException(Throwable exc) {
 
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
@@ -133,8 +139,8 @@ public abstract class ContinuousTask implements Stoppable {
 
             ExceptionFormatter.format(
 
-                "Uncaught exception in task " + Objects.toIdentityString(this) + " [",
-                exc, "] >> Stack trace: " + sw.toString()
+                "ContinuousTask.logException => Uncaught exception in task " + Objects.toIdentityString(this),
+                exc, "Stack trace: " + sw.toString()
             ),
 
             LogLevels.ERROR

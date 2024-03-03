@@ -1,17 +1,15 @@
 package io.github.clamentos.blackhole.framework.implementation.persistence.models;
 
 ///
-import io.github.clamentos.blackhole.framework.scaffolding.cache.Cacheability;
+import io.github.clamentos.blackhole.framework.scaffolding.persistence.cache.Cacheability;
 
 ///..
-import io.github.clamentos.blackhole.framework.scaffolding.persistence.Entities;
+import io.github.clamentos.blackhole.framework.scaffolding.persistence.model.Entities;
 
 ///
 /**
  * <h3>System Entities</h3>
  * Enumeration that describes some internal database system entities.
- * @see LogEntity
- * @see SystemDiagnostics
 */
 public enum SystemEntities implements Entities<SystemEntities> {
 
@@ -66,6 +64,7 @@ public enum SystemEntities implements Entities<SystemEntities> {
             "\"responses_sent_ok\"",
             "\"responses_sent_ko\"",
             "\"sockets_accepted\"",
+            "\"sockets_refused\"",
             "\"sockets_closed\""
         },
 
@@ -84,10 +83,7 @@ public enum SystemEntities implements Entities<SystemEntities> {
     /** The primary key generation strategy. */
     private final boolean auto_key;
 
-    /**
-     * The cacheability level.
-     * @see Cacheability
-    */
+    /** The cacheability level. */
     private final Cacheability cacheability;
 
     /** The cacheability size limit. */
@@ -138,7 +134,7 @@ public enum SystemEntities implements Entities<SystemEntities> {
     ///..
     /** {@inheritDoc} */
     @Override
-    public Cacheability cacheable() {
+    public Cacheability getCacheability() {
 
         return(cacheability);
     }
