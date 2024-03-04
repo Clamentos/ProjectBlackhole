@@ -29,20 +29,35 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 ///
+/**
+ * <h3>Network Session Service</h3>
+ * Service offering user session managing methods.
+*/
 public final class NetworkSessionService implements SessionService {
 
     ///
+    /** Singleton instance of {@code this} instantiated during class loading. */
     private static final NetworkSessionService INSTANCE = new NetworkSessionService();
 
     ///.
+    /** The service used to log notable events. */
     private final Logger logger;
 
     ///..
+    /** The cryptographically secure session id generator. */
     private final SecureRandom id_generator;
+
+    /** The map that associates sessions and ids. */
     private final ConcurrentHashMap<byte[], Session> session_map;
+
+    /** The map that associates users to session ids. */
     private final ConcurrentHashMap<Long, Set<byte[]>> user_id_map;
 
     ///
+    /**
+     * Instantiates a new {@code NetworkSessionService} object.
+     * @apiNote Since this class is a singleton, this constructor will only be called once.
+    */
     private NetworkSessionService() {
 
         logger = Logger.getInstance();
@@ -55,6 +70,7 @@ public final class NetworkSessionService implements SessionService {
     }
 
     ///
+    /** @return The {@link NetworkSessionService} instance created during class loading. */
     public static NetworkSessionService getInstance() {
 
         return(INSTANCE);

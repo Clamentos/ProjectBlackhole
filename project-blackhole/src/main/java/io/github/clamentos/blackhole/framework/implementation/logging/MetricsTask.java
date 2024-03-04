@@ -71,7 +71,7 @@ public final class MetricsTask extends ContinuousTask {
     private final ConnectionPool pool;
 
     /** The service used to perform database queries. */
-    private final Repository repository;
+    private Repository repository;
 
     ///..
     /** The log timestamp formatter with pattern: {@code dd/MM/yyyy HH:mm:ss.SSS}. */
@@ -93,7 +93,6 @@ public final class MetricsTask extends ContinuousTask {
         logger = Logger.getInstance();
         log_printer = LogPrinter.getInstance();
         pool = ConnectionPool.getInstance();
-        repository = Repository.getInstance();
         formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss.SSS");
         split_idx = new int[]{0};
 
@@ -130,6 +129,8 @@ public final class MetricsTask extends ContinuousTask {
         }
 
         logger.log("MetricsTask.work => Begin", LogLevels.INFO);
+
+        repository = Repository.getInstance(); // Initialize lazily to avoid circular dependencies.
         sleep_samples = 0;
 
         SystemDiagnostics snapshot = MetricsTracker.getInstance().sample();

@@ -157,7 +157,7 @@ public final class ConfigurationProvider {
 
     /**
      * <p>Specifies the database URL.</p>
-     * Default: {@code jdbc:postgresql://127.0.0.1:5432/example_db}
+     * Default: {@code jdbc:postgresql://127.0.0.1:5432/mock_db}
     */
     public final String DATABASE_ADDRESS;
 

@@ -4,6 +4,10 @@ package io.github.clamentos.blackhole.framework.implementation.persistence.query
 import io.github.clamentos.blackhole.framework.implementation.logging.Logger;
 
 ///..
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.LogLevels;
+import io.github.clamentos.blackhole.framework.implementation.logging.exportable.MetricsTracker;
+
+///..
 import io.github.clamentos.blackhole.framework.implementation.persistence.pool.PooledConnection;
 
 ///..
@@ -50,6 +54,9 @@ public class Repository {
     /** The service used to log notable events. */
     private final Logger logger;
 
+    /** The service used to update query success metrics. */
+    private final MetricsTracker metrics_tracker;
+
     ///
     /**
      * Instantiates a new {@code Repository}.
@@ -58,6 +65,9 @@ public class Repository {
     private Repository() {
 
         logger = Logger.getInstance();
+        metrics_tracker = MetricsTracker.getInstance();
+
+        logger.log("Repository.new => Instantiated successfully", LogLevels.SUCCESS);
     }
 
     ///
@@ -90,6 +100,7 @@ public class Repository {
 
         if(entities == null || descriptor == null || connection == null) {
 
+            metrics_tracker.incrementDatabaseQueriesKo(1);
             throw new IllegalArgumentException("Repository.insert -> The input arguments cannot be null");
         }
 
@@ -99,6 +110,7 @@ public class Repository {
 
         if(entities.size() == 0) {
 
+            metrics_tracker.incrementDatabaseQueriesOk(1);
             return(keys);
         }
 
@@ -128,7 +140,9 @@ public class Repository {
 
             else {
 
+                metrics_tracker.incrementDatabaseQueriesKo(1);
                 ResourceReleaserInternal.release(logger, "Repository", "insert", statement);
+
                 throw exc;
             }
         }
@@ -139,16 +153,20 @@ public class Repository {
 
             while(result_set.next()) {
 
-                keys.add(result_set.getLong(0));
+                keys.add(result_set.getLong(1));
             }
 
             ResourceReleaserInternal.release(logger, "Repository", "insert", statement, result_set);
+            metrics_tracker.incrementDatabaseQueriesOk(1);
+
             return(keys);
         }
 
         catch(SQLException exc2) {
 
+            metrics_tracker.incrementDatabaseQueriesKo(1);
             ResourceReleaserInternal.release(logger, "Repository", "insert", statement, result_set);
+
             throw SqlExceptionDecoder.decode("Repository.insert -> Could not extract keys: ", exc2);
         }
     }
@@ -167,6 +185,7 @@ public class Repository {
 
         if(filter == null || connection == null || mapper == null) {
 
+            metrics_tracker.incrementDatabaseQueriesKo(1);
             throw new IllegalArgumentException("Repository.select -> The input arguments cannot be null");
         }
 
@@ -195,7 +214,9 @@ public class Repository {
 
             else {
 
+                metrics_tracker.incrementDatabaseQueriesKo(1);
                 ResourceReleaserInternal.release(logger, "Repository", "select", statement);
+
                 throw exc;
             }
         }
@@ -210,12 +231,15 @@ public class Repository {
                 return(new ArrayList<>());
             }
 
+            metrics_tracker.incrementDatabaseQueriesOk(1);
             return(entities);
         }
 
         catch(ResultSetMappingException exc3) {
 
+            metrics_tracker.incrementDatabaseQueriesKo(1);
             ResourceReleaserInternal.release(logger, "Repository", "select", statement, result_set);
+
             throw exc3;
         }
     }
@@ -244,6 +268,7 @@ public class Repository {
 
         if(entity == null || descriptor == null || connection == null) {
 
+            metrics_tracker.incrementDatabaseQueriesKo(1);
             throw new IllegalArgumentException("Repository.update -> The input arguments cannot be null");
         }
 
@@ -275,11 +300,14 @@ public class Repository {
 
             else {
 
+                metrics_tracker.incrementDatabaseQueriesKo(1);
                 ResourceReleaserInternal.release(logger, "Repository", "update", statement);
+
                 throw exc;
             }
         }
 
+        metrics_tracker.incrementDatabaseQueriesOk(1);
         ResourceReleaserInternal.release(logger, "Repository", "update", statement);
     }
 
@@ -299,6 +327,7 @@ public class Repository {
 
         if(keys == null || descriptor == null || connection == null) {
 
+            metrics_tracker.incrementDatabaseQueriesKo(1);
             throw new IllegalArgumentException("Repository.delete -> The input arguments cannot be null");
         }
 
@@ -336,12 +365,16 @@ public class Repository {
 
             else {
 
+                metrics_tracker.incrementDatabaseQueriesKo(1);
                 ResourceReleaserInternal.release(logger, "Repository", "delete", statement);
+
                 throw exc;
             }
         }
 
+        metrics_tracker.incrementDatabaseQueriesOk(1);
         ResourceReleaserInternal.release(logger, "Repository", "delete", statement);
+
         return(rows_affected);
     }
 
